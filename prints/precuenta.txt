@@ -1,0 +1,11 @@
+negocio               
+----------------------
+RESTAURANT SERVICE POS
+mesa        pedido      estado      total     
+----------  ----------  ----------  ----------
+Mesa 2      1           abierto     36.5 €    
+producto           cantidad    precio      subtotal    nota      
+-----------------  ----------  ----------  ----------  ----------
+Croquetas caseras  2           8.5 €       17.0 €                
+Paella valenciana  1           14.5 €      14.5 €      Sin marisc
+Coca-Cola          2           2.5 €       5.0 €                 
