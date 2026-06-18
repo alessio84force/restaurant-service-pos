@@ -6,15 +6,39 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Restaurant Service POS</h1>
-  <h2>Panel principal</h2>
 
-  <button>Mesas</button>
-  <button>Pedidos</button>
-  <button>Cocina</button>
-  <button>Bar</button>
-  <button>Productos</button>
-  <button>Precuenta</button>
+  <header>
+    <h1>Restaurant Service POS</h1>
+    <p>La gestión completa de tu restaurante</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Panel principal</h2>
+
+      <div class="menu">
+        <button>Mesas</button>
+        <button>Pedidos</button>
+        <button>Cocina</button>
+        <button>Bar</button>
+        <button>Productos</button>
+        <button>Precuenta</button>
+      </div>
+    </section>
+
+    <section class="mesas">
+      <h2>Mesas</h2>
+
+      <div class="grid-mesas">
+        <div class="mesa libre">Mesa 1<br><span>Libre</span></div>
+        <div class="mesa ocupada">Mesa 2<br><span>Ocupada</span></div>
+        <div class="mesa libre">Mesa 3<br><span>Libre</span></div>
+        <div class="mesa reservada">Mesa 4<br><span>Reservada</span></div>
+        <div class="mesa ocupada">Mesa 5<br><span>Ocupada</span></div>
+        <div class="mesa libre">Mesa 6<br><span>Libre</span></div>
+      </div>
+    </section>
+  </main>
 
   <script src="script.js"></script>
 </body>
