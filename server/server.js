@@ -1,8 +1,12 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+
+app.use(cors());
+app.use(express.json());
 
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
@@ -14,11 +18,7 @@ app.get('/', (req, res) => {
 
 app.get('/mesas', (req, res) => {
   db.all('SELECT * FROM mesas ORDER BY numero', [], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
@@ -36,19 +36,10 @@ app.get('/pedido/:mesa', (req, res) => {
   `;
 
   db.get(pedidoSql, [mesa], (err, pedido) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
+    if (err) return res.status(500).json({ error: err.message });
 
     if (!pedido) {
-      res.json({
-        mesa: mesa,
-        pedido: null,
-        productos: [],
-        total: 0
-      });
-      return;
+      return res.json({ mesa: mesa, pedido: null, productos: [], total: 0 });
     }
 
     const lineasSql = `
@@ -61,10 +52,7 @@ app.get('/pedido/:mesa', (req, res) => {
     `;
 
     db.all(lineasSql, [pedido.id], (err, productos) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-        return;
-      }
+      if (err) return res.status(500).json({ error: err.message });
 
       res.json({
         mesa: pedido.mesa,
@@ -74,6 +62,27 @@ app.get('/pedido/:mesa', (req, res) => {
         total: pedido.total
       });
     });
+  });
+});
+
+app.post('/abrir-mesa/:mesa', (req, res) => {
+  const mesa = req.params.mesa;
+
+  db.run("UPDATE mesas SET estado='ocupada' WHERE numero=?", [mesa], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+
+    db.run(
+      "INSERT INTO pedidos (mesa_id, estado, total) SELECT id, 'abierto', 0 FROM mesas WHERE numero=?",
+      [mesa],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.json({
+          mensaje: 'Mesa abierta correctamente',
+          mesa: mesa
+        });
+      }
+    );
   });
 });
 
