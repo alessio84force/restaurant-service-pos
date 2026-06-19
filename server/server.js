@@ -23,6 +23,21 @@ app.get('/mesas', (req, res) => {
   });
 });
 
+app.get('/productos', (req, res) => {
+  db.all(
+    `SELECT productos.id, productos.nombre, productos.precio, categorias.nombre AS categoria
+     FROM productos
+     JOIN categorias ON productos.categoria_id = categorias.id
+     WHERE productos.disponible = 1
+     ORDER BY categorias.id, productos.id`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
 app.get('/pedido/:mesa', (req, res) => {
   const mesa = req.params.mesa;
 
@@ -76,13 +91,63 @@ app.post('/abrir-mesa/:mesa', (req, res) => {
       [mesa],
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
-
-        res.json({
-          mensaje: 'Mesa abierta correctamente',
-          mesa: mesa
-        });
+        res.json({ mensaje: 'Mesa abierta correctamente', mesa: mesa });
       }
     );
+  });
+});
+
+app.post('/anadir-producto', (req, res) => {
+  const mesa = req.body.mesa;
+  const producto = req.body.producto;
+  const cantidad = req.body.cantidad || 1;
+
+  const pedidoSql = `
+    SELECT pedidos.id
+    FROM pedidos
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    ORDER BY pedidos.id DESC
+    LIMIT 1
+  `;
+
+  db.get(pedidoSql, [mesa], (err, pedido) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!pedido) {
+      return res.status(400).json({ error: 'No hay pedido abierto para esta mesa' });
+    }
+
+    db.get('SELECT precio FROM productos WHERE id=?', [producto], (err, productoDb) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (!productoDb) {
+        return res.status(404).json({ error: 'Producto no encontrado' });
+      }
+
+      db.run(
+        'INSERT INTO pedido_lineas (pedido_id, producto_id, cantidad, precio, nota) VALUES (?, ?, ?, ?, ?)',
+        [pedido.id, producto, cantidad, productoDb.precio, ''],
+        function(err) {
+          if (err) return res.status(500).json({ error: err.message });
+
+          db.run(
+            'UPDATE pedidos SET total = (SELECT SUM(cantidad * precio) FROM pedido_lineas WHERE pedido_id=?) WHERE id=?',
+            [pedido.id, pedido.id],
+            function(err) {
+              if (err) return res.status(500).json({ error: err.message });
+
+              res.json({
+                mensaje: 'Producto añadido correctamente',
+                mesa: mesa,
+                producto: producto,
+                cantidad: cantidad
+              });
+            }
+          );
+        }
+      );
+    });
   });
 });
 
