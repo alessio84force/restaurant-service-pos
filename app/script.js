@@ -60,6 +60,7 @@ function cargarPedido(numeroMesa) {
       html += '<h3>Total: ' + data.total.toFixed(2) + ' €</h3>';
 html += '<button onclick="cerrarMesa(' + data.mesa + ')">Cerrar Mesa</button>';
 
+html += '<button onclick="generarPrecuenta(' + data.mesa + ')">Precuenta</button>';
       detalle.innerHTML = html;
     });
 }
@@ -127,4 +128,8 @@ function cerrarMesa(numeroMesa) {
     document.getElementById('detalle-pedido').innerHTML =
       'Selecciona una mesa para ver el pedido.';
   });
+}
+
+function generarPrecuenta(numeroMesa) {
+  window.open('http://localhost:3000/pedido/' + numeroMesa, '_blank');
 }
