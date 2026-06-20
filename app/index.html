@@ -7,38 +7,32 @@
 </head>
 <body>
 
-  <header>
-    <h1>Restaurant Service POS</h1>
-    <p>La gestión completa de tu restaurante</p>
-  </header>
+<header>
+  <h1>Restaurant Service POS</h1>
+  <p>La gestión completa de tu restaurante</p>
+</header>
 
-  <main>
-    <section class="panel">
-      <h2>Panel principal</h2>
+<main>
+  <section class="mesas">
+    <h2>Mesas</h2>
+    <div class="grid-mesas"></div>
+  </section>
 
-      <div class="menu">
-        <button>Mesas</button>
-        <button>Pedidos</button>
-        <button>Cocina</button>
-        <button>Bar</button>
-        <button>Productos</button>
-        <button>Precuenta</button>
-      </div>
-    </section>
+  <section class="pedido">
+    <h2>Pedido seleccionado</h2>
+    <div id="detalle-pedido">
+      Selecciona una mesa para ver el pedido.
+    </div>
+  </section>
 
-    <section class="mesas">
-      <h2>Mesas</h2>
-      <div class="grid-mesas"></div>
-    </section>
+  <section class="productos">
+    <h2>Productos</h2>
+    <div id="lista-productos">
+      Selecciona una mesa para añadir productos.
+    </div>
+  </section>
+</main>
 
-    <section class="pedido">
-      <h2>Pedido seleccionado</h2>
-      <div id="detalle-pedido">
-        Selecciona una mesa para ver el pedido.
-      </div>
-    </section>
-  </main>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
