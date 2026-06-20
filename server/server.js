@@ -80,6 +80,103 @@ app.get('/pedido/:mesa', (req, res) => {
   });
 });
 
+app.get('/ticket/:mesa', (req, res) => {
+  const mesa = req.params.mesa;
+
+  const pedidoSql = `
+    SELECT pedidos.id, mesas.numero AS mesa, pedidos.estado, pedidos.total, pedidos.creado_en
+    FROM pedidos
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    ORDER BY pedidos.id DESC
+    LIMIT 1
+  `;
+
+  db.get(pedidoSql, [mesa], (err, pedido) => {
+    if (err) return res.status(500).send(err.message);
+
+    if (!pedido) {
+      return res.send('<h1>No hay pedido abierto para esta mesa</h1>');
+    }
+
+    const lineasSql = `
+      SELECT productos.nombre, pedido_lineas.cantidad, pedido_lineas.precio,
+      (pedido_lineas.cantidad * pedido_lineas.precio) AS subtotal,
+      pedido_lineas.nota
+      FROM pedido_lineas
+      JOIN productos ON pedido_lineas.producto_id = productos.id
+      WHERE pedido_lineas.pedido_id = ?
+    `;
+
+    db.all(lineasSql, [pedido.id], (err, productos) => {
+      if (err) return res.status(500).send(err.message);
+
+      let filas = '';
+
+      productos.forEach(p => {
+        filas += `
+          <tr>
+            <td>${p.nombre}</td>
+            <td>${p.cantidad}</td>
+            <td>${p.precio.toFixed(2)}</td>
+            <td>${p.subtotal.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+
+      const html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+          <meta charset="UTF-8">
+          <title>Precuenta Mesa ${pedido.mesa}</title>
+          <style>
+            body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+            .ticket { width: 320px; background: white; padding: 20px; margin: auto; border: 1px solid #ddd; }
+            h1, h2, p { text-align: center; margin: 5px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+            th, td { border-bottom: 1px solid #ddd; padding: 6px 2px; text-align: left; }
+            .total { text-align: right; font-size: 20px; margin-top: 15px; font-weight: bold; }
+            button { width: 100%; padding: 12px; margin-top: 15px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+            @media print {
+              body { background: white; padding: 0; }
+              button { display: none; }
+              .ticket { border: none; width: 100%; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <h1>Restaurant Service</h1>
+            <p>Precuenta</p>
+            <p>Mesa ${pedido.mesa} | Pedido ${pedido.id}</p>
+            <p>${pedido.creado_en}</p>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cant.</th>
+                  <th>Precio</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>${filas}</tbody>
+            </table>
+
+            <div class="total">TOTAL: ${pedido.total.toFixed(2)} EUR</div>
+
+            <button onclick="window.print()">Imprimir</button>
+          </div>
+        </body>
+        </html>
+      `;
+
+      res.send(html);
+    });
+  });
+});
+
 app.post('/abrir-mesa/:mesa', (req, res) => {
   const mesa = req.params.mesa;
 
@@ -150,7 +247,6 @@ app.post('/anadir-producto', (req, res) => {
     });
   });
 });
-
 
 app.post('/cerrar-mesa/:mesa', (req, res) => {
   const mesa = req.params.mesa;
