@@ -58,6 +58,7 @@ function cargarPedido(numeroMesa) {
 
       html += '</ul>';
       html += '<h3>Total: ' + data.total.toFixed(2) + ' €</h3>';
+html += '<button onclick="cerrarMesa(' + data.mesa + ')">Cerrar Mesa</button>';
 
       detalle.innerHTML = html;
     });
@@ -110,3 +111,20 @@ function anadirProducto(productoId) {
 cargarMesas();
 
 cargarProductos();
+
+function cerrarMesa(numeroMesa) {
+  if (!confirm('¿Cerrar Mesa ' + numeroMesa + '?')) {
+    return;
+  }
+
+  fetch('http://localhost:3000/cerrar-mesa/' + numeroMesa, {
+    method: 'POST'
+  })
+  .then(response => response.json())
+  .then(() => {
+    mesaSeleccionada = null;
+    cargarMesas();
+    document.getElementById('detalle-pedido').innerHTML =
+      'Selecciona una mesa para ver el pedido.';
+  });
+}

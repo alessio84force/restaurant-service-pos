@@ -151,6 +151,42 @@ app.post('/anadir-producto', (req, res) => {
   });
 });
 
+
+app.post('/cerrar-mesa/:mesa', (req, res) => {
+  const mesa = req.params.mesa;
+
+  const pedidoSql = `
+    SELECT pedidos.id
+    FROM pedidos
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    ORDER BY pedidos.id DESC
+    LIMIT 1
+  `;
+
+  db.get(pedidoSql, [mesa], (err, pedido) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!pedido) {
+      return res.status(400).json({ error: 'No hay pedido abierto para esta mesa' });
+    }
+
+    db.run("UPDATE pedidos SET estado='cerrado' WHERE id=?", [pedido.id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.run("UPDATE mesas SET estado='libre' WHERE numero=?", [mesa], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+
+        res.json({
+          mensaje: 'Mesa cerrada correctamente',
+          mesa: mesa,
+          pedido: pedido.id
+        });
+      });
+    });
+  });
+});
+
 app.listen(3000, () => {
   console.log('Servidor iniciado en http://localhost:3000');
 });
