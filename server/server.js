@@ -58,7 +58,7 @@ app.get('/pedido/:mesa', (req, res) => {
     }
 
     const lineasSql = `
-      SELECT productos.nombre, pedido_lineas.cantidad, pedido_lineas.precio,
+      SELECT pedido_lineas.id, productos.nombre, pedido_lineas.cantidad, pedido_lineas.precio,
       (pedido_lineas.cantidad * pedido_lineas.precio) AS subtotal,
       pedido_lineas.nota
       FROM pedido_lineas
@@ -100,7 +100,7 @@ app.get('/ticket/:mesa', (req, res) => {
     }
 
     const lineasSql = `
-      SELECT productos.nombre, pedido_lineas.cantidad, pedido_lineas.precio,
+      SELECT pedido_lineas.id, productos.nombre, pedido_lineas.cantidad, pedido_lineas.precio,
       (pedido_lineas.cantidad * pedido_lineas.precio) AS subtotal,
       pedido_lineas.nota
       FROM pedido_lineas
@@ -286,3 +286,61 @@ app.post('/cerrar-mesa/:mesa', (req, res) => {
 app.listen(3000, () => {
   console.log('Servidor iniciado en http://localhost:3000');
 });
+
+// Actualizar cantidad de una linea de pedido
+app.post('/linea/:id/cantidad', (req, res) => {
+  const id = req.params.id;
+  const cambio = req.body.cambio;
+
+  db.get('SELECT pedido_id, cantidad FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!linea) {
+      return res.status(404).json({ error: 'Linea no encontrada' });
+    }
+
+    const nuevaCantidad = linea.cantidad + cambio;
+
+    if (nuevaCantidad <= 0) {
+      db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        actualizarTotal(linea.pedido_id, res);
+      });
+      return;
+    }
+
+    db.run('UPDATE pedido_lineas SET cantidad=? WHERE id=?', [nuevaCantidad, id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      actualizarTotal(linea.pedido_id, res);
+    });
+  });
+});
+
+// Eliminar linea de pedido
+app.delete('/linea/:id', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT pedido_id FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!linea) {
+      return res.status(404).json({ error: 'Linea no encontrada' });
+    }
+
+    db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      actualizarTotal(linea.pedido_id, res);
+    });
+  });
+});
+
+function actualizarTotal(pedidoId, res) {
+  db.run(
+    'UPDATE pedidos SET total = COALESCE((SELECT SUM(cantidad * precio) FROM pedido_lineas WHERE pedido_id=?), 0) WHERE id=?',
+    [pedidoId, pedidoId],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ mensaje: 'Pedido actualizado correctamente' });
+    }
+  );
+}

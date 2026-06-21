@@ -17,15 +17,13 @@ function cargarMesas() {
 
           if (mesa.estado === 'libre') {
             if (confirm('¿Abrir Mesa ' + mesa.numero + '?')) {
-              fetch('http://localhost:3000/abrir-mesa/' + mesa.numero, {
-                method: 'POST'
-              })
-              .then(response => response.json())
-              .then(() => {
-                cargarMesas();
-                cargarPedido(mesa.numero);
-                cargarProductos();
-              });
+              fetch('http://localhost:3000/abrir-mesa/' + mesa.numero, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => {
+                  cargarMesas();
+                  cargarPedido(mesa.numero);
+                  cargarProductos();
+                });
             }
           } else {
             cargarPedido(mesa.numero);
@@ -50,17 +48,21 @@ function cargarPedido(numeroMesa) {
       }
 
       let html = '<h3>Mesa ' + data.mesa + ' - Pedido ' + data.pedido + '</h3>';
-      html += '<ul>';
 
       data.productos.forEach(producto => {
-        html += '<li>' + producto.nombre + ' x' + producto.cantidad + ' - ' + producto.subtotal.toFixed(2) + ' €</li>';
+        html += '<div class="linea-pedido">';
+        html += '<strong>' + producto.nombre + '</strong><br>';
+        html += 'Cantidad: ' + producto.cantidad + ' | Subtotal: ' + producto.subtotal.toFixed(2) + ' EUR<br>';
+        html += '<button onclick="cambiarCantidad(' + producto.id + ', 1)">+</button>';
+        html += '<button onclick="cambiarCantidad(' + producto.id + ', -1)">-</button>';
+        html += '<button onclick="eliminarLinea(' + producto.id + ')">Eliminar</button>';
+        html += '</div>';
       });
 
-      html += '</ul>';
-      html += '<h3>Total: ' + data.total.toFixed(2) + ' €</h3>';
-html += '<button onclick="cerrarMesa(' + data.mesa + ')">Cerrar Mesa</button>';
+      html += '<h3>Total: ' + data.total.toFixed(2) + ' EUR</h3>';
+      html += '<button onclick="generarPrecuenta(' + data.mesa + ')">Precuenta</button>';
+      html += '<button onclick="cerrarMesa(' + data.mesa + ')">Cerrar Mesa</button>';
 
-html += '<button onclick="generarPrecuenta(' + data.mesa + ')">Precuenta</button>';
       detalle.innerHTML = html;
     });
 }
@@ -74,7 +76,7 @@ function cargarProductos() {
 
       productos.forEach(producto => {
         const btn = document.createElement('button');
-        btn.textContent = producto.nombre + ' - ' + producto.precio.toFixed(2) + ' €';
+        btn.textContent = producto.nombre + ' - ' + producto.precio.toFixed(2) + ' EUR';
 
         btn.addEventListener('click', () => {
           anadirProducto(producto.id);
@@ -93,9 +95,7 @@ function anadirProducto(productoId) {
 
   fetch('http://localhost:3000/anadir-producto', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mesa: mesaSeleccionada,
       producto: productoId,
@@ -109,27 +109,52 @@ function anadirProducto(productoId) {
   });
 }
 
-cargarMesas();
+function cambiarCantidad(lineaId, cambio) {
+  fetch('http://localhost:3000/linea/' + lineaId + '/cantidad', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cambio: cambio })
+  })
+  .then(response => response.json())
+  .then(() => {
+    cargarPedido(mesaSeleccionada);
+    cargarMesas();
+  });
+}
 
-cargarProductos();
+function eliminarLinea(lineaId) {
+  if (!confirm('¿Eliminar producto del pedido?')) {
+    return;
+  }
+
+  fetch('http://localhost:3000/linea/' + lineaId, {
+    method: 'DELETE'
+  })
+  .then(response => response.json())
+  .then(() => {
+    cargarPedido(mesaSeleccionada);
+    cargarMesas();
+  });
+}
 
 function cerrarMesa(numeroMesa) {
   if (!confirm('¿Cerrar Mesa ' + numeroMesa + '?')) {
     return;
   }
 
-  fetch('http://localhost:3000/cerrar-mesa/' + numeroMesa, {
-    method: 'POST'
-  })
-  .then(response => response.json())
-  .then(() => {
-    mesaSeleccionada = null;
-    cargarMesas();
-    document.getElementById('detalle-pedido').innerHTML =
-      'Selecciona una mesa para ver el pedido.';
-  });
+  fetch('http://localhost:3000/cerrar-mesa/' + numeroMesa, { method: 'POST' })
+    .then(response => response.json())
+    .then(() => {
+      mesaSeleccionada = null;
+      cargarMesas();
+      document.getElementById('detalle-pedido').innerHTML =
+        'Selecciona una mesa para ver el pedido.';
+    });
 }
 
 function generarPrecuenta(numeroMesa) {
-  window.open('http://localhost:3000/pedido/' + numeroMesa, '_blank');
+  window.open('http://localhost:3000/ticket/' + numeroMesa, '_blank');
 }
+
+cargarMesas();
+cargarProductos();
