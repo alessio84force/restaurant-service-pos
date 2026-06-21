@@ -344,3 +344,127 @@ function actualizarTotal(pedidoId, res) {
     }
   );
 }
+
+app.get('/cocina', (req, res) => {
+  const sql = `
+    SELECT 
+      mesas.numero AS mesa,
+      pedidos.id AS pedido,
+      productos.nombre AS producto,
+      pedido_lineas.cantidad,
+      pedido_lineas.nota
+    FROM pedido_lineas
+    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    JOIN productos ON pedido_lineas.producto_id = productos.id
+    JOIN categorias ON productos.categoria_id = categorias.id
+    WHERE pedidos.estado = 'abierto'
+    AND categorias.nombre IN ('Entrantes', 'Primeros', 'Segundos', 'Postres')
+    ORDER BY pedidos.id, pedido_lineas.id
+  `;
+
+  db.all(sql, [], (err, lineas) => {
+    if (err) return res.status(500).send(err.message);
+
+    let html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Cocina - Restaurant Service POS</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+          h1 { text-align: center; }
+          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #dc2626; }
+          .producto { font-size: 20px; font-weight: bold; }
+          .nota { color: #dc2626; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>COCINA</h1>
+    `;
+
+    if (lineas.length === 0) {
+      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
+    }
+
+    lineas.forEach(l => {
+      html += `
+        <div class="comanda">
+          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
+          <p class="producto">${l.cantidad} x ${l.producto}</p>
+          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
+        </div>
+      `;
+    });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  });
+});
+
+app.get('/bar', (req, res) => {
+  const sql = `
+    SELECT 
+      mesas.numero AS mesa,
+      pedidos.id AS pedido,
+      productos.nombre AS producto,
+      pedido_lineas.cantidad,
+      pedido_lineas.nota
+    FROM pedido_lineas
+    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    JOIN productos ON pedido_lineas.producto_id = productos.id
+    JOIN categorias ON productos.categoria_id = categorias.id
+    WHERE pedidos.estado = 'abierto'
+    AND categorias.nombre IN ('Bebidas', 'Cafés')
+    ORDER BY pedidos.id, pedido_lineas.id
+  `;
+
+  db.all(sql, [], (err, lineas) => {
+    if (err) return res.status(500).send(err.message);
+
+    let html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Bar - Restaurant Service POS</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+          h1 { text-align: center; }
+          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #2563eb; }
+          .producto { font-size: 20px; font-weight: bold; }
+          .nota { color: #2563eb; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>BAR</h1>
+    `;
+
+    if (lineas.length === 0) {
+      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
+    }
+
+    lineas.forEach(l => {
+      html += `
+        <div class="comanda">
+          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
+          <p class="producto">${l.cantidad} x ${l.producto}</p>
+          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
+        </div>
+      `;
+    });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  });
+});
