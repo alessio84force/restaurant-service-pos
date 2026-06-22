@@ -192,7 +192,7 @@ app.get('/cocina', (req, res) => {
     JOIN categorias ON productos.categoria_id = categorias.id
     WHERE pedidos.estado = 'abierto'
     AND pedido_lineas.preparado = 0
-    AND categorias.nombre IN ('Entrantes', 'Primeros', 'Segundos', 'Postres')
+    AND categorias.destino = 'cocina'
     ORDER BY pedidos.id, pedido_lineas.id
   `;
 
@@ -258,7 +258,7 @@ app.get('/bar', (req, res) => {
     JOIN categorias ON productos.categoria_id = categorias.id
     WHERE pedidos.estado = 'abierto'
     AND pedido_lineas.preparado = 0
-    AND categorias.nombre IN ('Bebidas', 'Cafés')
+    AND categorias.destino = 'bar'
     ORDER BY pedidos.id, pedido_lineas.id
   `;
 
