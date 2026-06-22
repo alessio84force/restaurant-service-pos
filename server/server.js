@@ -551,3 +551,69 @@ app.get('/ventas', (req, res) => {
     `);
   });
 });
+
+app.get('/dashboard', (req, res) => {
+  const datos = {};
+
+  db.get("SELECT COALESCE(SUM(total), 0) AS ventas FROM pedidos WHERE estado='cerrado'", [], (err, row) => {
+    if (err) return res.status(500).send(err.message);
+    datos.ventas = row.ventas;
+
+    db.get("SELECT COUNT(*) AS mesas_abiertas FROM mesas WHERE estado='ocupada'", [], (err, row) => {
+      if (err) return res.status(500).send(err.message);
+      datos.mesas_abiertas = row.mesas_abiertas;
+
+      db.get("SELECT COUNT(*) AS pedidos_activos FROM pedidos WHERE estado='abierto'", [], (err, row) => {
+        if (err) return res.status(500).send(err.message);
+        datos.pedidos_activos = row.pedidos_activos;
+
+        db.get("SELECT COUNT(*) AS pedidos_cerrados FROM pedidos WHERE estado='cerrado'", [], (err, row) => {
+          if (err) return res.status(500).send(err.message);
+          datos.pedidos_cerrados = row.pedidos_cerrados;
+
+          const ticketMedio = datos.pedidos_cerrados > 0
+            ? datos.ventas / datos.pedidos_cerrados
+            : 0;
+
+          res.send(`
+            <html>
+            <head>
+              <meta charset="UTF-8">
+              <title>Dashboard Gerencia</title>
+              <style>
+                body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+                h1 { text-align: center; }
+                .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; max-width: 900px; margin: auto; }
+                .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center; }
+                .number { font-size: 36px; font-weight: bold; color: #2563eb; }
+                .label { color: #555; margin-top: 8px; }
+              </style>
+            </head>
+            <body>
+              <h1>Dashboard de Gerencia</h1>
+              <div class="grid">
+                <div class="card">
+                  <div class="number">${datos.ventas.toFixed(2)} EUR</div>
+                  <div class="label">Ventas cerradas</div>
+                </div>
+                <div class="card">
+                  <div class="number">${datos.mesas_abiertas}</div>
+                  <div class="label">Mesas abiertas</div>
+                </div>
+                <div class="card">
+                  <div class="number">${datos.pedidos_activos}</div>
+                  <div class="label">Pedidos activos</div>
+                </div>
+                <div class="card">
+                  <div class="number">${ticketMedio.toFixed(2)} EUR</div>
+                  <div class="label">Ticket medio</div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `);
+        });
+      });
+    });
+  });
+});
