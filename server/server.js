@@ -490,3 +490,64 @@ function actualizarTotal(pedidoId, res) {
 app.listen(3000, () => {
   console.log('Servidor iniciado en http://localhost:3000');
 });
+
+app.get('/ventas', (req, res) => {
+  const sql = `
+    SELECT 
+      pedidos.id,
+      mesas.numero AS mesa,
+      pedidos.total,
+      pedidos.creado_en
+    FROM pedidos
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    WHERE pedidos.estado = 'cerrado'
+    ORDER BY pedidos.id DESC
+  `;
+
+  db.all(sql, [], (err, pedidos) => {
+    if (err) return res.status(500).send(err.message);
+
+    let total = pedidos.reduce((sum, p) => sum + p.total, 0);
+
+    let filas = '';
+    pedidos.forEach(p => {
+      filas += `
+        <tr>
+          <td>${p.id}</td>
+          <td>Mesa ${p.mesa}</td>
+          <td>${p.total.toFixed(2)} EUR</td>
+          <td>${p.creado_en}</td>
+        </tr>
+      `;
+    });
+
+    res.send(`
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Ventas</title>
+        <style>
+          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+          h1 { text-align: center; }
+          table { width: 100%; background: white; border-collapse: collapse; }
+          th, td { padding: 10px; border-bottom: 1px solid #ddd; }
+          .total { font-size: 24px; font-weight: bold; text-align: right; margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Historial de ventas</h1>
+        <div class="total">TOTAL: ${total.toFixed(2)} EUR</div>
+        <table>
+          <tr>
+            <th>Pedido</th>
+            <th>Mesa</th>
+            <th>Total</th>
+            <th>Fecha</th>
+          </tr>
+          ${filas}
+        </table>
+      </body>
+      </html>
+    `);
+  });
+});
