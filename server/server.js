@@ -4,7 +4,6 @@ const path = require('path');
 const cors = require('cors');
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -177,6 +176,138 @@ app.get('/ticket/:mesa', (req, res) => {
   });
 });
 
+app.get('/cocina', (req, res) => {
+  const sql = `
+    SELECT 
+      pedido_lineas.id AS id,
+      mesas.numero AS mesa,
+      pedidos.id AS pedido,
+      productos.nombre AS producto,
+      pedido_lineas.cantidad,
+      pedido_lineas.nota
+    FROM pedido_lineas
+    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    JOIN productos ON pedido_lineas.producto_id = productos.id
+    JOIN categorias ON productos.categoria_id = categorias.id
+    WHERE pedidos.estado = 'abierto'
+    AND pedido_lineas.preparado = 0
+    AND categorias.nombre IN ('Entrantes', 'Primeros', 'Segundos', 'Postres')
+    ORDER BY pedidos.id, pedido_lineas.id
+  `;
+
+  db.all(sql, [], (err, lineas) => {
+    if (err) return res.status(500).send(err.message);
+
+    let html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Cocina - Restaurant Service POS</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+          h1 { text-align: center; }
+          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #dc2626; }
+          .producto { font-size: 20px; font-weight: bold; }
+          .nota { color: #dc2626; font-weight: bold; }
+          button { padding: 10px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <h1>COCINA</h1>
+    `;
+
+    if (lineas.length === 0) {
+      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
+    }
+
+    lineas.forEach(l => {
+      html += `
+        <div class="comanda">
+          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
+          <p class="producto">${l.cantidad} x ${l.producto}</p>
+          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
+          <button onclick="fetch('http://localhost:3000/linea/${l.id}/preparado', { method: 'POST' }).then(() => location.reload())">Preparado</button>
+        </div>
+      `;
+    });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  });
+});
+
+app.get('/bar', (req, res) => {
+  const sql = `
+    SELECT 
+      pedido_lineas.id AS id,
+      mesas.numero AS mesa,
+      pedidos.id AS pedido,
+      productos.nombre AS producto,
+      pedido_lineas.cantidad,
+      pedido_lineas.nota
+    FROM pedido_lineas
+    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
+    JOIN mesas ON pedidos.mesa_id = mesas.id
+    JOIN productos ON pedido_lineas.producto_id = productos.id
+    JOIN categorias ON productos.categoria_id = categorias.id
+    WHERE pedidos.estado = 'abierto'
+    AND pedido_lineas.preparado = 0
+    AND categorias.nombre IN ('Bebidas', 'Cafés')
+    ORDER BY pedidos.id, pedido_lineas.id
+  `;
+
+  db.all(sql, [], (err, lineas) => {
+    if (err) return res.status(500).send(err.message);
+
+    let html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Bar - Restaurant Service POS</title>
+        <style>
+          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
+          h1 { text-align: center; }
+          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #2563eb; }
+          .producto { font-size: 20px; font-weight: bold; }
+          .nota { color: #2563eb; font-weight: bold; }
+          button { padding: 10px; background: #16a34a; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        </style>
+      </head>
+      <body>
+        <h1>BAR</h1>
+    `;
+
+    if (lineas.length === 0) {
+      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
+    }
+
+    lineas.forEach(l => {
+      html += `
+        <div class="comanda">
+          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
+          <p class="producto">${l.cantidad} x ${l.producto}</p>
+          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
+          <button onclick="fetch('http://localhost:3000/linea/${l.id}/preparado', { method: 'POST' }).then(() => location.reload())">Preparado</button>
+        </div>
+      `;
+    });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    res.send(html);
+  });
+});
+
 app.post('/abrir-mesa/:mesa', (req, res) => {
   const mesa = req.params.mesa;
 
@@ -248,6 +379,68 @@ app.post('/anadir-producto', (req, res) => {
   });
 });
 
+app.post('/linea/:id/cantidad', (req, res) => {
+  const id = req.params.id;
+  const cambio = req.body.cambio;
+
+  db.get('SELECT pedido_id, cantidad FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!linea) {
+      return res.status(404).json({ error: 'Linea no encontrada' });
+    }
+
+    const nuevaCantidad = linea.cantidad + cambio;
+
+    if (nuevaCantidad <= 0) {
+      db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        actualizarTotal(linea.pedido_id, res);
+      });
+      return;
+    }
+
+    db.run('UPDATE pedido_lineas SET cantidad=? WHERE id=?', [nuevaCantidad, id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      actualizarTotal(linea.pedido_id, res);
+    });
+  });
+});
+
+app.delete('/linea/:id', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT pedido_id FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (!linea) {
+      return res.status(404).json({ error: 'Linea no encontrada' });
+    }
+
+    db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      actualizarTotal(linea.pedido_id, res);
+    });
+  });
+});
+
+app.post('/linea/:id/preparado', (req, res) => {
+  const id = req.params.id;
+
+  db.run(
+    'UPDATE pedido_lineas SET preparado = 1 WHERE id=?',
+    [id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.json({
+        mensaje: 'Linea marcada como preparada',
+        linea: id
+      });
+    }
+  );
+});
+
 app.post('/cerrar-mesa/:mesa', (req, res) => {
   const mesa = req.params.mesa;
 
@@ -283,57 +476,6 @@ app.post('/cerrar-mesa/:mesa', (req, res) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log('Servidor iniciado en http://localhost:3000');
-});
-
-// Actualizar cantidad de una linea de pedido
-app.post('/linea/:id/cantidad', (req, res) => {
-  const id = req.params.id;
-  const cambio = req.body.cambio;
-
-  db.get('SELECT pedido_id, cantidad FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    if (!linea) {
-      return res.status(404).json({ error: 'Linea no encontrada' });
-    }
-
-    const nuevaCantidad = linea.cantidad + cambio;
-
-    if (nuevaCantidad <= 0) {
-      db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        actualizarTotal(linea.pedido_id, res);
-      });
-      return;
-    }
-
-    db.run('UPDATE pedido_lineas SET cantidad=? WHERE id=?', [nuevaCantidad, id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      actualizarTotal(linea.pedido_id, res);
-    });
-  });
-});
-
-// Eliminar linea de pedido
-app.delete('/linea/:id', (req, res) => {
-  const id = req.params.id;
-
-  db.get('SELECT pedido_id FROM pedido_lineas WHERE id=?', [id], (err, linea) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    if (!linea) {
-      return res.status(404).json({ error: 'Linea no encontrada' });
-    }
-
-    db.run('DELETE FROM pedido_lineas WHERE id=?', [id], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      actualizarTotal(linea.pedido_id, res);
-    });
-  });
-});
-
 function actualizarTotal(pedidoId, res) {
   db.run(
     'UPDATE pedidos SET total = COALESCE((SELECT SUM(cantidad * precio) FROM pedido_lineas WHERE pedido_id=?), 0) WHERE id=?',
@@ -345,126 +487,6 @@ function actualizarTotal(pedidoId, res) {
   );
 }
 
-app.get('/cocina', (req, res) => {
-  const sql = `
-    SELECT 
-      mesas.numero AS mesa,
-      pedidos.id AS pedido,
-      productos.nombre AS producto,
-      pedido_lineas.cantidad,
-      pedido_lineas.nota
-    FROM pedido_lineas
-    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
-    JOIN mesas ON pedidos.mesa_id = mesas.id
-    JOIN productos ON pedido_lineas.producto_id = productos.id
-    JOIN categorias ON productos.categoria_id = categorias.id
-    WHERE pedidos.estado = 'abierto'
-    AND categorias.nombre IN ('Entrantes', 'Primeros', 'Segundos', 'Postres')
-    ORDER BY pedidos.id, pedido_lineas.id
-  `;
-
-  db.all(sql, [], (err, lineas) => {
-    if (err) return res.status(500).send(err.message);
-
-    let html = `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Cocina - Restaurant Service POS</title>
-        <style>
-          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
-          h1 { text-align: center; }
-          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #dc2626; }
-          .producto { font-size: 20px; font-weight: bold; }
-          .nota { color: #dc2626; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <h1>COCINA</h1>
-    `;
-
-    if (lineas.length === 0) {
-      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
-    }
-
-    lineas.forEach(l => {
-      html += `
-        <div class="comanda">
-          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
-          <p class="producto">${l.cantidad} x ${l.producto}</p>
-          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
-        </div>
-      `;
-    });
-
-    html += `
-      </body>
-      </html>
-    `;
-
-    res.send(html);
-  });
-});
-
-app.get('/bar', (req, res) => {
-  const sql = `
-    SELECT 
-      mesas.numero AS mesa,
-      pedidos.id AS pedido,
-      productos.nombre AS producto,
-      pedido_lineas.cantidad,
-      pedido_lineas.nota
-    FROM pedido_lineas
-    JOIN pedidos ON pedido_lineas.pedido_id = pedidos.id
-    JOIN mesas ON pedidos.mesa_id = mesas.id
-    JOIN productos ON pedido_lineas.producto_id = productos.id
-    JOIN categorias ON productos.categoria_id = categorias.id
-    WHERE pedidos.estado = 'abierto'
-    AND categorias.nombre IN ('Bebidas', 'Cafés')
-    ORDER BY pedidos.id, pedido_lineas.id
-  `;
-
-  db.all(sql, [], (err, lineas) => {
-    if (err) return res.status(500).send(err.message);
-
-    let html = `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <title>Bar - Restaurant Service POS</title>
-        <style>
-          body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 30px; }
-          h1 { text-align: center; }
-          .comanda { background: white; padding: 15px; margin: 10px auto; max-width: 500px; border-radius: 10px; border-left: 6px solid #2563eb; }
-          .producto { font-size: 20px; font-weight: bold; }
-          .nota { color: #2563eb; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <h1>BAR</h1>
-    `;
-
-    if (lineas.length === 0) {
-      html += '<p style="text-align:center;">No hay comandas pendientes.</p>';
-    }
-
-    lineas.forEach(l => {
-      html += `
-        <div class="comanda">
-          <p><strong>Mesa ${l.mesa}</strong> | Pedido ${l.pedido}</p>
-          <p class="producto">${l.cantidad} x ${l.producto}</p>
-          ${l.nota ? `<p class="nota">Nota: ${l.nota}</p>` : ''}
-        </div>
-      `;
-    });
-
-    html += `
-      </body>
-      </html>
-    `;
-
-    res.send(html);
-  });
+app.listen(3000, () => {
+  console.log('Servidor iniciado en http://localhost:3000');
 });
