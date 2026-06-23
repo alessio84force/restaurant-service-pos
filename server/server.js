@@ -1034,3 +1034,69 @@ app.post('/cierre-caja/cerrar', (req, res) => {
     }
   );
 });
+
+app.get('/login', (req, res) => {
+  res.send(`
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Login</title>
+      <style>
+        body { font-family: Arial; background: #f4f4f4; padding: 40px; }
+        form { background: white; padding: 25px; max-width: 400px; margin: auto; border-radius: 10px; }
+        input, button { width: 100%; padding: 12px; margin: 8px 0; }
+        button { background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; }
+      </style>
+    </head>
+    <body>
+      <form method="POST" action="/login">
+        <h1>Restaurant Service POS</h1>
+        <h2>Acceso</h2>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="password" type="password" placeholder="Contraseña" required>
+        <button type="submit">Entrar</button>
+      </form>
+    </body>
+    </html>
+  `);
+});
+
+app.post('/login', (req, res) => {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  db.get(
+    'SELECT id, nombre, email, rol FROM usuarios WHERE email=? AND password=? AND activo=1',
+    [email, password],
+    (err, usuario) => {
+      if (err) return res.status(500).send(err.message);
+
+      if (!usuario) {
+        return res.send('Usuario o contraseña incorrectos');
+      }
+
+      res.send(`
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Panel usuario</title>
+        </head>
+        <body style="font-family: Arial; padding: 30px;">
+          <h1>Bienvenido, ${usuario.nombre}</h1>
+          <p>Rol: ${usuario.rol}</p>
+
+          <ul>
+            <li><a href="http://localhost:8000">Sala</a></li>
+            <li><a href="/cocina">Cocina</a></li>
+            <li><a href="/bar">Bar</a></li>
+            <li><a href="/reservas">Reservas</a></li>
+            <li><a href="/admin-productos">Admin productos</a></li>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/cierre-caja">Cierre de caja</a></li>
+          </ul>
+        </body>
+        </html>
+      `);
+    }
+  );
+});
