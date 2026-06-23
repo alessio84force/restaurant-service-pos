@@ -1122,3 +1122,82 @@ res.send(`
     }
   );
 });
+
+app.get('/admin-usuarios', (req, res) => {
+  db.all('SELECT id, nombre, email, rol, activo FROM usuarios ORDER BY id', [], (err, usuarios) => {
+    if (err) return res.status(500).send(err.message);
+
+    let filas = '';
+
+    usuarios.forEach(u => {
+      filas += `
+        <tr>
+          <td>${u.nombre}</td>
+          <td>${u.email}</td>
+          <td>${u.rol}</td>
+          <td>${u.activo ? 'Si' : 'No'}</td>
+        </tr>
+      `;
+    });
+
+    res.send(`
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Admin Usuarios</title>
+        <style>
+          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+          form, table { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; width: 100%; }
+          input, select, button { padding: 10px; margin: 5px; }
+          table { border-collapse: collapse; }
+          th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <h1>Administrar usuarios</h1>
+
+        <form method="POST" action="/admin-usuarios/crear">
+          <h2>Nuevo usuario</h2>
+          <input name="nombre" placeholder="Nombre" required>
+          <input name="email" type="email" placeholder="Email" required>
+          <input name="password" placeholder="Contraseña" required>
+          <select name="rol" required>
+            <option value="admin">Admin</option>
+            <option value="camarero">Camarero</option>
+            <option value="cocina">Cocina</option>
+            <option value="bar">Bar</option>
+            <option value="gerente">Gerente</option>
+          </select>
+          <button type="submit">Crear usuario</button>
+        </form>
+
+        <table>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Activo</th>
+          </tr>
+          ${filas}
+        </table>
+      </body>
+      </html>
+    `);
+  });
+});
+
+app.post('/admin-usuarios/crear', (req, res) => {
+  const nombre = req.body.nombre;
+  const email = req.body.email;
+  const password = req.body.password;
+  const rol = req.body.rol;
+
+  db.run(
+    'INSERT INTO usuarios (nombre, email, password, rol, activo) VALUES (?, ?, ?, ?, 1)',
+    [nombre, email, password, rol],
+    function(err) {
+      if (err) return res.status(500).send(err.message);
+      res.redirect('/admin-usuarios');
+    }
+  );
+});
