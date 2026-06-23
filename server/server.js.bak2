@@ -645,12 +645,7 @@ app.get('/admin-productos', (req, res) => {
             <td>${p.precio.toFixed(2)} EUR</td>
             <td>${p.categoria}</td>
             <td>${p.destino}</td>
-            <td>${p.disponible ? "Si" : "No"}</td>
-            <td>
-              <form method="POST" action="/admin-productos/activar/${p.id}" style="display:inline;"><button type="submit">Activar</button></form>
-              <form method="POST" action="/admin-productos/desactivar/${p.id}" style="display:inline;"><button type="submit">Desactivar</button></form>
-              <form method="POST" action="/admin-productos/eliminar/${p.id}" style="display:inline;"><button type="submit">Eliminar</button></form>
-            </td>
+            <td>${p.disponible ? 'Sí' : 'No'}</td>
           </tr>
         `;
       });
@@ -671,16 +666,6 @@ app.get('/admin-productos', (req, res) => {
         <body>
           <h1>Administrar productos</h1>
 
-<form method="POST" action="/admin-categorias/crear">
-<h2>Nueva categoría</h2>
-<input name="nombre" placeholder="Nombre de categoría" required>
-<select name="destino" required>
-<option value="cocina">Cocina</option>
-<option value="bar">Bar</option>
-</select>
-<button type="submit">Crear categoría</button>
-</form>
-
           <form method="POST" action="/admin-productos/crear">
             <h2>Nuevo producto</h2>
             <input name="nombre" placeholder="Nombre del producto" required>
@@ -696,7 +681,6 @@ app.get('/admin-productos', (req, res) => {
               <th>Categoría</th>
               <th>Destino</th>
               <th>Disponible</th>
-<th>Acciones</th>
             </tr>
             ${filas}
           </table>
@@ -724,24 +708,3 @@ app.post('/admin-categorias/crear', (req, res) => {
   );
 });
 
-
-app.post('/admin-productos/activar/:id', (req, res) => {
-  db.run('UPDATE productos SET disponible=1 WHERE id=?', [req.params.id], function(err) {
-    if (err) return res.status(500).send(err.message);
-    res.redirect('/admin-productos');
-  });
-});
-
-app.post('/admin-productos/desactivar/:id', (req, res) => {
-  db.run('UPDATE productos SET disponible=0 WHERE id=?', [req.params.id], function(err) {
-    if (err) return res.status(500).send(err.message);
-    res.redirect('/admin-productos');
-  });
-});
-
-app.post('/admin-productos/eliminar/:id', (req, res) => {
-  db.run('DELETE FROM productos WHERE id=?', [req.params.id], function(err) {
-    if (err) return res.status(500).send(err.message);
-    res.redirect('/admin-productos');
-  });
-});
