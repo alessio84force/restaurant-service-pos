@@ -933,3 +933,104 @@ app.post('/reservas/:id/cancelar', (req, res) => {
     });
   });
 });
+
+app.get('/cierre-caja', (req, res) => {
+  const fechaHoy = new Date().toISOString().slice(0, 10);
+
+  db.get(
+    "SELECT COALESCE(SUM(total), 0) AS total_ventas, COUNT(*) AS pedidos_cerrados FROM pedidos WHERE estado='cerrado'",
+    [],
+    (err, resumen) => {
+      if (err) return res.status(500).send(err.message);
+
+      const ticketMedio = resumen.pedidos_cerrados > 0
+        ? resumen.total_ventas / resumen.pedidos_cerrados
+        : 0;
+
+      db.all('SELECT * FROM cierres_caja ORDER BY id DESC', [], (err, cierres) => {
+        if (err) return res.status(500).send(err.message);
+
+        let filas = '';
+        cierres.forEach(c => {
+          filas += `
+            <tr>
+              <td>${c.fecha}</td>
+              <td>${c.total_ventas.toFixed(2)} EUR</td>
+              <td>${c.pedidos_cerrados}</td>
+              <td>${c.ticket_medio.toFixed(2)} EUR</td>
+              <td>${c.creado_en}</td>
+            </tr>
+          `;
+        });
+
+        res.send(`
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Cierre de Caja</title>
+            <style>
+              body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+              .card, table { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; width: 100%; }
+              .total { font-size: 32px; font-weight: bold; color: #2563eb; }
+              th, td { padding: 10px; border-bottom: 1px solid #ddd; }
+              button { padding: 12px 20px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+            </style>
+          </head>
+          <body>
+            <h1>Cierre de Caja Diario</h1>
+
+            <div class="card">
+              <h2>Resumen actual</h2>
+              <p>Fecha: ${fechaHoy}</p>
+              <p class="total">${resumen.total_ventas.toFixed(2)} EUR</p>
+              <p>Pedidos cerrados: ${resumen.pedidos_cerrados}</p>
+              <p>Ticket medio: ${ticketMedio.toFixed(2)} EUR</p>
+
+              <form method="POST" action="/cierre-caja/cerrar">
+                <button type="submit">Cerrar caja</button>
+              </form>
+            </div>
+
+            <h2>Historial de cierres</h2>
+            <table>
+              <tr>
+                <th>Fecha</th>
+                <th>Total ventas</th>
+                <th>Pedidos cerrados</th>
+                <th>Ticket medio</th>
+                <th>Creado en</th>
+              </tr>
+              ${filas}
+            </table>
+          </body>
+          </html>
+        `);
+      });
+    }
+  );
+});
+
+app.post('/cierre-caja/cerrar', (req, res) => {
+  const fechaHoy = new Date().toISOString().slice(0, 10);
+
+  db.get(
+    "SELECT COALESCE(SUM(total), 0) AS total_ventas, COUNT(*) AS pedidos_cerrados FROM pedidos WHERE estado='cerrado'",
+    [],
+    (err, resumen) => {
+      if (err) return res.status(500).send(err.message);
+
+      const ticketMedio = resumen.pedidos_cerrados > 0
+        ? resumen.total_ventas / resumen.pedidos_cerrados
+        : 0;
+
+      db.run(
+        'INSERT INTO cierres_caja (fecha, total_ventas, pedidos_cerrados, ticket_medio) VALUES (?, ?, ?, ?)',
+        [fechaHoy, resumen.total_ventas, resumen.pedidos_cerrados, ticketMedio],
+        function(err) {
+          if (err) return res.status(500).send(err.message);
+          res.redirect('/cierre-caja');
+        }
+      );
+    }
+  );
+});
