@@ -647,6 +647,7 @@ app.get('/admin-productos', (req, res) => {
             <td>${p.destino}</td>
             <td>${p.disponible ? "Si" : "No"}</td>
             <td>
+<form method="GET" action="/admin-productos/editar/${p.id}" style="display:inline;"><button type="submit">Editar</button></form>
               <form method="POST" action="/admin-productos/activar/${p.id}" style="display:inline;"><button type="submit">Activar</button></form>
               <form method="POST" action="/admin-productos/desactivar/${p.id}" style="display:inline;"><button type="submit">Desactivar</button></form>
               <form method="POST" action="/admin-productos/eliminar/${p.id}" style="display:inline;"><button type="submit">Eliminar</button></form>
@@ -744,4 +745,65 @@ app.post('/admin-productos/eliminar/:id', (req, res) => {
     if (err) return res.status(500).send(err.message);
     res.redirect('/admin-productos');
   });
+});
+
+app.get('/admin-productos/editar/:id', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT * FROM productos WHERE id=?', [id], (err, producto) => {
+    if (err) return res.status(500).send(err.message);
+
+    if (!producto) {
+      return res.send('Producto no encontrado');
+    }
+
+    db.all('SELECT id, nombre, destino FROM categorias ORDER BY nombre', [], (err, categorias) => {
+      if (err) return res.status(500).send(err.message);
+
+      let opciones = '';
+      categorias.forEach(c => {
+        const selected = c.id === producto.categoria_id ? 'selected' : '';
+        opciones += `<option value="${c.id}" ${selected}>${c.nombre} (${c.destino})</option>`;
+      });
+
+      res.send(`
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Editar producto</title>
+          <style>
+            body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+            form { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; }
+            input, select, button { width: 100%; padding: 10px; margin: 8px 0; }
+          </style>
+        </head>
+        <body>
+          <form method="POST" action="/admin-productos/editar/${producto.id}">
+            <h1>Editar producto</h1>
+            <input name="nombre" value="${producto.nombre}" required>
+            <input name="precio" type="number" step="0.01" value="${producto.precio}" required>
+            <select name="categoria_id" required>${opciones}</select>
+            <button type="submit">Guardar cambios</button>
+          </form>
+        </body>
+        </html>
+      `);
+    });
+  });
+});
+
+app.post('/admin-productos/editar/:id', (req, res) => {
+  const id = req.params.id;
+  const nombre = req.body.nombre;
+  const precio = req.body.precio;
+  const categoria_id = req.body.categoria_id;
+
+  db.run(
+    'UPDATE productos SET nombre=?, precio=?, categoria_id=? WHERE id=?',
+    [nombre, precio, categoria_id, id],
+    function(err) {
+      if (err) return res.status(500).send(err.message);
+      res.redirect('/admin-productos');
+    }
+  );
 });
