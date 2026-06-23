@@ -826,6 +826,10 @@ app.get('/reservas', (req, res) => {
           <td>${r.fecha}</td>
           <td>${r.hora}</td>
           <td>${r.estado}</td>
+<td>
+<form method="POST" action="/reservas/${r.id}/confirmar" style="display:inline;"><button type="submit">Confirmar llegada</button></form>
+<form method="POST" action="/reservas/${r.id}/cancelar" style="display:inline;"><button type="submit">Cancelar</button></form>
+</td>
         </tr>
       `;
     });
@@ -862,6 +866,7 @@ app.get('/reservas', (req, res) => {
             <th>Fecha</th>
             <th>Hora</th>
             <th>Estado</th>
+<th>Acciones</th>
           </tr>
           ${filas}
         </table>
@@ -891,4 +896,40 @@ app.post('/reservas/crear', (req, res) => {
       });
     }
   );
+});
+
+app.post('/reservas/:id/confirmar', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT mesa_id FROM reservas WHERE id=?', [id], (err, reserva) => {
+    if (err) return res.status(500).send(err.message);
+    if (!reserva) return res.status(404).send('Reserva no encontrada');
+
+    db.run("UPDATE reservas SET estado='confirmada' WHERE id=?", [id], function(err) {
+      if (err) return res.status(500).send(err.message);
+
+      db.run("UPDATE mesas SET estado='ocupada' WHERE id=?", [reserva.mesa_id], function(err) {
+        if (err) return res.status(500).send(err.message);
+        res.redirect('/reservas');
+      });
+    });
+  });
+});
+
+app.post('/reservas/:id/cancelar', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT mesa_id FROM reservas WHERE id=?', [id], (err, reserva) => {
+    if (err) return res.status(500).send(err.message);
+    if (!reserva) return res.status(404).send('Reserva no encontrada');
+
+    db.run("UPDATE reservas SET estado='cancelada' WHERE id=?", [id], function(err) {
+      if (err) return res.status(500).send(err.message);
+
+      db.run("UPDATE mesas SET estado='libre' WHERE id=?", [reserva.mesa_id], function(err) {
+        if (err) return res.status(500).send(err.message);
+        res.redirect('/reservas');
+      });
+    });
+  });
 });
