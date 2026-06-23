@@ -848,16 +848,6 @@ app.get('/reservas', (req, res) => {
       </head>
       <body>
         <h1>Reservas</h1>
-<form method="POST" action="/reservas/crear" style="background:white; padding:20px; margin-bottom:25px;">
-<h2>Nueva reserva</h2>
-<select name="mesa_id" required><option value="1">Mesa 1</option><option value="2">Mesa 2</option><option value="3">Mesa 3</option><option value="4">Mesa 4</option><option value="5">Mesa 5</option><option value="6">Mesa 6</option></select>
-<input name="cliente" placeholder="Cliente" required>
-<input name="personas" type="number" placeholder="Personas" required>
-<input name="telefono" placeholder="Telefono">
-<input name="fecha" type="date" required>
-<input name="hora" type="time" required>
-<button type="submit">Crear reserva</button>
-</form>
         <table>
           <tr>
             <th>Mesa</th>
@@ -874,26 +864,4 @@ app.get('/reservas', (req, res) => {
       </html>
     `);
   });
-});
-
-app.post('/reservas/crear', (req, res) => {
-  const mesa_id = req.body.mesa_id;
-  const cliente = req.body.cliente;
-  const personas = req.body.personas;
-  const telefono = req.body.telefono;
-  const fecha = req.body.fecha;
-  const hora = req.body.hora;
-
-  db.run(
-    'INSERT INTO reservas (mesa_id, cliente, personas, telefono, fecha, hora, estado) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [mesa_id, cliente, personas, telefono, fecha, hora, 'activa'],
-    function(err) {
-      if (err) return res.status(500).send(err.message);
-
-      db.run("UPDATE mesas SET estado='reservada' WHERE id=?", [mesa_id], function(err) {
-        if (err) return res.status(500).send(err.message);
-        res.redirect('/reservas');
-      });
-    }
-  );
 });
