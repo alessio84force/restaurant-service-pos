@@ -807,3 +807,61 @@ app.post('/admin-productos/editar/:id', (req, res) => {
     }
   );
 });
+
+app.get('/reservas', (req, res) => {
+  const sql = `
+    SELECT reservas.id, mesas.numero AS mesa, reservas.cliente, reservas.personas,
+           reservas.telefono, reservas.fecha, reservas.hora, reservas.estado
+    FROM reservas
+    JOIN mesas ON reservas.mesa_id = mesas.id
+    ORDER BY reservas.fecha, reservas.hora
+  `;
+
+  db.all(sql, [], (err, reservas) => {
+    if (err) return res.status(500).send(err.message);
+
+    let filas = '';
+    reservas.forEach(r => {
+      filas += `
+        <tr>
+          <td>Mesa ${r.mesa}</td>
+          <td>${r.cliente}</td>
+          <td>${r.personas}</td>
+          <td>${r.telefono}</td>
+          <td>${r.fecha}</td>
+          <td>${r.hora}</td>
+          <td>${r.estado}</td>
+        </tr>
+      `;
+    });
+
+    res.send(`
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reservas</title>
+        <style>
+          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+          table { width: 100%; background: white; border-collapse: collapse; }
+          th, td { padding: 10px; border-bottom: 1px solid #ddd; }
+        </style>
+      </head>
+      <body>
+        <h1>Reservas</h1>
+        <table>
+          <tr>
+            <th>Mesa</th>
+            <th>Cliente</th>
+            <th>Personas</th>
+            <th>Telefono</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Estado</th>
+          </tr>
+          ${filas}
+        </table>
+      </body>
+      </html>
+    `);
+  });
+});
