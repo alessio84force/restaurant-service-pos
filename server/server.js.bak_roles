@@ -1075,50 +1075,28 @@ app.post('/login', (req, res) => {
         return res.send('Usuario o contraseña incorrectos');
       }
 
-let menu = "";
+      res.send(`
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Panel usuario</title>
+        </head>
+        <body style="font-family: Arial; padding: 30px;">
+          <h1>Bienvenido, ${usuario.nombre}</h1>
+          <p>Rol: ${usuario.rol}</p>
 
-if (usuario.rol === "admin") {
-menu += `<li><a href="http://localhost:8000">Sala</a></li>`;
-menu += `<li><a href="/cocina">Cocina</a></li>`;
-menu += `<li><a href="/bar">Bar</a></li>`;
-menu += `<li><a href="/reservas">Reservas</a></li>`;
-menu += `<li><a href="/admin-productos">Admin productos</a></li>`;
-menu += `<li><a href="/dashboard">Dashboard</a></li>`;
-menu += `<li><a href="/cierre-caja">Cierre de caja</a></li>`;
-}
-
-if (usuario.rol === "camarero") {
-menu += `<li><a href="http://localhost:8000">Sala</a></li>`;
-menu += `<li><a href="/reservas">Reservas</a></li>`;
-}
-
-if (usuario.rol === "cocina") {
-menu += `<li><a href="/cocina">Cocina</a></li>`;
-}
-
-if (usuario.rol === "bar") {
-menu += `<li><a href="/bar">Bar</a></li>`;
-}
-
-if (usuario.rol === "gerente") {
-menu += `<li><a href="/dashboard">Dashboard</a></li>`;
-menu += `<li><a href="/ventas">Historial ventas</a></li>`;
-menu += `<li><a href="/cierre-caja">Cierre de caja</a></li>`;
-}
-
-res.send(`
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Panel usuario</title>
-</head>
-<body style="font-family: Arial; padding: 30px;">
-<h1>Bienvenido, ${usuario.nombre}</h1>
-<p>Rol: ${usuario.rol}</p>
-<ul>${menu}</ul>
-</body>
-</html>
-`);
+          <ul>
+            <li><a href="http://localhost:8000">Sala</a></li>
+            <li><a href="/cocina">Cocina</a></li>
+            <li><a href="/bar">Bar</a></li>
+            <li><a href="/reservas">Reservas</a></li>
+            <li><a href="/admin-productos">Admin productos</a></li>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/cierre-caja">Cierre de caja</a></li>
+          </ul>
+        </body>
+        </html>
+      `);
     }
   );
 });
