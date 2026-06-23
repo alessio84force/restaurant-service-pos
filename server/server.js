@@ -617,3 +617,75 @@ app.get('/dashboard', (req, res) => {
     });
   });
 });
+
+app.get('/admin-productos', (req, res) => {
+  db.all('SELECT id, nombre, destino FROM categorias ORDER BY nombre', [], (err, categorias) => {
+    if (err) return res.status(500).send(err.message);
+
+    db.all(`
+      SELECT productos.id, productos.nombre, productos.precio, productos.disponible,
+             categorias.nombre AS categoria, categorias.destino
+      FROM productos
+      JOIN categorias ON productos.categoria_id = categorias.id
+      ORDER BY categorias.nombre, productos.nombre
+    `, [], (err, productos) => {
+      if (err) return res.status(500).send(err.message);
+
+      let opciones = '';
+      categorias.forEach(c => {
+        opciones += `<option value="${c.id}">${c.nombre} (${c.destino})</option>`;
+      });
+
+      let filas = '';
+      productos.forEach(p => {
+        filas += `
+          <tr>
+            <td>${p.nombre}</td>
+            <td>${p.precio.toFixed(2)} EUR</td>
+            <td>${p.categoria}</td>
+            <td>${p.destino}</td>
+            <td>${p.disponible ? 'Sí' : 'No'}</td>
+          </tr>
+        `;
+      });
+
+      res.send(`
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Admin Productos</title>
+          <style>
+            body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+            form, table { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; width: 100%; }
+            input, select, button { padding: 10px; margin: 5px; }
+            table { border-collapse: collapse; }
+            th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+          </style>
+        </head>
+        <body>
+          <h1>Administrar productos</h1>
+
+          <form method="POST" action="/admin-productos/crear">
+            <h2>Nuevo producto</h2>
+            <input name="nombre" placeholder="Nombre del producto" required>
+            <input name="precio" type="number" step="0.01" placeholder="Precio" required>
+            <select name="categoria_id" required>${opciones}</select>
+            <button type="submit">Crear producto</button>
+          </form>
+
+          <table>
+            <tr>
+              <th>Producto</th>
+              <th>Precio</th>
+              <th>Categoría</th>
+              <th>Destino</th>
+              <th>Disponible</th>
+            </tr>
+            ${filas}
+          </table>
+        </body>
+        </html>
+      `);
+    });
+  });
+});
