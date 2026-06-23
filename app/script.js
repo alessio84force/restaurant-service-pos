@@ -10,7 +10,7 @@ function cargarMesas() {
       mesas.forEach(mesa => {
         const div = document.createElement('div');
         div.className = 'mesa ' + mesa.estado;
-        div.innerHTML = 'Mesa ' + mesa.numero + '<br><span>' + mesa.estado + '</span>';
+        div.innerHTML = 'Mesa ' + mesa.numero + '<br><span>' + mesa.estado + '</span>'; if (mesa.reserva_cliente) { div.innerHTML += '<br><small>' + mesa.reserva_cliente + '<br>' + mesa.reserva_hora + ' - ' + mesa.reserva_personas + ' personas</small>'; }
 
         div.addEventListener('click', () => {
           mesaSeleccionada = mesa.numero;
