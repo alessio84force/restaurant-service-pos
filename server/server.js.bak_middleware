@@ -15,6 +15,26 @@ saveUninitialized: false
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+function requiereLogin(req, res, next) {
+if (!req.session.usuario) {
+return res.redirect("/login");
+}
+next();
+}
+
+function requiereRol(rolesPermitidos) {
+return function(req, res, next) {
+if (!req.session.usuario) {
+return res.redirect("/login");
+}
+
+if (!rolesPermitidos.includes(req.session.usuario.rol)) {
+return res.status(403).send("Acceso no autorizado");
+}
+
+next();
+};
+}
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
