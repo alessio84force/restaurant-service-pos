@@ -2,8 +2,14 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
+const session = require("express-session");
 
 const app = express();
+app.use(session({
+secret: "restaurant-service-secret",
+resave: false,
+saveUninitialized: false
+}));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -1074,6 +1080,7 @@ app.post('/login', (req, res) => {
       if (!usuario) {
         return res.send('Usuario o contraseña incorrectos');
       }
+req.session.usuario = usuario;
 
 let menu = "";
 
@@ -1115,7 +1122,7 @@ res.send(`
 <body style="font-family: Arial; padding: 30px;">
 <h1>Bienvenido, ${usuario.nombre}</h1>
 <p>Rol: ${usuario.rol}</p>
-<ul>${menu}</ul>
+<ul>${menu}</ul><p><a href="/logout">Cerrar sesión</a></p>
 </body>
 </html>
 `);
@@ -1296,3 +1303,9 @@ app.post('/admin-usuarios/editar/:id', (req, res) => {
   );
 });
 
+
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => {
+    res.redirect('/login');
+  });
+});
