@@ -1136,6 +1136,12 @@ app.get('/admin-usuarios', (req, res) => {
           <td>${u.email}</td>
           <td>${u.rol}</td>
           <td>${u.activo ? 'Si' : 'No'}</td>
+<td>
+<form method="GET" action="/admin-usuarios/editar/${u.id}" style="display:inline;"><button type="submit">Editar</button></form>
+<form method="POST" action="/admin-usuarios/activar/${u.id}" style="display:inline;"><button type="submit">Activar</button></form>
+<form method="POST" action="/admin-usuarios/desactivar/${u.id}" style="display:inline;"><button type="submit">Desactivar</button></form>
+<form method="POST" action="/admin-usuarios/eliminar/${u.id}" style="display:inline;"><button type="submit">Eliminar</button></form>
+</td>
         </tr>
       `;
     });
@@ -1177,6 +1183,7 @@ app.get('/admin-usuarios', (req, res) => {
             <th>Email</th>
             <th>Rol</th>
             <th>Activo</th>
+<th>Acciones</th>
           </tr>
           ${filas}
         </table>
@@ -1201,3 +1208,28 @@ app.post('/admin-usuarios/crear', (req, res) => {
     }
   );
 });
+
+app.post('/admin-usuarios/activar/:id', (req, res) => {
+  db.run(
+    'UPDATE usuarios SET activo=1 WHERE id=?',
+    [req.params.id],
+    () => res.redirect('/admin-usuarios')
+  );
+});
+
+app.post('/admin-usuarios/desactivar/:id', (req, res) => {
+  db.run(
+    'UPDATE usuarios SET activo=0 WHERE id=?',
+    [req.params.id],
+    () => res.redirect('/admin-usuarios')
+  );
+});
+
+app.post('/admin-usuarios/eliminar/:id', (req, res) => {
+  db.run(
+    'DELETE FROM usuarios WHERE id=?',
+    [req.params.id],
+    () => res.redirect('/admin-usuarios')
+  );
+});
+
