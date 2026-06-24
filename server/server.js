@@ -13,6 +13,12 @@ saveUninitialized: false
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+function requiereLogin(req, res, next) {
+if (!req.session.usuario) {
+return res.redirect("/login");
+}
+next();
+}
 
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
@@ -493,7 +499,7 @@ app.listen(3000, () => {
   console.log('Servidor iniciado en http://localhost:3000');
 });
 
-app.get('/ventas', (req, res) => {
+app.get('/ventas', requiereLogin, (req, res) => {
   const sql = `
     SELECT 
       pedidos.id,
@@ -554,7 +560,7 @@ app.get('/ventas', (req, res) => {
   });
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/dashboard', requiereLogin, (req, res) => {
   const datos = {};
 
   db.get("SELECT COALESCE(SUM(total), 0) AS ventas FROM pedidos WHERE estado='cerrado'", [], (err, row) => {
@@ -620,7 +626,7 @@ app.get('/dashboard', (req, res) => {
   });
 });
 
-app.get('/admin-productos', (req, res) => {
+app.get('/admin-productos', requiereLogin, (req, res) => {
   db.all('SELECT id, nombre, destino FROM categorias ORDER BY nombre', [], (err, categorias) => {
     if (err) return res.status(500).send(err.message);
 
@@ -809,7 +815,7 @@ app.post('/admin-productos/editar/:id', (req, res) => {
   );
 });
 
-app.get('/reservas', (req, res) => {
+app.get('/reservas', requiereLogin, (req, res) => {
   const sql = `
     SELECT reservas.id, mesas.numero AS mesa, reservas.cliente, reservas.personas,
            reservas.telefono, reservas.fecha, reservas.hora, reservas.estado
@@ -940,7 +946,7 @@ app.post('/reservas/:id/cancelar', (req, res) => {
   });
 });
 
-app.get('/cierre-caja', (req, res) => {
+app.get('/cierre-caja', requiereLogin, (req, res) => {
   const fechaHoy = new Date().toISOString().slice(0, 10);
 
   db.get(
@@ -1130,7 +1136,7 @@ res.send(`
   );
 });
 
-app.get('/admin-usuarios', (req, res) => {
+app.get('/admin-usuarios', requiereLogin, (req, res) => {
   db.all('SELECT id, nombre, email, rol, activo FROM usuarios ORDER BY id', [], (err, usuarios) => {
     if (err) return res.status(500).send(err.message);
 
