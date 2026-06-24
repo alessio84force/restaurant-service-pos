@@ -1328,3 +1328,62 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
   });
 });
+
+app.get('/admin-categorias', requiereRol(['admin']), (req, res) => {
+  db.all('SELECT id, nombre, destino FROM categorias ORDER BY nombre', [], (err, categorias) => {
+    if (err) return res.status(500).send(err.message);
+
+    let filas = '';
+
+    categorias.forEach(c => {
+      filas += `
+        <tr>
+          <td>${c.nombre}</td>
+          <td>${c.destino}</td>
+          <td>
+            <form method="POST" action="/admin-categorias/eliminar/${c.id}" style="display:inline;">
+              <button type="submit">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      `;
+    });
+
+    res.send(`
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Admin Categorías</title>
+      </head>
+      <body style="font-family: Arial; padding: 30px;">
+        <h1>Administrar categorías</h1>
+
+        <form method="POST" action="/admin-categorias/crear">
+          <input name="nombre" placeholder="Nombre categoría" required>
+          <select name="destino">
+            <option value="cocina">Cocina</option>
+            <option value="bar">Bar</option>
+          </select>
+          <button type="submit">Crear categoría</button>
+        </form>
+
+        <table border="1" cellpadding="8" style="margin-top:20px;">
+          <tr>
+            <th>Nombre</th>
+            <th>Destino</th>
+            <th>Acciones</th>
+          </tr>
+          ${filas}
+        </table>
+      </body>
+      </html>
+    `);
+  });
+});
+
+app.post('/admin-categorias/eliminar/:id', requiereRol(['admin']), (req, res) => {
+  db.run('DELETE FROM categorias WHERE id=?', [req.params.id], function(err) {
+    if (err) return res.status(500).send(err.message);
+    res.redirect('/admin-categorias');
+  });
+});
