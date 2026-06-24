@@ -1233,3 +1233,66 @@ app.post('/admin-usuarios/eliminar/:id', (req, res) => {
   );
 });
 
+
+app.get('/admin-usuarios/editar/:id', (req, res) => {
+  const id = req.params.id;
+
+  db.get('SELECT * FROM usuarios WHERE id=?', [id], (err, usuario) => {
+    if (err) return res.status(500).send(err.message);
+
+    if (!usuario) {
+      return res.send('Usuario no encontrado');
+    }
+
+    res.send(`
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Editar usuario</title>
+        <style>
+          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+          form { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; }
+          input, select, button { width: 100%; padding: 10px; margin: 8px 0; }
+        </style>
+      </head>
+      <body>
+        <form method="POST" action="/admin-usuarios/editar/${usuario.id}">
+          <h1>Editar usuario</h1>
+
+          <input name="nombre" value="${usuario.nombre}" required>
+          <input name="email" type="email" value="${usuario.email}" required>
+          <input name="password" value="${usuario.password}" required>
+
+          <select name="rol" required>
+            <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Admin</option>
+            <option value="camarero" ${usuario.rol === 'camarero' ? 'selected' : ''}>Camarero</option>
+            <option value="cocina" ${usuario.rol === 'cocina' ? 'selected' : ''}>Cocina</option>
+            <option value="bar" ${usuario.rol === 'bar' ? 'selected' : ''}>Bar</option>
+            <option value="gerente" ${usuario.rol === 'gerente' ? 'selected' : ''}>Gerente</option>
+          </select>
+
+          <button type="submit">Guardar cambios</button>
+        </form>
+      </body>
+      </html>
+    `);
+  });
+});
+
+app.post('/admin-usuarios/editar/:id', (req, res) => {
+  const id = req.params.id;
+  const nombre = req.body.nombre;
+  const email = req.body.email;
+  const password = req.body.password;
+  const rol = req.body.rol;
+
+  db.run(
+    'UPDATE usuarios SET nombre=?, email=?, password=?, rol=? WHERE id=?',
+    [nombre, email, password, rol, id],
+    function(err) {
+      if (err) return res.status(500).send(err.message);
+      res.redirect('/admin-usuarios');
+    }
+  );
+});
+
