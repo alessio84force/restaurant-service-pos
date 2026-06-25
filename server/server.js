@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
   res.send('Restaurant Service POS API funcionando');
 });
 
-app.get('/mesas', (req, res) => {  const sql = `    SELECT mesas.id, mesas.numero, mesas.estado,           reservas.cliente AS reserva_cliente,           reservas.personas AS reserva_personas,           reservas.hora AS reserva_hora    FROM mesas    LEFT JOIN reservas ON reservas.mesa_id = mesas.id AND reservas.estado = 'activa'    ORDER BY mesas.numero  `;  db.all(sql, [], (err, rows) => {    if (err) return res.status(500).json({ error: err.message });    res.json(rows);  });});
+app.get('/mesas', (req, res) => {  const sql = `    SELECT mesas.id, mesas.numero, mesas.estado,           zonas.nombre AS zona,           reservas.cliente AS reserva_cliente,           reservas.personas AS reserva_personas,           reservas.hora AS reserva_hora    FROM mesas    LEFT JOIN zonas ON mesas.zona_id = zonas.id    LEFT JOIN reservas ON reservas.mesa_id = mesas.id AND reservas.estado = 'activa'    ORDER BY zonas.id, mesas.numero  `;  db.all(sql, [], (err, rows) => {    if (err) return res.status(500).json({ error: err.message });    res.json(rows);  });});
 
 app.get('/productos', (req, res) => {
   db.all(
