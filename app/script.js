@@ -7,31 +7,62 @@ function cargarMesas() {
       const contenedor = document.querySelector('.grid-mesas');
       contenedor.innerHTML = '';
 
+      const zonas = {};
+
       mesas.forEach(mesa => {
-        const div = document.createElement('div');
-        div.className = 'mesa ' + mesa.estado;
-        div.innerHTML = 'Mesa ' + mesa.numero + '<br><span>' + mesa.estado + '</span>'; if (mesa.reserva_cliente) { div.innerHTML += '<br><small>' + mesa.reserva_cliente + '<br>' + mesa.reserva_hora + ' - ' + mesa.reserva_personas + ' personas</small>'; }
+        const nombreZona = mesa.zona || 'Sin zona';
 
-        div.addEventListener('click', () => {
-          mesaSeleccionada = mesa.numero;
+        if (!zonas[nombreZona]) {
+          zonas[nombreZona] = [];
+        }
 
-          if (mesa.estado === 'libre') {
-            if (confirm('¿Abrir Mesa ' + mesa.numero + '?')) {
-              fetch('http://localhost:3000/abrir-mesa/' + mesa.numero, { method: 'POST' })
-                .then(response => response.json())
-                .then(() => {
-                  cargarMesas();
-                  cargarPedido(mesa.numero);
-                  cargarProductos();
-                });
-            }
-          } else {
-            cargarPedido(mesa.numero);
-            cargarProductos();
+        zonas[nombreZona].push(mesa);
+      });
+
+      Object.keys(zonas).forEach(nombreZona => {
+        const bloqueZona = document.createElement('div');
+        bloqueZona.className = 'bloque-zona';
+
+        const tituloZona = document.createElement('h3');
+        tituloZona.textContent = nombreZona;
+        bloqueZona.appendChild(tituloZona);
+
+        const gridZona = document.createElement('div');
+        gridZona.className = 'grid-zona';
+
+        zonas[nombreZona].forEach(mesa => {
+          const div = document.createElement('div');
+          div.className = 'mesa ' + mesa.estado;
+          div.innerHTML = 'Mesa ' + mesa.numero + '<br><span>' + mesa.estado + '</span>';
+
+          if (mesa.reserva_cliente) {
+            div.innerHTML += '<br><small>' + mesa.reserva_cliente + '<br>' + mesa.reserva_hora + ' - ' + mesa.reserva_personas + ' personas</small>';
           }
+
+          div.addEventListener('click', () => {
+            mesaSeleccionada = mesa.numero;
+
+            if (mesa.estado === 'libre') {
+              if (confirm('¿Abrir Mesa ' + mesa.numero + '?')) {
+                fetch('http://localhost:3000/abrir-mesa/' + mesa.numero, { method: 'POST' })
+                  .then(response => response.json())
+                  .then(() => {
+                    cargarMesas();
+                    cargarPedido(mesa.numero);
+                    cargarProductos();
+                  });
+              }
+            } else {
+              cargarPedido(mesa.numero);
+              cargarProductos();
+            }
+          });
+
+          gridZona.appendChild(div);
         });
 
-        contenedor.appendChild(div);
+        bloqueZona.appendChild(gridZona);
+        contenedor.appendChild(bloqueZona);
       });
     });
 }
