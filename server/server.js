@@ -1417,3 +1417,113 @@ app.post('/admin-categorias/editar/:id', requiereRol(['admin']), (req, res) => {
   );
 });
 
+
+app.get('/admin-zonas-mesas', requiereRol(['admin']), (req, res) => {
+  db.all('SELECT id, nombre FROM zonas WHERE activo=1 ORDER BY id', [], (err, zonas) => {
+    if (err) return res.status(500).send(err.message);
+
+    db.all(`
+      SELECT mesas.id, mesas.numero, mesas.estado, zonas.nombre AS zona
+      FROM mesas
+      LEFT JOIN zonas ON mesas.zona_id = zonas.id
+      ORDER BY zonas.id, mesas.numero
+    `, [], (err, mesas) => {
+      if (err) return res.status(500).send(err.message);
+
+      let opcionesZonas = '';
+      zonas.forEach(z => {
+        opcionesZonas += `<option value="${z.id}">${z.nombre}</option>`;
+      });
+
+      let filasZonas = '';
+      zonas.forEach(z => {
+        filasZonas += `
+          <tr>
+            <td>${z.nombre}</td>
+          </tr>
+        `;
+      });
+
+      let filasMesas = '';
+      mesas.forEach(m => {
+        filasMesas += `
+          <tr>
+            <td>Mesa ${m.numero}</td>
+            <td>${m.zona}</td>
+            <td>${m.estado}</td>
+          </tr>
+        `;
+      });
+
+      res.send(`
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Zonas y Mesas</title>
+          <style>
+            body { font-family: Arial; background: #f4f4f4; padding: 30px; }
+            form, table { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; width: 100%; }
+            input, select, button { padding: 10px; margin: 5px; }
+            table { border-collapse: collapse; }
+            th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
+          </style>
+        </head>
+        <body>
+          <h1>Administrar zonas y mesas</h1>
+
+          <form method="POST" action="/admin-zonas/crear">
+            <h2>Nueva zona</h2>
+            <input name="nombre" placeholder="Nombre de zona" required>
+            <button type="submit">Crear zona</button>
+          </form>
+
+          <form method="POST" action="/admin-mesas/crear">
+            <h2>Nueva mesa</h2>
+            <input name="numero" placeholder="Número o nombre de mesa" required>
+            <select name="zona_id" required>${opcionesZonas}</select>
+            <button type="submit">Crear mesa</button>
+          </form>
+
+          <h2>Zonas</h2>
+          <table>
+            <tr><th>Zona</th></tr>
+            ${filasZonas}
+          </table>
+
+          <h2>Mesas</h2>
+          <table>
+            <tr>
+              <th>Mesa</th>
+              <th>Zona</th>
+              <th>Estado</th>
+            </tr>
+            ${filasMesas}
+          </table>
+        </body>
+        </html>
+      `);
+    });
+  });
+});
+
+app.post('/admin-zonas/crear', requiereRol(['admin']), (req, res) => {
+  db.run(
+    'INSERT INTO zonas (nombre, activo) VALUES (?, 1)',
+    [req.body.nombre],
+    function(err) {
+      if (err) return res.status(500).send(err.message);
+      res.redirect('/admin-zonas-mesas');
+    }
+  );
+});
+
+app.post('/admin-mesas/crear', requiereRol(['admin']), (req, res) => {
+  db.run(
+    "INSERT INTO mesas (numero, estado, zona_id) VALUES (?, 'libre', ?)",
+    [req.body.numero, req.body.zona_id],
+    function(err) {
+      if (err) return res.status(500).send(err.message);
+      res.redirect('/admin-zonas-mesas');
+    }
+  );
+});
