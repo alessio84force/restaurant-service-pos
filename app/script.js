@@ -91,8 +91,10 @@ function cargarPedido(numeroMesa) {
       });
 
       html += '<h3>Total: ' + data.total.toFixed(2) + ' EUR</h3>';
-      html += '<button onclick="generarPrecuenta(' + data.mesa + ')">Precuenta</button>';
-      html += '<button onclick="cerrarMesa(' + data.mesa + ')">Cerrar Mesa</button>';
+      html += '<button onclick="generarPrecuenta(' + data.mesa + ')">Imprimir cuenta</button>';
+      html += '<button onclick="marcarCuenta(' + data.mesa + ')">Cuenta entregada</button>';
+      html += '<button onclick="pagarMesa(' + data.mesa + ', \'tarjeta\', ' + data.total + ')">Cobrar tarjeta</button>';
+      html += '<button onclick="pagarMesa(' + data.mesa + ', \'efectivo\', ' + data.total + ')">Cobrar efectivo</button>';
 
       detalle.innerHTML = html;
     });
@@ -189,3 +191,44 @@ function generarPrecuenta(numeroMesa) {
 
 cargarMesas();
 cargarProductos();
+
+
+function marcarCuenta(numeroMesa) {
+  fetch('http://localhost:3000/mesa/' + numeroMesa + '/cuenta', {
+    method: 'POST'
+  })
+  .then(response => response.json())
+  .then(() => {
+    cargarMesas();
+    cargarPedido(numeroMesa);
+  });
+}
+
+function pagarMesa(numeroMesa, metodo, total) {
+  let efectivo = 0;
+  let tarjeta = 0;
+
+  if (metodo === 'efectivo') {
+    efectivo = total;
+  }
+
+  if (metodo === 'tarjeta') {
+    tarjeta = total;
+  }
+
+  fetch('http://localhost:3000/mesa/' + numeroMesa + '/pagar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      metodo: metodo,
+      efectivo: efectivo,
+      tarjeta: tarjeta
+    })
+  })
+  .then(response => response.json())
+  .then(() => {
+    mesaSeleccionada = null;
+    cargarMesas();
+    document.getElementById('detalle-pedido').innerHTML = 'Selecciona una mesa para ver el pedido.';
+  });
+}

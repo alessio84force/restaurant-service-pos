@@ -6,8 +6,11 @@ const session = require("express-session");
 const { generarTicketHTML } = require("./printing/ticketGenerator");
 const { requiereLogin, requiereRol } = require("./middleware/auth");
 const productosRoutes = require("./routes/productos");
+const barRoutes = require("./routes/bar");
+const configurazioneRoutes = require("./routes/configurazione");
 const zonasRoutes = require("./routes/zonas");
 const pagosRoutes = require("./routes/pagos");
+const mesasRoutes = require("./routes/mesas");
 
 const app = express();
 app.use(session({
@@ -23,7 +26,10 @@ const db = new sqlite3.Database(
 );
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
+app.use(mesasRoutes(db));
 app.use(productosRoutes(db));
+app.use(barRoutes(db));
+app.use(configurazioneRoutes(db));
 
 app.get('/', (req, res) => {
   res.send('Restaurant Service POS API funcionando');
