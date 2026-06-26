@@ -1,7 +1,10 @@
-destino       
---------------
-*** COCINA ***
-producto           cantidad    nota      
------------------  ----------  ----------
-Croquetas caseras  2                     
-Paella valenciana  1           Sin marisc
+************************
+*****   COCINA   *******
+************************
+
+Mesa: 2
+26/6/2026, 18:37:08
+
+1 x Paella valenciana
+
+************************

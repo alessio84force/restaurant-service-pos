@@ -8,8 +8,10 @@ const { requiereLogin, requiereRol } = require("./middleware/auth");
 const productosRoutes = require("./routes/productos");
 const barRoutes = require("./routes/bar");
 const configurazioneRoutes = require("./routes/configurazione");
+const cocinaRoutes = require("./routes/cocina");
 const zonasRoutes = require("./routes/zonas");
 const pagosRoutes = require("./routes/pagos");
+const adminProductosRoutes = require("./routes/adminProductos");
 const mesasRoutes = require("./routes/mesas");
 
 const app = express();
@@ -27,9 +29,10 @@ const db = new sqlite3.Database(
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
 app.use(mesasRoutes(db));
+app.use(adminProductosRoutes(db));
 app.use(productosRoutes(db));
 app.use(barRoutes(db));
-app.use(configurazioneRoutes(db));
+app.use(cocinaRoutes(db));
 
 app.get('/', (req, res) => {
   res.send('Restaurant Service POS API funcionando');
