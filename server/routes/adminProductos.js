@@ -4,6 +4,18 @@ function adminProductosRoutes(db){
 
 const router=express.Router();
 
+router.get("/admin/categorias",(req,res)=>{
+
+db.all(
+"SELECT id,nombre,destino FROM categorias ORDER BY nombre",
+[],
+(err,rows)=>{
+if(err) return res.status(500).json(err);
+res.json(rows);
+});
+
+});
+
 router.get("/admin/productos",(req,res)=>{
 
 db.all(
@@ -15,12 +27,9 @@ p.nombre,
 p.precio,
 c.nombre categoria,
 c.destino
-
 FROM productos p
-
 JOIN categorias c
 ON c.id=p.categoria_id
-
 ORDER BY c.nombre,p.nombre
 `,
 
@@ -45,7 +54,6 @@ db.run(
 `
 INSERT INTO productos
 (nombre,precio,categoria_id)
-
 VALUES(?,?,?)
 `,
 

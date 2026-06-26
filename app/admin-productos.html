@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Restaurant Service - Productos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h1>🍽 Administración de Productos</h1>
+
+<div>
+
+<input id="id" type="hidden">
+
+<input id="nombre" placeholder="Nombre">
+
+<input id="precio" type="number" step="0.01" placeholder="Precio">
+
+<select id="categoria_id"></select>
+
+<button onclick="guardar()">💾 Guardar</button>
+
+<button onclick="nuevo()">➕ Nuevo</button>
+
+</div>
+
+<hr>
+
+<table border="1" width="100%">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>Nombre</th>
+<th>Categoría</th>
+<th>Destino</th>
+<th>Precio</th>
+<th></th>
+
+</tr>
+
+</thead>
+
+<tbody id="tabla"></tbody>
+
+</table>
+
+<script>
+
+function cargarCategorias(){
+
+fetch("http://localhost:3000/admin/categorias")
+.then(r=>r.json())
+.then(datos=>{
+
+categoria_id.innerHTML="";
+
+datos.forEach(c=>{
+
+categoria_id.innerHTML+=`
+<option value="${c.id}">
+${c.nombre}
+</option>
+`;
+
+});
+
+});
+
+}
+
+function cargarProductos(){
+
+fetch("http://localhost:3000/admin/productos")
+
+.then(r=>r.json())
+
+.then(datos=>{
+
+tabla.innerHTML="";
+
+datos.forEach(p=>{
+
+tabla.innerHTML+=`
+
+<tr>
+
+<td>${p.id}</td>
+
+<td>${p.nombre}</td>
+
+<td>${p.categoria}</td>
+
+<td>${p.destino}</td>
+
+<td>${p.precio} €</td>
+
+<td>
+
+<button onclick='editar(${JSON.stringify(p)})'>✏️</button>
+
+<button onclick='eliminar(${p.id})'>🗑️</button>
+
+</td>
+
+</tr>
+
+`;
+
+});
+
+});
+
+}
+
+function nuevo(){
+
+id.value="";
+nombre.value="";
+precio.value="";
+
+}
+
+function editar(p){
+
+id.value=p.id;
+nombre.value=p.nombre;
+precio.value=p.precio;
+
+}
+
+function guardar(){
+
+const datos={
+
+nombre:nombre.value,
+precio:precio.value,
+categoria_id:categoria_id.value
+
+};
+
+if(id.value==""){
+
+fetch("http://localhost:3000/admin/productos",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(datos)
+
+})
+
+.then(()=>{
+
+nuevo();
+
+cargarProductos();
+
+});
+
+}else{
+
+fetch("http://localhost:3000/admin/productos/"+id.value,{
+
+method:"PUT",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(datos)
+
+})
+
+.then(()=>{
+
+nuevo();
+
+cargarProductos();
+
+});
+
+}
+
+}
+
+function eliminar(idProducto){
+
+if(!confirm("Eliminar producto?")) return;
+
+fetch("http://localhost:3000/admin/productos/"+idProducto,{
+
+method:"DELETE"
+
+})
+
+.then(()=>cargarProductos());
+
+}
+
+cargarCategorias();
+
+cargarProductos();
+
+</script>
+
+</body>
+
+</html>
