@@ -7,6 +7,7 @@ const { generarTicketHTML } = require("./printing/ticketGenerator");
 const { requiereLogin, requiereRol } = require("./middleware/auth");
 const productosRoutes = require("./routes/productos");
 const zonasRoutes = require("./routes/zonas");
+const pagosRoutes = require("./routes/pagos");
 
 const app = express();
 app.use(session({
@@ -21,6 +22,7 @@ const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
 app.use(zonasRoutes(db));
+app.use(pagosRoutes(db));
 app.use(productosRoutes(db));
 
 app.get('/', (req, res) => {
