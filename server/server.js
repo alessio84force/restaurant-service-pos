@@ -35,6 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
+app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
 app.use(mesasRoutes(db));
