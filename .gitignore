@@ -1,2 +1,21 @@
-server/node_modules/
+# Archivos temporales de análisis
+ANALISI_*.txt
+
+# Backups locales
+*.backup*
+*.bak
+*.bak*
+*backup*
+app/v2-backup-*/
+server/*.before-*.js
+
+# Base de datos local
+database/*.db
+database/*.db-*
+database/*.backup-*.db
+
+# Tickets y comandas generadas en pruebas
+prints/*.txt
+
+# Sistema
 .DS_Store
