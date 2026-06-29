@@ -487,7 +487,7 @@ async function generarPrecuenta(numeroMesa){
             <script>
                 window.addEventListener("load", function(){
                     setTimeout(function(){
-                        window.print();
+                        
                     }, 400);
                 });
             </script>
