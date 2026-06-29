@@ -246,17 +246,157 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
         console.error("Error cambiando cantidad:", error);
 
-        const panel = document.getElementById("panel-central");
+        mostrarToastPedidoV2("No se pudo modificar la cantidad del producto.", "error");
 
-        panel.insertAdjacentHTML("afterbegin", `
+    }
 
-            <div class="mensaje-error-pedido-v2">
+}
 
-                No se pudo modificar la cantidad del producto.
+function mostrarToastPedidoV2(texto, tipo){
 
-            </div>
+    const toastAnterior = document.getElementById("toast-pedido-v2");
 
-        `);
+    if(toastAnterior){
+        toastAnterior.remove();
+    }
+
+    let fondo = "#2563eb";
+    let color = "#ffffff";
+    let icono = "ℹ️";
+
+    if(tipo === "correcto"){
+        fondo = "#16a34a";
+        color = "#ffffff";
+        icono = "✅";
+    }
+
+    if(tipo === "error"){
+        fondo = "#dc2626";
+        color = "#ffffff";
+        icono = "❌";
+    }
+
+    if(tipo === "aviso"){
+        fondo = "#f59e0b";
+        color = "#111827";
+        icono = "⚠️";
+    }
+
+    const toast = document.createElement("div");
+
+    toast.id = "toast-pedido-v2";
+
+    toast.innerHTML = `
+        <div style="font-size:26px;line-height:1;">
+            ${icono}
+        </div>
+
+        <div>
+            ${texto}
+        </div>
+    `;
+
+    toast.style.position = "fixed";
+    toast.style.top = "24px";
+    toast.style.right = "24px";
+    toast.style.zIndex = "99999";
+    toast.style.maxWidth = "420px";
+    toast.style.minWidth = "300px";
+    toast.style.background = fondo;
+    toast.style.color = color;
+    toast.style.padding = "18px 20px";
+    toast.style.borderRadius = "18px";
+    toast.style.boxShadow = "0 18px 40px rgba(15,23,42,.30)";
+    toast.style.fontSize = "17px";
+    toast.style.fontWeight = "900";
+    toast.style.display = "flex";
+    toast.style.alignItems = "center";
+    toast.style.gap = "14px";
+    toast.style.border = "1px solid rgba(255,255,255,.25)";
+
+    document.body.appendChild(toast);
+
+    setTimeout(()=>{
+        const toastActual = document.getElementById("toast-pedido-v2");
+
+        if(toastActual){
+            toastActual.remove();
+        }
+    }, 4200);
+
+}
+
+function bloquearAccionesPedidoV2(bloquear){
+
+    const botones = document.querySelectorAll(".acciones button");
+
+    botones.forEach(boton=>{
+
+        boton.disabled = bloquear;
+
+        if(bloquear){
+            boton.style.opacity = ".55";
+            boton.style.cursor = "not-allowed";
+        }else{
+            boton.style.opacity = "1";
+            boton.style.cursor = "pointer";
+        }
+
+    });
+
+}
+
+async function enviarBar(numeroMesa){
+
+    await enviarComandaV2(numeroMesa, "bar");
+
+}
+
+async function enviarCocina(numeroMesa){
+
+    await enviarComandaV2(numeroMesa, "cocina");
+
+}
+
+async function enviarComandaV2(numeroMesa, destino){
+
+    const destinoTexto = destino === "bar" ? "bar" : "cocina";
+    const destinoTitulo = destino === "bar" ? "Bar" : "Cocina";
+    const endpoint = destino === "bar"
+        ? "/bar/enviar/" + numeroMesa
+        : "/cocina/enviar/" + numeroMesa;
+
+    try{
+
+        bloquearAccionesPedidoV2(true);
+
+        mostrarToastPedidoV2("Enviando comanda a " + destinoTitulo + "...", "info");
+
+        const respuesta = await apiPost(endpoint, {});
+
+        const lineas = Array.isArray(respuesta.lineas) ? respuesta.lineas : [];
+
+        await cargarPedidoV2(numeroMesa);
+
+        await cargarMesasV2();
+
+        if(lineas.length === 0){
+
+            mostrarToastPedidoV2("No hay productos nuevos para enviar a " + destinoTexto + ".", "aviso");
+
+            return;
+
+        }
+
+        mostrarToastPedidoV2("Comanda enviada a " + destinoTitulo + ". Líneas enviadas: " + lineas.length + ".", "correcto");
+
+    }catch(error){
+
+        console.error("Error enviando comanda a " + destinoTexto + ":", error);
+
+        bloquearAccionesPedidoV2(false);
+
+        mostrarToastPedidoV2("No se pudo enviar la comanda a " + destinoTexto + ".", "error");
 
     }
 
@@ -319,15 +459,7 @@ async function generarPrecuenta(numeroMesa){
 
     try{
 
-        panel.insertAdjacentHTML("afterbegin", `
-
-            <div class="mensaje-info-pedido-v2" id="mensaje-cuenta-v2">
-
-                Generando precuenta...
-
-            </div>
-
-        `);
+        mostrarToastPedidoV2("Generando precuenta...", "info");
 
         try{
 
@@ -381,6 +513,8 @@ async function generarPrecuenta(numeroMesa){
 
         await cargarPedidoV2(numeroMesa);
 
+        mostrarToastPedidoV2("Precuenta generada correctamente.", "correcto");
+
     }catch(error){
 
         console.error("Error generando precuenta:", error);
@@ -407,15 +541,7 @@ async function generarPrecuenta(numeroMesa){
 
         }
 
-        panel.insertAdjacentHTML("afterbegin", `
-
-            <div class="mensaje-error-pedido-v2">
-
-                No se pudo generar la precuenta.
-
-            </div>
-
-        `);
+        mostrarToastPedidoV2("No se pudo generar la precuenta.", "error");
 
     }
 

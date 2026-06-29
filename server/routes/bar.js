@@ -3,13 +3,18 @@ const fs = require("fs");
 const path = require("path");
 
 function barRoutes(db) {
+
   const router = express.Router();
 
   router.post("/bar/enviar/:mesa", (req, res) => {
+
     const mesa = req.params.mesa;
 
     const sql = `
-      SELECT pl.id, pl.cantidad, p.nombre
+      SELECT 
+        pl.id,
+        (pl.cantidad - COALESCE(pl.cantidad_enviada_bar, 0)) AS cantidad,
+        p.nombre
       FROM pedido_lineas pl
       JOIN pedidos pe ON pe.id = pl.pedido_id
       JOIN mesas m ON m.id = pe.mesa_id
@@ -18,17 +23,25 @@ function barRoutes(db) {
       WHERE m.numero = ?
         AND pe.estado != 'cerrado'
         AND c.destino = 'bar'
-        AND pl.enviada_bar = 0
+        AND (pl.cantidad - COALESCE(pl.cantidad_enviada_bar, 0)) > 0
+      ORDER BY pl.id
     `;
 
     db.all(sql, [mesa], (err, lineas) => {
+
       if (err) return res.status(500).json(err);
 
       if (lineas.length === 0) {
-        return res.json({ ok: true, mensaje: "Nada para enviar" });
+        return res.json({
+          ok: true,
+          mensaje: "Nada para enviar",
+          mesa,
+          lineas: []
+        });
       }
 
       let texto = "";
+
       texto += "************************\n";
       texto += "BAR\n";
       texto += "Mesa " + mesa + "\n";
@@ -41,15 +54,28 @@ function barRoutes(db) {
 
       texto += "\n************************\n";
 
-      const rutaPrint = path.join(__dirname, "..", "..", "prints", "comanda_bar.txt");
+      const carpetaPrint = path.join(__dirname, "..", "..", "prints");
+
+      if (!fs.existsSync(carpetaPrint)) {
+        fs.mkdirSync(carpetaPrint, { recursive: true });
+      }
+
+      const rutaPrint = path.join(carpetaPrint, "comanda_bar.txt");
+
       fs.writeFileSync(rutaPrint, texto);
 
       const ids = lineas.map(l => l.id);
 
       db.run(
-        `UPDATE pedido_lineas SET enviada_bar=1 WHERE id IN (${ids.map(() => "?").join(",")})`,
+        `UPDATE pedido_lineas 
+         SET cantidad_enviada_bar = cantidad,
+             enviada_bar = 1
+         WHERE id IN (${ids.map(() => "?").join(",")})`,
         ids,
-        () => {
+        function(err) {
+
+          if (err) return res.status(500).json(err);
+
           res.json({
             ok: true,
             mensaje: "Comanda bar generada",
@@ -57,12 +83,16 @@ function barRoutes(db) {
             mesa,
             lineas
           });
+
         }
       );
+
     });
+
   });
 
   return router;
+
 }
 
 module.exports = barRoutes;
