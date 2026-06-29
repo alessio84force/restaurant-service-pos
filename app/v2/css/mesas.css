@@ -1,0 +1,91 @@
+.zona{
+    margin-bottom:18px;
+}
+
+.zona h3{
+    margin:8px 0;
+    font-size:15px;
+    color:#475569;
+}
+
+.grid-mesas{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+
+    gap:8px;
+
+}
+
+.mesa-card{
+
+    height:74px;
+
+    border-radius:12px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    cursor:pointer;
+
+    transition:.15s;
+
+    border:2px solid transparent;
+
+    font-weight:bold;
+
+    user-select:none;
+
+}
+
+.mesa-card:hover{
+
+    transform:scale(1.04);
+
+}
+
+.numero-mesa{
+
+    font-size:20px;
+
+    line-height:20px;
+
+}
+
+.icono{
+
+    font-size:20px;
+
+    margin-top:4px;
+
+}
+
+.libre{
+
+    background:#d1fae5;
+
+}
+
+.ocupada{
+
+    background:#fee2e2;
+
+}
+
+.reservada{
+
+    background:#fef3c7;
+
+}
+
+.cuenta{
+
+    background:#dbeafe;
+
+}

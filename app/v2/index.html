@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Restaurant Service POS V2</title>
+
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/mesas.css">
+<link rel="stylesheet" href="css/pedido.css">
+<link rel="stylesheet" href="css/menu.css">
+<link rel="stylesheet" href="css/cobro.css">
+
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <div class="logo">
+
+        <h1>Restaurant Service POS</h1>
+
+        <span>Versión 2</span>
+
+    </div>
+
+    <div class="usuario">
+
+        Camarero
+
+    </div>
+
+</header>
+
+<div class="contenedor">
+
+    <aside class="columna izquierda">
+
+        <h2>Mesas</h2>
+
+        <div id="lista-mesas"></div>
+
+    </aside>
+
+    <main class="columna centro">
+
+        <div id="panel-central">
+
+            <div class="bienvenida">
+
+                <h2>Bienvenido</h2>
+
+                <p>Selecciona una mesa para comenzar.</p>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <aside class="columna derecha">
+
+        <h2>Menú</h2>
+
+        <div id="lista-categorias"></div>
+
+        <div id="lista-productos"></div>
+
+    </aside>
+
+</div>
+
+<footer>
+
+Restaurant Service POS · V2
+
+</footer>
+
+<script src="js/api.js"></script>
+<script src="js/mesas.js"></script>
+<script src="js/pedido.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/cobro.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+
+</html>

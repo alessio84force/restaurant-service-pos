@@ -1,0 +1,29 @@
+.menu-btn,
+.producto-btn{
+    width:100%;
+    min-height:54px;
+    margin-bottom:10px;
+    border:none;
+    border-radius:12px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    text-align:left;
+    padding:12px;
+}
+
+.producto-btn{
+    background:#0f172a;
+}
+
+.producto-btn span{
+    font-size:13px;
+    opacity:.85;
+}
+
+.menu-btn:hover,
+.producto-btn:hover{
+    opacity:.9;
+}

@@ -19,6 +19,7 @@ const usuariosRoutes = require("./routes/usuarios");
 const productoRoutes = require("./routes/producto");
 const menuRoutes = require("./routes/menu");
 const posRoutes = require("./routes/pos");
+const pagosMultiplesRoutes = require("./routes/pagos-multiples");
 const mesasRoutes = require("./routes/mesas");
 
 const app = express();
@@ -38,6 +39,7 @@ app.use(pagosRoutes(db));
 app.use(mesasRoutes(db));
 app.use(adminProductosRoutes(db));
 app.use(posRoutes(db));
+app.use(pagosMultiplesRoutes(db));
 app.use(menuRoutes(db));
 app.use(productoRoutes(db));
 app.use(usuariosRoutes(db));
@@ -76,7 +78,7 @@ app.get('/pedido/:mesa', (req, res) => {
     SELECT pedidos.id, mesas.numero AS mesa, pedidos.estado, pedidos.total
     FROM pedidos
     JOIN mesas ON pedidos.mesa_id = mesas.id
-    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    WHERE mesas.numero = ? AND pedidos.estado IN ('abierto','cuenta')
     ORDER BY pedidos.id DESC
     LIMIT 1
   `;
@@ -118,7 +120,7 @@ app.get('/ticket/:mesa', (req, res) => {
     SELECT pedidos.id, mesas.numero AS mesa, pedidos.estado, pedidos.total, pedidos.creado_en
     FROM pedidos
     JOIN mesas ON pedidos.mesa_id = mesas.id
-    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    WHERE mesas.numero = ? AND pedidos.estado IN ('abierto','cuenta')
     ORDER BY pedidos.id DESC
     LIMIT 1
   `;
@@ -222,7 +224,7 @@ app.get('/cocina', (req, res) => {
     JOIN mesas ON pedidos.mesa_id = mesas.id
     JOIN productos ON pedido_lineas.producto_id = productos.id
     JOIN categorias ON productos.categoria_id = categorias.id
-    WHERE pedidos.estado = 'abierto'
+    WHERE pedidos.estado IN ('abierto','cuenta')
     AND pedido_lineas.preparado = 0
     AND categorias.destino = 'cocina'
     ORDER BY pedidos.id, pedido_lineas.id
@@ -288,7 +290,7 @@ app.get('/bar', (req, res) => {
     JOIN mesas ON pedidos.mesa_id = mesas.id
     JOIN productos ON pedido_lineas.producto_id = productos.id
     JOIN categorias ON productos.categoria_id = categorias.id
-    WHERE pedidos.estado = 'abierto'
+    WHERE pedidos.estado IN ('abierto','cuenta')
     AND pedido_lineas.preparado = 0
     AND categorias.destino = 'bar'
     ORDER BY pedidos.id, pedido_lineas.id
@@ -366,7 +368,7 @@ app.post('/anadir-producto', (req, res) => {
     SELECT pedidos.id
     FROM pedidos
     JOIN mesas ON pedidos.mesa_id = mesas.id
-    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    WHERE mesas.numero = ? AND pedidos.estado IN ('abierto','cuenta')
     ORDER BY pedidos.id DESC
     LIMIT 1
   `;
@@ -480,7 +482,7 @@ app.post('/cerrar-mesa/:mesa', (req, res) => {
     SELECT pedidos.id
     FROM pedidos
     JOIN mesas ON pedidos.mesa_id = mesas.id
-    WHERE mesas.numero = ? AND pedidos.estado = 'abierto'
+    WHERE mesas.numero = ? AND pedidos.estado IN ('abierto','cuenta')
     ORDER BY pedidos.id DESC
     LIMIT 1
   `;
@@ -1656,5 +1658,44 @@ ok:true
 
 });
 
+});
+
+
+app.post('/mesa/:mesa/ocupar-reserva', (req, res) => {
+  const mesa = req.params.mesa;
+
+  db.get(
+    "SELECT id FROM mesas WHERE numero=?",
+    [mesa],
+    (err, mesaRow) => {
+      if (err) return res.status(500).json({error:err.message});
+      if (!mesaRow) return res.status(404).json({error:"Mesa no encontrada"});
+
+      db.run(
+        "UPDATE reservas SET estado='confirmada' WHERE mesa_id=? AND estado='activa'",
+        [mesaRow.id],
+        (err) => {
+          if (err) return res.status(500).json({error:err.message});
+
+          db.run(
+            "UPDATE mesas SET estado='ocupada' WHERE id=?",
+            [mesaRow.id],
+            (err) => {
+              if (err) return res.status(500).json({error:err.message});
+
+              db.run(
+                "INSERT INTO pedidos (mesa_id, estado, total) VALUES (?, 'abierto', 0)",
+                [mesaRow.id],
+                function(err){
+                  if (err) return res.status(500).json({error:err.message});
+                  res.json({ok:true,pedido:this.lastID});
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
 });
 
