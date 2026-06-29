@@ -21,6 +21,7 @@ const menuRoutes = require("./routes/menu");
 const posRoutes = require("./routes/pos");
 const pagosMultiplesRoutes = require("./routes/pagos-multiples");
 const mesasRoutes = require("./routes/mesas");
+const ticketRoutes = require("./routes/ticket");
 
 const app = express();
 app.use(session({
@@ -37,6 +38,7 @@ const db = new sqlite3.Database(
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
 app.use(mesasRoutes(db));
+app.use(ticketRoutes(db));
 app.use(adminProductosRoutes(db));
 app.use(posRoutes(db));
 app.use(pagosMultiplesRoutes(db));

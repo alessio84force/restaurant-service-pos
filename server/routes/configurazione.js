@@ -35,7 +35,8 @@ email=?,
 logo=?,
 iva=?,
 stampante_bar=?,
-stampante_cucina=?
+stampante_cucina=?,
+mensaje_ticket=?
 WHERE id=1`,
 
 [
@@ -47,7 +48,8 @@ c.email,
 c.logo,
 c.iva,
 c.stampante_bar,
-c.stampante_cucina
+c.stampante_cucina,
+c.mensaje_ticket
 ],
 
 (err)=>{
