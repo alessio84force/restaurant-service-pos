@@ -580,7 +580,11 @@ function renderMesaCerradaCobroV2(mesa, pedido, total, pagado){
                     </div>
                 </div>
 
-                <button class="cobro-btn-principal" onclick="mostrarInicioCobroV2()">
+                <button class="cobro-btn-principal" onclick="imprimirTicketFinalCobroV2(${pedido})">
+                    Imprimir ticket final
+                </button>
+
+                <button class="cobro-btn-secundario" onclick="mostrarInicioCobroV2()">
                     Volver a mesas
                 </button>
             </div>
@@ -610,5 +614,17 @@ function volverAlPedidoDesdeCobroV2(){
     }
 
     mostrarInicioCobroV2();
+
+}
+
+
+function imprimirTicketFinalCobroV2(pedidoId){
+
+    if(!pedidoId){
+        alert("No se encontró el pedido para imprimir el ticket final.");
+        return;
+    }
+
+    window.open(API + "/ticket-final/" + pedidoId, "_blank");
 
 }
