@@ -2,6 +2,62 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
+function limpiarTextoTicket(texto) {
+
+  return String(texto || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+}
+
+function lineaSeparadora() {
+
+  return "================================\n";
+
+}
+
+function lineaCorta() {
+
+  return "--------------------------------\n";
+
+}
+
+function formatearComandaBar(mesa, lineas) {
+
+  const ahora = new Date().toLocaleString("es-ES");
+
+  const pedido = lineas.length > 0 ? lineas[0].pedido : "";
+
+  let texto = "";
+
+  texto += lineaSeparadora();
+  texto += "       RESTAURANT SERVICE\n";
+  texto += lineaSeparadora();
+  texto += "COMANDA BAR\n";
+  texto += "MESA: " + mesa + "\n";
+  texto += "PEDIDO: " + pedido + "\n";
+  texto += "HORA: " + ahora + "\n";
+  texto += lineaCorta();
+
+  lineas.forEach(l => {
+
+    texto += l.cantidad + " x " + limpiarTextoTicket(l.nombre).toUpperCase() + "\n";
+
+    if (l.nota) {
+      texto += "  NOTA: " + limpiarTextoTicket(l.nota).toUpperCase() + "\n";
+    }
+
+  });
+
+  texto += lineaCorta();
+  texto += "TOTAL LINEAS: " + lineas.length + "\n";
+  texto += lineaSeparadora();
+  texto += "\n\n";
+
+  return texto;
+
+}
+
 function barRoutes(db) {
 
   const router = express.Router();
@@ -13,8 +69,10 @@ function barRoutes(db) {
     const sql = `
       SELECT 
         pl.id,
+        pe.id AS pedido,
         (pl.cantidad - COALESCE(pl.cantidad_enviada_bar, 0)) AS cantidad,
-        p.nombre
+        p.nombre,
+        pl.nota
       FROM pedido_lineas pl
       JOIN pedidos pe ON pe.id = pl.pedido_id
       JOIN mesas m ON m.id = pe.mesa_id
@@ -40,19 +98,7 @@ function barRoutes(db) {
         });
       }
 
-      let texto = "";
-
-      texto += "************************\n";
-      texto += "BAR\n";
-      texto += "Mesa " + mesa + "\n";
-      texto += new Date().toLocaleString() + "\n";
-      texto += "************************\n\n";
-
-      lineas.forEach(l => {
-        texto += l.cantidad + " x " + l.nombre + "\n";
-      });
-
-      texto += "\n************************\n";
+      const texto = formatearComandaBar(mesa, lineas);
 
       const carpetaPrint = path.join(__dirname, "..", "..", "prints");
 

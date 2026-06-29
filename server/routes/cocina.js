@@ -2,6 +2,62 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
+function limpiarTextoTicket(texto) {
+
+  return String(texto || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+}
+
+function lineaSeparadora() {
+
+  return "================================\n";
+
+}
+
+function lineaCorta() {
+
+  return "--------------------------------\n";
+
+}
+
+function formatearComandaCocina(mesa, lineas) {
+
+  const ahora = new Date().toLocaleString("es-ES");
+
+  const pedido = lineas.length > 0 ? lineas[0].pedido : "";
+
+  let texto = "";
+
+  texto += lineaSeparadora();
+  texto += "       RESTAURANT SERVICE\n";
+  texto += lineaSeparadora();
+  texto += "COMANDA COCINA\n";
+  texto += "MESA: " + mesa + "\n";
+  texto += "PEDIDO: " + pedido + "\n";
+  texto += "HORA: " + ahora + "\n";
+  texto += lineaCorta();
+
+  lineas.forEach(l => {
+
+    texto += l.cantidad + " x " + limpiarTextoTicket(l.nombre).toUpperCase() + "\n";
+
+    if (l.nota) {
+      texto += "  NOTA: " + limpiarTextoTicket(l.nota).toUpperCase() + "\n";
+    }
+
+  });
+
+  texto += lineaCorta();
+  texto += "TOTAL LINEAS: " + lineas.length + "\n";
+  texto += lineaSeparadora();
+  texto += "\n\n";
+
+  return texto;
+
+}
+
 function cocinaRoutes(db) {
 
   const router = express.Router();
@@ -13,8 +69,10 @@ function cocinaRoutes(db) {
     const sql = `
       SELECT
         pl.id,
+        pe.id AS pedido,
         (pl.cantidad - COALESCE(pl.cantidad_enviada_cocina, 0)) AS cantidad,
-        p.nombre
+        p.nombre,
+        pl.nota
       FROM pedido_lineas pl
       JOIN pedidos pe ON pe.id = pl.pedido_id
       JOIN mesas m ON m.id = pe.mesa_id
@@ -40,19 +98,7 @@ function cocinaRoutes(db) {
         });
       }
 
-      let ticket = "";
-
-      ticket += "************************\n";
-      ticket += "*****   COCINA   *******\n";
-      ticket += "************************\n\n";
-      ticket += "Mesa: " + mesa + "\n";
-      ticket += new Date().toLocaleString() + "\n\n";
-
-      lineas.forEach(l => {
-        ticket += l.cantidad + " x " + l.nombre + "\n";
-      });
-
-      ticket += "\n************************\n";
+      const ticket = formatearComandaCocina(mesa, lineas);
 
       const carpetaPrint = path.join(__dirname, "..", "..", "prints");
 
