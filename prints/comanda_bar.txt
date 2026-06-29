@@ -1,6 +1,0 @@
-destino    
------------
-*** BAR ***
-producto    cantidad  
-----------  ----------
-Coca-Cola   2         

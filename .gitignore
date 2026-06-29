@@ -19,3 +19,12 @@ prints/*.txt
 
 # Sistema
 .DS_Store
+
+# Dependencias instaladas localmente
+node_modules/
+server/node_modules/
+
+# Experimentos frontend antiguos
+app/components/
+app/js/
+app/script.before-menu-replace.js
