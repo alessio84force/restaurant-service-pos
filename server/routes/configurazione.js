@@ -1,8 +1,28 @@
 const express = require("express");
+const { requiereRol } = require("../middleware/auth");
 
 function configurazioneRoutes(db){
 
 const router=express.Router();
+
+router.get("/usuario-actual",(req,res)=>{
+
+if(!req.session || !req.session.usuario){
+return res.json({
+autenticado:false
+});
+}
+
+res.json({
+autenticado:true,
+id:req.session.usuario.id,
+nombre:req.session.usuario.nombre,
+email:req.session.usuario.email,
+rol:req.session.usuario.rol
+});
+
+});
+
 
 function escaparHTML(valor){
 
@@ -15,7 +35,7 @@ return String(valor || "")
 
 }
 
-router.get("/configurazione",(req,res)=>{
+router.get("/configurazione", requiereRol(["admin","gerente"]), (req,res)=>{
 
 db.get(
 "SELECT * FROM configurazione WHERE id=1",
@@ -30,7 +50,190 @@ res.json(row);
 
 });
 
-router.get("/configuracion-restaurante",(req,res)=>{
+
+
+router.get("/configuracion", requiereRol(["admin","gerente"]), (req,res)=>{
+
+res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Configuración general</title>
+<style>
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#eef2f7;
+color:#111827;
+padding:30px;
+}
+
+.contenedor{
+max-width:1100px;
+margin:0 auto;
+}
+
+.header{
+background:#111827;
+color:white;
+padding:26px;
+border-radius:20px;
+margin-bottom:24px;
+box-shadow:0 12px 28px rgba(15,23,42,.18);
+}
+
+.header h1{
+margin:0;
+font-size:30px;
+}
+
+.header p{
+margin:8px 0 0 0;
+color:#cbd5e1;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:18px;
+}
+
+.card{
+background:white;
+border-radius:18px;
+padding:22px;
+box-shadow:0 12px 28px rgba(15,23,42,.10);
+text-decoration:none;
+color:#111827;
+display:block;
+border:2px solid transparent;
+transition:.15s ease;
+min-height:160px;
+}
+
+.card:hover{
+transform:translateY(-2px);
+border-color:#2563eb;
+box-shadow:0 16px 34px rgba(15,23,42,.14);
+}
+
+.icono{
+font-size:34px;
+margin-bottom:12px;
+}
+
+.card h2{
+margin:0 0 8px 0;
+font-size:20px;
+}
+
+.card p{
+margin:0;
+color:#64748b;
+line-height:1.4;
+font-size:14px;
+}
+
+.card.proximamente{
+opacity:.55;
+cursor:not-allowed;
+}
+
+.card.proximamente:hover{
+transform:none;
+border-color:transparent;
+}
+
+.volver{
+display:inline-flex;
+margin-top:24px;
+padding:14px 18px;
+border-radius:14px;
+background:#2563eb;
+color:white;
+text-decoration:none;
+font-weight:900;
+}
+
+@media(max-width:900px){
+.grid{
+grid-template-columns:1fr 1fr;
+}
+}
+
+@media(max-width:600px){
+.grid{
+grid-template-columns:1fr;
+}
+}
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+
+<div class="header">
+<h1>Configuración general</h1>
+<p>Gestiona los datos principales del restaurante y del POS.</p>
+</div>
+
+<div class="grid">
+
+<a class="card" href="/configuracion-restaurante">
+<div class="icono">🧾</div>
+<h2>Restaurante y ticket</h2>
+<p>Logo, nombre comercial, NIF/CIF, dirección, email, IVA y mensaje final.</p>
+</a>
+
+<a class="card" href="/admin-productos">
+<div class="icono">🍽️</div>
+<h2>Productos y precios</h2>
+<p>Crear productos, cambiar precios, activar o desactivar platos y bebidas.</p>
+</a>
+
+<a class="card" href="/admin-zonas-mesas">
+<div class="icono">🏠</div>
+<h2>Salas y mesas</h2>
+<p>Crear zonas, terrazas, salones y organizar las mesas del restaurante.</p>
+</a>
+
+<a class="card" href="/admin-usuarios">
+<div class="icono">👥</div>
+<h2>Usuarios</h2>
+<p>Crear camareros, responsables y accesos para el personal.</p>
+</a>
+
+<a class="card" href="/configuracion-restaurante">
+<div class="icono">🖨️</div>
+<h2>Impresoras</h2>
+<p>Configurar impresora de tickets, bar y cocina.</p>
+</a>
+
+<a class="card" href="/cierre-caja">
+<div class="icono">💶</div>
+<h2>Caja y pagos</h2>
+<p>Configurar métodos de pago, caja diaria y cierres.</p>
+</a>
+
+</div>
+
+<a class="volver" href="/app/v2/index.html">Volver al POS</a>
+
+</div>
+
+</body>
+</html>
+`);
+
+});
+
+
+router.get("/configuracion-restaurante", requiereRol(["admin","gerente"]), (req,res)=>{
 
 db.get(
 "SELECT * FROM configurazione WHERE id=1",
@@ -485,7 +688,7 @@ mostrarMensaje("No se pudo guardar la configuración.","error");
 
 });
 
-router.post("/configurazione",(req,res)=>{
+router.post("/configurazione", requiereRol(["admin","gerente"]), (req,res)=>{
 
 const c=req.body;
 
