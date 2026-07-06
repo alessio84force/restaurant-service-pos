@@ -202,7 +202,7 @@ grid-template-columns:1fr;
 <p>Crear zonas, terrazas, salones y organizar las mesas del restaurante.</p>
 </a>
 
-<a class="card" href="/admin-usuarios">
+<a class="card" href="/configuracion-usuarios">
 <div class="icono">👥</div>
 <h2>Usuarios</h2>
 <p>Crear camareros, responsables y accesos para el personal.</p>
