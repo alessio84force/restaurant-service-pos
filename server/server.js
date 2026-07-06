@@ -1,3 +1,4 @@
+const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -351,85 +352,336 @@ Prueba gratuita durante 7 días. Si tienes un código promocional, podrás intro
   `);
 });
 
+
+function escapeHtmlRegistro(valor) {
+  return String(valor || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderRegistroPropietario(error, valores) {
+  const v = valores || {};
+  const errorHtml = error
+    ? '<div class="error">' + escapeHtmlRegistro(error) + '</div>'
+    : '';
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="es">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<title>Crear cuenta - Restaurant Service POS</title>',
+    '<style>',
+    '*{box-sizing:border-box;}',
+    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:#111827;padding:28px;}',
+    '.card{max-width:720px;margin:35px auto;background:white;border-radius:26px;padding:32px;box-shadow:0 22px 60px rgba(0,0,0,.28);}',
+    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;margin-bottom:16px;}',
+    'h1{margin:0;font-size:34px;letter-spacing:-.7px;}',
+    '.intro{color:#64748b;font-size:16px;line-height:1.5;margin:10px 0 24px 0;font-weight:700;}',
+    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}',
+    '.full{grid-column:1 / -1;}',
+    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
+    'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:15px;background:white;}',
+    '.nota{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:14px;color:#166534;font-weight:900;line-height:1.45;margin:18px 0;}',
+    '.error{background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:14px;color:#991b1b;font-weight:900;margin:0 0 18px 0;}',
+    'button{width:100%;border:none;border-radius:16px;padding:15px;background:#16a34a;color:white;font-size:16px;font-weight:900;cursor:pointer;margin-top:18px;}',
+    'button:hover{background:#15803d;}',
+    '.volver{display:block;text-align:center;margin-top:14px;color:#111827;font-weight:900;text-decoration:none;}',
+    '.legal{font-size:12px;color:#64748b;line-height:1.45;text-align:center;margin-top:18px;}',
+    '@media(max-width:700px){.grid{grid-template-columns:1fr;}.full{grid-column:auto;}.card{padding:24px;margin:15px auto;}}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="card">',
+    '<div class="marca">Restaurant Service POS</div>',
+    '<h1>Crear cuenta del restaurante</h1>',
+    '<p class="intro">Registra el restaurante y crea el usuario propietario. La cuenta empezará con prueba gratuita.</p>',
+    errorHtml,
+    '<form method="POST" action="/registro">',
+    '<div class="grid">',
+    '<div class="full">',
+    '<label>Nombre del restaurante</label>',
+    '<input name="nombre_restaurante" value="' + escapeHtmlRegistro(v.nombre_restaurante) + '" required>',
+    '</div>',
+    '<div>',
+    '<label>Nombre del propietario</label>',
+    '<input name="nombre_propietario" value="' + escapeHtmlRegistro(v.nombre_propietario) + '" required>',
+    '</div>',
+    '<div>',
+    '<label>Teléfono</label>',
+    '<input name="telefono" value="' + escapeHtmlRegistro(v.telefono) + '">',
+    '</div>',
+    '<div>',
+    '<label>Email de acceso</label>',
+    '<input name="email" type="email" value="' + escapeHtmlRegistro(v.email) + '" required>',
+    '</div>',
+    '<div>',
+    '<label>Contraseña</label>',
+    '<input name="password" type="password" required>',
+    '</div>',
+    '<div class="full">',
+    '<label>Código promocional opcional</label>',
+    '<input name="codigo_promocional" value="">',
+    '</div>',
+    '</div>',
+    '<div class="nota">La prueba gratuita se activará automáticamente al crear la cuenta.</div>',
+    '<button type="submit">Crear cuenta y activar prueba</button>',
+    '</form>',
+    '<a class="volver" href="/login">Volver al login</a>',
+    '<div class="legal">© 2026 Restaurant Service POS™. Todos los derechos reservados.</div>',
+    '</div>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+
+function renderRegistroCreado(email, estado) {
+  const mensajePlan = estado === "gratis_vida"
+    ? "Cuenta creada con plan especial activado."
+    : "Cuenta creada con prueba gratuita activada.";
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="es">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<title>Cuenta creada - Restaurant Service POS</title>',
+    '<style>',
+    'body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:#111827;padding:30px;}',
+    '.card{max-width:620px;margin:80px auto;background:white;border-radius:26px;padding:34px;box-shadow:0 22px 60px rgba(0,0,0,.28);text-align:center;}',
+    'h1{margin-top:0;font-size:34px;}',
+    'p{color:#475569;font-size:17px;line-height:1.5;font-weight:700;}',
+    '.ok{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:16px;color:#166534;font-weight:900;margin:20px 0;}',
+    'a{display:inline-flex;background:#16a34a;color:white;border-radius:15px;padding:14px 20px;text-decoration:none;font-weight:900;margin-top:12px;}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="card">',
+    '<h1>Cuenta creada</h1>',
+    '<div class="ok">' + escapeHtmlRegistro(mensajePlan) + '</div>',
+    '<p>Ya puedes iniciar sesión con el email:</p>',
+    '<p><strong>' + escapeHtmlRegistro(email) + '</strong></p>',
+    '<a href="/login">Ir al login</a>',
+    '</div>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+
+function obtenerTablaConfiguracionRegistro(callback) {
+  db.get(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('configurazione','configuracion') ORDER BY CASE WHEN name='configurazione' THEN 0 ELSE 1 END LIMIT 1",
+    [],
+    (err, row) => {
+      if (err) return callback(err);
+      if (!row) return callback(new Error("No existe tabla de configuracion"));
+      callback(null, row.name);
+    }
+  );
+}
+
+function asegurarColumnasRegistro(callback) {
+  obtenerTablaConfiguracionRegistro((err, tabla) => {
+    if (err) return callback(err);
+
+    db.all("PRAGMA table_info(" + tabla + ")", [], (err2, rows) => {
+      if (err2) return callback(err2);
+
+      const existentes = rows.map((r) => r.name);
+      const necesarias = [
+        ["suscripcion_estado", "TEXT DEFAULT 'activo'"],
+        ["trial_inicio", "TEXT"],
+        ["trial_fin", "TEXT"],
+        ["plan_tipo", "TEXT"],
+        ["propietario_nombre", "TEXT"],
+        ["propietario_email", "TEXT"],
+        ["propietario_telefono", "TEXT"],
+        ["promocion_aplicada", "TEXT"]
+      ];
+
+      const pendientes = necesarias.filter((c) => !existentes.includes(c[0]));
+
+      function siguiente() {
+        if (pendientes.length === 0) return callback(null, tabla);
+
+        const col = pendientes.shift();
+        db.run("ALTER TABLE " + tabla + " ADD COLUMN " + col[0] + " " + col[1], [], (err3) => {
+          if (err3 && !String(err3.message || "").includes("duplicate column name")) {
+            return callback(err3);
+          }
+          siguiente();
+        });
+      }
+
+      siguiente();
+    });
+  });
+}
+
+function crearUsuarioPropietarioRegistro(datos, callback) {
+  db.all("PRAGMA table_info(usuarios)", [], (err, rows) => {
+    if (err) return callback(err);
+
+    const columnas = rows.map((r) => r.name);
+
+    const mapa = {
+      nombre: datos.nombre_propietario,
+      email: datos.email,
+      password: datos.password,
+      rol: "admin",
+      activo: 1
+    };
+
+    const cols = Object.keys(mapa).filter((c) => columnas.includes(c));
+
+    if (!cols.includes("email") || !cols.includes("password") || !cols.includes("rol")) {
+      return callback(new Error("La tabla usuarios no tiene las columnas necesarias"));
+    }
+
+    const sql = "INSERT INTO usuarios (" + cols.join(",") + ") VALUES (" + cols.map(() => "?").join(",") + ")";
+    const params = cols.map((c) => mapa[c]);
+
+    db.run(sql, params, callback);
+  });
+}
+
+function actualizarConfiguracionRegistro(tabla, datos, callback) {
+  db.get("SELECT id FROM " + tabla + " ORDER BY id LIMIT 1", [], (err, row) => {
+    if (err) return callback(err);
+
+    function continuar(id) {
+      db.all("PRAGMA table_info(" + tabla + ")", [], (err2, rows) => {
+        if (err2) return callback(err2);
+
+        const columnas = rows.map((r) => r.name);
+
+        const mapa = {
+          nome_ristorante: datos.nombre_restaurante,
+          nombre_restaurante: datos.nombre_restaurante,
+          telefono: datos.telefono,
+          email: datos.email,
+          propietario_nombre: datos.nombre_propietario,
+          propietario_email: datos.email,
+          propietario_telefono: datos.telefono,
+          suscripcion_estado: datos.suscripcion_estado,
+          trial_inicio: datos.trial_inicio,
+          trial_fin: datos.trial_fin,
+          plan_tipo: datos.plan_tipo,
+          promocion_aplicada: datos.promocion_aplicada
+        };
+
+        const cols = Object.keys(mapa).filter((c) => columnas.includes(c));
+
+        if (cols.length === 0) return callback(null);
+
+        const sql = "UPDATE " + tabla + " SET " + cols.map((c) => c + "=?").join(", ") + " WHERE id=?";
+        const params = cols.map((c) => mapa[c]);
+        params.push(id);
+
+        db.run(sql, params, callback);
+      });
+    }
+
+    if (row && row.id) {
+      return continuar(row.id);
+    }
+
+    db.run("INSERT INTO " + tabla + " DEFAULT VALUES", [], function(err3) {
+      if (err3) return callback(err3);
+      continuar(this.lastID);
+    });
+  });
+}
+
 app.get('/registro', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Crear cuenta - Restaurant Service POS</title>
-<style>
-body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#eef2f7;
-color:#111827;
-padding:30px;
-}
+  res.send(renderRegistroPropietario(null, {}));
+});
 
-.card{
-max-width:620px;
-margin:70px auto;
-background:white;
-border-radius:24px;
-padding:32px;
-box-shadow:0 18px 45px rgba(15,23,42,.12);
-}
+app.post('/registro', (req, res) => {
+  const datos = {
+    nombre_restaurante: String(req.body.nombre_restaurante || "").trim(),
+    nombre_propietario: String(req.body.nombre_propietario || "").trim(),
+    telefono: String(req.body.telefono || "").trim(),
+    email: String(req.body.email || "").trim().toLowerCase(),
+    password: String(req.body.password || ""),
+    codigo_promocional: String(req.body.codigo_promocional || "").trim()
+  };
 
-h1{
-margin-top:0;
-font-size:34px;
-}
+  if (!datos.nombre_restaurante || !datos.nombre_propietario || !datos.email || !datos.password) {
+    return res.send(renderRegistroPropietario("Completa los campos obligatorios.", datos));
+  }
 
-p{
-color:#475569;
-font-size:17px;
-line-height:1.5;
-}
+  if (datos.password.length < 4) {
+    return res.send(renderRegistroPropietario("La contraseña debe tener al menos 4 caracteres.", datos));
+  }
 
-.codigo{
-display:inline-flex;
-background:#111827;
-color:white;
-border-radius:999px;
-padding:8px 13px;
-font-weight:900;
-letter-spacing:.4px;
-}
+  let promo = null;
 
-a{
-display:inline-flex;
-background:#2563eb;
-color:white;
-border-radius:14px;
-padding:14px 18px;
-text-decoration:none;
-font-weight:900;
-margin-top:12px;
-}
-</style>
-</head>
-<body>
+  if (datos.codigo_promocional) {
+    promo = validarCodigoPromocional(datos.codigo_promocional);
 
-<div class="card">
-<h1>Crear cuenta nueva</h1>
+    if (!promo) {
+      return res.send(renderRegistroPropietario("Código promocional no válido.", datos));
+    }
+  }
 
-<p>
-Esta será la siguiente parte del sistema: registro del propietario, datos del restaurante
-y activación de la prueba gratuita.
-</p>
+  let diasPrueba = 7;
+  let estado = "prueba";
+  let planTipo = "trial";
+  let promocionAplicada = promo ? String(promo.tipo || "promocion") : "ninguna";
 
-<p>
-En el próximo paso activaremos el formulario real de registro, la prueba gratuita
-y el campo opcional de código promocional.
-</p>
+  if (promo && promo.tipo === "trial_extra") {
+    diasPrueba += Number(promo.dias_extra || 0);
+  }
 
-<a href="/login">Volver al login</a>
-</div>
+  if (promo && promo.tipo === "gratis_vida") {
+    estado = "gratis_vida";
+    planTipo = "gratis_vida";
+  }
 
-</body>
-</html>
-  `);
+  const ahora = new Date();
+  const finTrial = new Date(ahora.getTime() + diasPrueba * 24 * 60 * 60 * 1000);
+
+  db.get("SELECT id FROM usuarios WHERE LOWER(email)=LOWER(?)", [datos.email], (err, existente) => {
+    if (err) return res.send(renderRegistroPropietario("Error comprobando el email.", datos));
+
+    if (existente) {
+      return res.send(renderRegistroPropietario("Ya existe un usuario con ese email.", datos));
+    }
+
+    asegurarColumnasRegistro((err2, tablaConfig) => {
+      if (err2) {
+        return res.send(renderRegistroPropietario("Error preparando la configuración del restaurante.", datos));
+      }
+
+      crearUsuarioPropietarioRegistro(datos, (err3) => {
+        if (err3) {
+          return res.send(renderRegistroPropietario("Error creando el usuario propietario.", datos));
+        }
+
+        actualizarConfiguracionRegistro(tablaConfig, {
+          nombre_restaurante: datos.nombre_restaurante,
+          nombre_propietario: datos.nombre_propietario,
+          telefono: datos.telefono,
+          email: datos.email,
+          suscripcion_estado: estado,
+          trial_inicio: ahora.toISOString(),
+          trial_fin: estado === "gratis_vida" ? null : finTrial.toISOString(),
+          plan_tipo: planTipo,
+          promocion_aplicada: promocionAplicada
+        }, (err4) => {
+          if (err4) {
+            return res.send(renderRegistroPropietario("Usuario creado, pero hubo un error guardando la configuración.", datos));
+          }
+
+          res.send(renderRegistroCreado(datos.email, estado));
+        });
+      });
+    });
+  });
 });
 
 
