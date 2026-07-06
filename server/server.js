@@ -420,13 +420,8 @@ y activación de la prueba gratuita.
 </p>
 
 <p>
-Código especial:
-<br>
-<span class="codigo">BOADILLA COMERCIO</span>
-</p>
-
-<p>
-En el próximo paso activaremos el formulario real de registro.
+En el próximo paso activaremos el formulario real de registro, la prueba gratuita
+y el campo opcional de código promocional.
 </p>
 
 <a href="/login">Volver al login</a>

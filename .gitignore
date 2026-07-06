@@ -28,3 +28,4 @@ server/node_modules/
 app/components/
 app/js/
 app/script.before-menu-replace.js
+server/private/
