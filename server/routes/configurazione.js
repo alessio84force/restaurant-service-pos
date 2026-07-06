@@ -1,4 +1,6 @@
 const express = require("express");
+const fsImpresoras = require("fs");
+const pathImpresoras = require("path");
 const { requiereRol } = require("../middleware/auth");
 
 function configurazioneRoutes(db){
@@ -208,7 +210,7 @@ grid-template-columns:1fr;
 <p>Crear camareros, responsables y accesos para el personal.</p>
 </a>
 
-<a class="card" href="/configuracion-restaurante">
+<a class="card" href="/configuracion-impresoras">
 <div class="icono">🖨️</div>
 <h2>Impresoras</h2>
 <p>Configurar impresora de tickets, bar y cocina.</p>
@@ -229,6 +231,473 @@ grid-template-columns:1fr;
 </body>
 </html>
 `);
+
+});
+
+
+
+
+function textoPruebaImpresionV211(tipo, config){
+
+const fecha = new Date().toLocaleString("es-ES");
+
+const nombre = config && config.nome_ristorante
+? config.nome_ristorante
+: "Restaurant Service Demo";
+
+return [
+"RESTAURANT SERVICE POS",
+"PRUEBA DE IMPRESION",
+"------------------------------",
+"TIPO: " + tipo.toUpperCase(),
+"RESTAURANTE: " + nombre,
+"FECHA: " + fecha,
+"------------------------------",
+"Si este archivo se ha generado correctamente,",
+"la configuración básica de impresión funciona.",
+"------------------------------",
+""
+].join("\n");
+
+}
+
+function guardarPruebaImpresionV211(nombreArchivo, contenido){
+
+const carpeta = pathImpresoras.join(process.cwd(), "prints");
+
+if(!fsImpresoras.existsSync(carpeta)){
+fsImpresoras.mkdirSync(carpeta, { recursive:true });
+}
+
+const ruta = pathImpresoras.join(carpeta, nombreArchivo);
+
+fsImpresoras.writeFileSync(ruta, contenido, "utf8");
+
+return ruta;
+
+}
+
+router.get("/configuracion-impresoras", requiereRol(["admin","gerente"]), (req,res)=>{
+
+db.get(
+"SELECT * FROM configurazione WHERE id=1",
+[],
+(err,config)=>{
+
+if(err) return res.status(500).send(err.message);
+
+const c = config || {};
+
+const ok = req.query.ok
+? '<div class="mensaje ok">' + escaparHTML(req.query.ok) + '</div>'
+: "";
+
+const error = req.query.error
+? '<div class="mensaje error">' + escaparHTML(req.query.error) + '</div>'
+: "";
+
+res.send(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Impresoras</title>
+<style>
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Arial,sans-serif;
+background:#eef2f7;
+color:#111827;
+padding:30px;
+}
+
+.contenedor{
+max-width:1150px;
+margin:0 auto;
+}
+
+.header{
+background:#111827;
+color:white;
+padding:26px;
+border-radius:20px;
+margin-bottom:24px;
+box-shadow:0 12px 28px rgba(15,23,42,.18);
+display:flex;
+justify-content:space-between;
+gap:18px;
+align-items:center;
+}
+
+.header h1{
+margin:0;
+font-size:30px;
+}
+
+.header p{
+margin:8px 0 0 0;
+color:#cbd5e1;
+}
+
+.header a{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+background:#2563eb;
+color:white;
+text-decoration:none;
+padding:13px 18px;
+border-radius:14px;
+font-weight:900;
+white-space:nowrap;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:22px;
+align-items:start;
+}
+
+.card{
+background:white;
+border-radius:18px;
+padding:22px;
+box-shadow:0 12px 28px rgba(15,23,42,.10);
+margin-bottom:20px;
+}
+
+.card h2{
+margin:0 0 16px 0;
+font-size:22px;
+}
+
+.card p{
+color:#64748b;
+line-height:1.45;
+}
+
+label{
+display:block;
+font-size:13px;
+font-weight:900;
+color:#475569;
+margin-bottom:7px;
+}
+
+input,select{
+width:100%;
+border:1px solid #cbd5e1;
+border-radius:13px;
+padding:13px;
+font-size:15px;
+background:white;
+}
+
+.form-grid{
+display:grid;
+gap:14px;
+}
+
+button{
+border:none;
+border-radius:13px;
+padding:13px 16px;
+font-weight:900;
+font-size:14px;
+cursor:pointer;
+}
+
+.btn-principal{
+background:#16a34a;
+color:white;
+box-shadow:0 8px 18px rgba(22,163,74,.22);
+}
+
+.btn-principal:hover{
+background:#15803d;
+}
+
+.btn-test{
+background:#2563eb;
+color:white;
+width:100%;
+margin-top:10px;
+}
+
+.btn-test:hover{
+background:#1d4ed8;
+}
+
+.prueba-grid{
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:12px;
+}
+
+.prueba{
+background:#f8fafc;
+border:1px solid #e2e8f0;
+border-radius:16px;
+padding:16px;
+}
+
+.prueba h3{
+margin:0 0 8px 0;
+}
+
+.mensaje{
+padding:15px;
+border-radius:14px;
+font-weight:900;
+margin-bottom:18px;
+}
+
+.mensaje.ok{
+background:#dcfce7;
+color:#166534;
+border:1px solid #bbf7d0;
+}
+
+.mensaje.error{
+background:#fee2e2;
+color:#991b1b;
+border:1px solid #fecaca;
+}
+
+.aviso{
+background:#fffbeb;
+color:#92400e;
+border:1px solid #fde68a;
+border-radius:16px;
+padding:14px;
+font-weight:800;
+font-size:14px;
+line-height:1.4;
+margin-bottom:20px;
+}
+
+.codigo{
+background:#111827;
+color:white;
+border-radius:14px;
+padding:14px;
+font-family:monospace;
+font-size:13px;
+overflow:auto;
+}
+
+@media(max-width:900px){
+.grid{
+grid-template-columns:1fr;
+}
+
+.prueba-grid{
+grid-template-columns:1fr;
+}
+
+.header{
+flex-direction:column;
+align-items:flex-start;
+}
+}
+</style>
+</head>
+<body>
+
+<div class="contenedor">
+
+<div class="header">
+<div>
+<h1>Impresoras</h1>
+<p>Configura tickets, bar y cocina. Preparado para impresión real más adelante.</p>
+</div>
+<a href="/configuracion">Volver a configuración</a>
+</div>
+
+${ok}
+${error}
+
+<div class="aviso">
+Ahora las pruebas generan archivos TXT en la carpeta prints. Es una base segura para comprobar comandas y tickets antes de conectar impresión directa real.
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h2>Configuración de impresoras</h2>
+
+<form class="form-grid" method="POST" action="/configuracion-impresoras">
+
+<div>
+<label>Impresora tickets / caja</label>
+<input name="stampante_ticket" value="${escaparHTML(c.stampante_ticket || "")}" placeholder="Ej. EPSON TM-T20 Caja">
+</div>
+
+<div>
+<label>Impresora bar</label>
+<input name="stampante_bar" value="${escaparHTML(c.stampante_bar || "")}" placeholder="Ej. EPSON Barra">
+</div>
+
+<div>
+<label>Impresora cocina</label>
+<input name="stampante_cucina" value="${escaparHTML(c.stampante_cucina || "")}" placeholder="Ej. EPSON Cocina">
+</div>
+
+<div>
+<label>Modo de impresión</label>
+<select name="modo_impresion">
+<option value="ventana" ${(c.modo_impresion || "ventana") === "ventana" ? "selected" : ""}>Abrir ventana de impresión</option>
+<option value="archivo_txt" ${c.modo_impresion === "archivo_txt" ? "selected" : ""}>Generar archivo TXT</option>
+<option value="directa_futura" ${c.modo_impresion === "directa_futura" ? "selected" : ""}>Impresión directa futura</option>
+</select>
+</div>
+
+<button class="btn-principal" type="submit">Guardar impresoras</button>
+
+</form>
+</div>
+
+<div class="card">
+<h2>Estado actual</h2>
+<p><strong>Tickets/caja:</strong> ${escaparHTML(c.stampante_ticket || "Sin configurar")}</p>
+<p><strong>Bar:</strong> ${escaparHTML(c.stampante_bar || "Sin configurar")}</p>
+<p><strong>Cocina:</strong> ${escaparHTML(c.stampante_cucina || "Sin configurar")}</p>
+<p><strong>Modo:</strong> ${escaparHTML(c.modo_impresion || "ventana")}</p>
+
+<div class="codigo">
+Carpeta pruebas:<br>
+prints/prueba_ticket.txt<br>
+prints/prueba_bar.txt<br>
+prints/prueba_cocina.txt
+</div>
+</div>
+
+</div>
+
+<div class="card">
+<h2>Pruebas de impresión</h2>
+
+<div class="prueba-grid">
+
+<div class="prueba">
+<h3>Ticket / caja</h3>
+<p>Genera una prueba para la impresora de tickets.</p>
+<form method="POST" action="/configuracion-impresoras/probar-ticket">
+<button class="btn-test" type="submit">Probar ticket</button>
+</form>
+</div>
+
+<div class="prueba">
+<h3>Bar</h3>
+<p>Genera una comanda de prueba para barra.</p>
+<form method="POST" action="/configuracion-impresoras/probar-bar">
+<button class="btn-test" type="submit">Probar bar</button>
+</form>
+</div>
+
+<div class="prueba">
+<h3>Cocina</h3>
+<p>Genera una comanda de prueba para cocina.</p>
+<form method="POST" action="/configuracion-impresoras/probar-cocina">
+<button class="btn-test" type="submit">Probar cocina</button>
+</form>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
+`);
+
+});
+
+});
+
+router.post("/configuracion-impresoras", requiereRol(["admin","gerente"]), (req,res)=>{
+
+db.run(
+"INSERT OR IGNORE INTO configurazione(id,nome_ristorante,iva,mensaje_ticket,modo_impresion) VALUES(1,'Restaurant Service Demo',10,'Gracias por su visita','ventana')",
+[],
+(err)=>{
+
+if(err) return res.status(500).send(err.message);
+
+db.run(
+`
+UPDATE configurazione
+SET
+stampante_ticket=?,
+stampante_bar=?,
+stampante_cucina=?,
+modo_impresion=?
+WHERE id=1
+`,
+[
+req.body.stampante_ticket || "",
+req.body.stampante_bar || "",
+req.body.stampante_cucina || "",
+req.body.modo_impresion || "ventana"
+],
+function(err){
+
+if(err) return res.status(500).send(err.message);
+
+res.redirect("/configuracion-impresoras?ok=Impresoras guardadas correctamente");
+
+});
+
+});
+
+});
+
+router.post("/configuracion-impresoras/probar-ticket", requiereRol(["admin","gerente"]), (req,res)=>{
+
+db.get("SELECT * FROM configurazione WHERE id=1", [], (err,config)=>{
+
+if(err) return res.status(500).send(err.message);
+
+guardarPruebaImpresionV211("prueba_ticket.txt", textoPruebaImpresionV211("ticket/caja", config || {}));
+
+res.redirect("/configuracion-impresoras?ok=Prueba de ticket generada en prints/prueba_ticket.txt");
+
+});
+
+});
+
+router.post("/configuracion-impresoras/probar-bar", requiereRol(["admin","gerente"]), (req,res)=>{
+
+db.get("SELECT * FROM configurazione WHERE id=1", [], (err,config)=>{
+
+if(err) return res.status(500).send(err.message);
+
+guardarPruebaImpresionV211("prueba_bar.txt", textoPruebaImpresionV211("bar", config || {}));
+
+res.redirect("/configuracion-impresoras?ok=Prueba de bar generada en prints/prueba_bar.txt");
+
+});
+
+});
+
+router.post("/configuracion-impresoras/probar-cocina", requiereRol(["admin","gerente"]), (req,res)=>{
+
+db.get("SELECT * FROM configurazione WHERE id=1", [], (err,config)=>{
+
+if(err) return res.status(500).send(err.message);
+
+guardarPruebaImpresionV211("prueba_cocina.txt", textoPruebaImpresionV211("cocina", config || {}));
+
+res.redirect("/configuracion-impresoras?ok=Prueba de cocina generada en prints/prueba_cocina.txt");
+
+});
 
 });
 
