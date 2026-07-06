@@ -58,21 +58,30 @@ app.get('/', (req, res) => {
   res.send('Restaurant Service POS API funcionando');
 });
 
-app.get('/mesas', (req, res) => {  const sql = `    SELECT mesas.id, mesas.numero, mesas.estado,           zonas.nombre AS zona,           reservas.cliente AS reserva_cliente,           reservas.personas AS reserva_personas,           reservas.hora AS reserva_hora    FROM mesas    LEFT JOIN zonas ON mesas.zona_id = zonas.id    LEFT JOIN reservas ON reservas.mesa_id = mesas.id AND reservas.estado = 'activa'    ORDER BY zonas.id, mesas.numero  `;  db.all(sql, [], (err, rows) => {    if (err) return res.status(500).json({ error: err.message });    res.json(rows);  });});
+app.get('/mesas', (req, res) => {
 
-app.get('/productos', (req, res) => {
-  db.all(
-    `SELECT productos.id, productos.nombre, productos.precio, categorias.nombre AS categoria
-     FROM productos
-     JOIN categorias ON productos.categoria_id = categorias.id
-     WHERE productos.disponible = 1
-     ORDER BY categorias.id, productos.id`,
-    [],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
-  );
+  const sql = `
+    SELECT
+      mesas.id,
+      mesas.numero,
+      mesas.estado,
+      zonas.nombre AS zona,
+      reservas.cliente AS reserva_cliente,
+      reservas.personas AS reserva_personas,
+      reservas.hora AS reserva_hora
+    FROM mesas
+    LEFT JOIN zonas ON mesas.zona_id = zonas.id
+    LEFT JOIN reservas ON reservas.mesa_id = mesas.id AND reservas.estado = 'activa'
+    WHERE COALESCE(mesas.activo,1)=1
+    AND COALESCE(zonas.activo,1)=1
+    ORDER BY zonas.id, mesas.numero
+  `;
+
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+
 });
 
 app.get('/pedido/:mesa', (req, res) => {
@@ -1104,6 +1113,7 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
+
   const email = req.body.email;
   const password = req.body.password;
 
@@ -1111,234 +1121,86 @@ app.post('/login', (req, res) => {
     'SELECT id, nombre, email, rol FROM usuarios WHERE email=? AND password=? AND activo=1',
     [email, password],
     (err, usuario) => {
-      if (err) return res.status(500).send(err.message);
+
+      if (err) {
+        return res.status(500).send(err.message);
+      }
 
       if (!usuario) {
-        return res.send('Usuario o contraseña incorrectos');
+        return res.status(401).send(`
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <title>Login incorrecto</title>
+            <style>
+              body{
+                font-family:Arial,sans-serif;
+                background:#eef2f7;
+                padding:40px;
+                color:#111827;
+              }
+
+              .card{
+                max-width:420px;
+                margin:60px auto;
+                background:white;
+                border-radius:18px;
+                padding:26px;
+                box-shadow:0 12px 28px rgba(15,23,42,.12);
+              }
+
+              h1{
+                margin-top:0;
+              }
+
+              a{
+                display:inline-flex;
+                margin-top:12px;
+                background:#2563eb;
+                color:white;
+                padding:12px 16px;
+                border-radius:12px;
+                text-decoration:none;
+                font-weight:900;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h1>Login incorrecto</h1>
+              <p>Email o contraseña incorrectos, o usuario desactivado.</p>
+              <a href="/login">Volver a iniciar sesión</a>
+            </div>
+          </body>
+          </html>
+        `);
       }
-req.session.usuario = usuario;
 
-let menu = "";
+      req.session.usuario = usuario;
 
-if (usuario.rol === "admin") {
-menu += `<li><a href="http://localhost:8000">Sala</a></li>`;
-menu += `<li><a href="/cocina">Cocina</a></li>`;
-menu += `<li><a href="/bar">Bar</a></li>`;
-menu += `<li><a href="/reservas">Reservas</a></li>`;
-menu += `<li><a href="/admin-productos">Admin productos</a></li>`;
-menu += `<li><a href="/dashboard">Dashboard</a></li>`;
-menu += `<li><a href="/cierre-caja">Cierre de caja</a></li>`;
-}
+      if (usuario.rol === "admin" || usuario.rol === "gerente") {
+        return res.redirect("/configuracion");
+      }
 
-if (usuario.rol === "camarero") {
-menu += `<li><a href="http://localhost:8000">Sala</a></li>`;
-menu += `<li><a href="/reservas">Reservas</a></li>`;
-}
+      if (usuario.rol === "camarero") {
+        return res.redirect("/app/v2/index.html");
+      }
 
-if (usuario.rol === "cocina") {
-menu += `<li><a href="/cocina">Cocina</a></li>`;
-}
+      if (usuario.rol === "cocina") {
+        return res.redirect("/cocina");
+      }
 
-if (usuario.rol === "bar") {
-menu += `<li><a href="/bar">Bar</a></li>`;
-}
+      if (usuario.rol === "bar") {
+        return res.redirect("/bar");
+      }
 
-if (usuario.rol === "gerente") {
-menu += `<li><a href="/dashboard">Dashboard</a></li>`;
-menu += `<li><a href="/ventas">Historial ventas</a></li>`;
-menu += `<li><a href="/cierre-caja">Cierre de caja</a></li>`;
-}
+      return res.redirect("/app/v2/index.html");
 
-res.send(`
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Panel usuario</title>
-</head>
-<body style="font-family: Arial; padding: 30px;">
-<h1>Bienvenido, ${usuario.nombre}</h1>
-<p>Rol: ${usuario.rol}</p>
-<ul>${menu}</ul><p><a href="/logout">Cerrar sesión</a></p>
-</body>
-</html>
-`);
     }
   );
+
 });
-
-app.get('/admin-usuarios', requiereRol(['admin']), (req, res) => {
-  db.all('SELECT id, nombre, email, rol, activo FROM usuarios ORDER BY id', [], (err, usuarios) => {
-    if (err) return res.status(500).send(err.message);
-
-    let filas = '';
-
-    usuarios.forEach(u => {
-      filas += `
-        <tr>
-          <td>${u.nombre}</td>
-          <td>${u.email}</td>
-          <td>${u.rol}</td>
-          <td>${u.activo ? 'Si' : 'No'}</td>
-<td>
-<form method="GET" action="/admin-usuarios/editar/${u.id}" style="display:inline;"><button type="submit">Editar</button></form>
-<form method="POST" action="/admin-usuarios/activar/${u.id}" style="display:inline;"><button type="submit">Activar</button></form>
-<form method="POST" action="/admin-usuarios/desactivar/${u.id}" style="display:inline;"><button type="submit">Desactivar</button></form>
-<form method="POST" action="/admin-usuarios/eliminar/${u.id}" style="display:inline;"><button type="submit">Eliminar</button></form>
-</td>
-        </tr>
-      `;
-    });
-
-    res.send(`
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Admin Usuarios</title>
-        <style>
-          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
-          form, table { background: white; padding: 20px; border-radius: 10px; margin-bottom: 25px; width: 100%; }
-          input, select, button { padding: 10px; margin: 5px; }
-          table { border-collapse: collapse; }
-          th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-        </style>
-      </head>
-      <body>
-        <h1>Administrar usuarios</h1>
-
-        <form method="POST" action="/admin-usuarios/crear">
-          <h2>Nuevo usuario</h2>
-          <input name="nombre" placeholder="Nombre" required>
-          <input name="email" type="email" placeholder="Email" required>
-          <input name="password" placeholder="Contraseña" required>
-          <select name="rol" required>
-            <option value="admin">Admin</option>
-            <option value="camarero">Camarero</option>
-            <option value="cocina">Cocina</option>
-            <option value="bar">Bar</option>
-            <option value="gerente">Gerente</option>
-          </select>
-          <button type="submit">Crear usuario</button>
-        </form>
-
-        <table>
-          <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Activo</th>
-<th>Acciones</th>
-          </tr>
-          ${filas}
-        </table>
-      </body>
-      </html>
-    `);
-  });
-});
-
-app.post('/admin-usuarios/crear', (req, res) => {
-  const nombre = req.body.nombre;
-  const email = req.body.email;
-  const password = req.body.password;
-  const rol = req.body.rol;
-
-  db.run(
-    'INSERT INTO usuarios (nombre, email, password, rol, activo) VALUES (?, ?, ?, ?, 1)',
-    [nombre, email, password, rol],
-    function(err) {
-      if (err) return res.status(500).send(err.message);
-      res.redirect('/admin-usuarios');
-    }
-  );
-});
-
-app.post('/admin-usuarios/activar/:id', (req, res) => {
-  db.run(
-    'UPDATE usuarios SET activo=1 WHERE id=?',
-    [req.params.id],
-    () => res.redirect('/admin-usuarios')
-  );
-});
-
-app.post('/admin-usuarios/desactivar/:id', (req, res) => {
-  db.run(
-    'UPDATE usuarios SET activo=0 WHERE id=?',
-    [req.params.id],
-    () => res.redirect('/admin-usuarios')
-  );
-});
-
-app.post('/admin-usuarios/eliminar/:id', (req, res) => {
-  db.run(
-    'DELETE FROM usuarios WHERE id=?',
-    [req.params.id],
-    () => res.redirect('/admin-usuarios')
-  );
-});
-
-
-app.get('/admin-usuarios/editar/:id', (req, res) => {
-  const id = req.params.id;
-
-  db.get('SELECT * FROM usuarios WHERE id=?', [id], (err, usuario) => {
-    if (err) return res.status(500).send(err.message);
-
-    if (!usuario) {
-      return res.send('Usuario no encontrado');
-    }
-
-    res.send(`
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Editar usuario</title>
-        <style>
-          body { font-family: Arial; background: #f4f4f4; padding: 30px; }
-          form { background: white; padding: 20px; border-radius: 10px; max-width: 500px; margin: auto; }
-          input, select, button { width: 100%; padding: 10px; margin: 8px 0; }
-        </style>
-      </head>
-      <body>
-        <form method="POST" action="/admin-usuarios/editar/${usuario.id}">
-          <h1>Editar usuario</h1>
-
-          <input name="nombre" value="${usuario.nombre}" required>
-          <input name="email" type="email" value="${usuario.email}" required>
-          <input name="password" value="${usuario.password}" required>
-
-          <select name="rol" required>
-            <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Admin</option>
-            <option value="camarero" ${usuario.rol === 'camarero' ? 'selected' : ''}>Camarero</option>
-            <option value="cocina" ${usuario.rol === 'cocina' ? 'selected' : ''}>Cocina</option>
-            <option value="bar" ${usuario.rol === 'bar' ? 'selected' : ''}>Bar</option>
-            <option value="gerente" ${usuario.rol === 'gerente' ? 'selected' : ''}>Gerente</option>
-          </select>
-
-          <button type="submit">Guardar cambios</button>
-        </form>
-      </body>
-      </html>
-    `);
-  });
-});
-
-app.post('/admin-usuarios/editar/:id', (req, res) => {
-  const id = req.params.id;
-  const nombre = req.body.nombre;
-  const email = req.body.email;
-  const password = req.body.password;
-  const rol = req.body.rol;
-
-  db.run(
-    'UPDATE usuarios SET nombre=?, email=?, password=?, rol=? WHERE id=?',
-    [nombre, email, password, rol, id],
-    function(err) {
-      if (err) return res.status(500).send(err.message);
-      res.redirect('/admin-usuarios');
-    }
-  );
-});
-
 
 app.get('/logout', (req, res) => {
   req.session.destroy(() => {

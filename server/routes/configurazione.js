@@ -196,7 +196,7 @@ grid-template-columns:1fr;
 <p>Crear productos, cambiar precios, activar o desactivar platos y bebidas.</p>
 </a>
 
-<a class="card" href="/admin-zonas-mesas">
+<a class="card" href="/configuracion-mesas">
 <div class="icono">🏠</div>
 <h2>Salas y mesas</h2>
 <p>Crear zonas, terrazas, salones y organizar las mesas del restaurante.</p>
