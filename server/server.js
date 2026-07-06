@@ -1,3 +1,4 @@
+const { middlewareSuscripcion, renderPagoRequerido } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
@@ -38,6 +39,9 @@ app.use('/app', express.static(path.join(__dirname, '..', 'app')));
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
+
+app.use(middlewareSuscripcion(db));
+
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
@@ -740,6 +744,13 @@ app.get('/terminos', (req, res) => {
     '<p>Estos términos regularán el uso de Restaurant Service POS, la prueba gratuita, el precio mensual, la cancelación, las responsabilidades y las condiciones del servicio.</p>' +
     '<p>En próximas versiones se completará con el plan comercial definitivo, soporte, actualizaciones y política de pagos.</p>'
   ));
+});
+
+
+
+
+app.get('/pago-requerido', (req, res) => {
+  res.send(renderPagoRequerido());
 });
 
 app.post('/login', (req, res) => {
