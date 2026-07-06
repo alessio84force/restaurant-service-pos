@@ -190,7 +190,7 @@ grid-template-columns:1fr;
 <p>Logo, nombre comercial, NIF/CIF, dirección, email, IVA y mensaje final.</p>
 </a>
 
-<a class="card" href="/admin-productos">
+<a class="card" href="/configuracion-productos">
 <div class="icono">🍽️</div>
 <h2>Productos y precios</h2>
 <p>Crear productos, cambiar precios, activar o desactivar platos y bebidas.</p>
