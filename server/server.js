@@ -11,6 +11,7 @@ const configurazioneRoutes = require("./routes/configurazione");
 const cocinaRoutes = require("./routes/cocina");
 const zonasRoutes = require("./routes/zonas");
 const pagosRoutes = require("./routes/pagos");
+const cajaRoutes = require("./routes/caja");
 const adminProductosRoutes = require("./routes/adminProductos");
 const categoriasRoutes = require("./routes/categorias");
 const variantesRoutes = require("./routes/variantes");
@@ -39,6 +40,7 @@ const db = new sqlite3.Database(
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
+app.use(cajaRoutes(db));
 app.use(mesasRoutes(db));
 app.use(ticketRoutes(db));
 app.use(adminProductosRoutes(db));

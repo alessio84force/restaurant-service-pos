@@ -216,7 +216,7 @@ grid-template-columns:1fr;
 <p>Configurar impresora de tickets, bar y cocina.</p>
 </a>
 
-<a class="card" href="/cierre-caja">
+<a class="card" href="/configuracion-caja">
 <div class="icono">💶</div>
 <h2>Caja y pagos</h2>
 <p>Configurar métodos de pago, caja diaria y cierres.</p>
