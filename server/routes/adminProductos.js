@@ -5,6 +5,23 @@ function adminProductosRoutes(db){
 
 const router=express.Router();
 
+router.get("/admin-productos", requiereRol(["admin","gerente"]), (req,res)=>{
+res.redirect("/configuracion-productos");
+});
+
+router.get("/admin-categorias", requiereRol(["admin","gerente"]), (req,res)=>{
+res.redirect("/configuracion-productos");
+});
+
+router.get("/admin-productos/editar/:id", requiereRol(["admin","gerente"]), (req,res)=>{
+res.redirect("/configuracion-productos");
+});
+
+router.get("/admin-categorias/editar/:id", requiereRol(["admin","gerente"]), (req,res)=>{
+res.redirect("/configuracion-productos");
+});
+
+
 function escaparHTML(valor){
 
 return String(valor || "")
