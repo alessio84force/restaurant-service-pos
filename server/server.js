@@ -1,3 +1,4 @@
+const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
@@ -43,6 +44,7 @@ const db = new sqlite3.Database(
 
 app.use(middlewareSuscripcion(db));
 app.use(activacionSuscripcionRoutes(db));
+app.use(panelSuscripcionRoutes(db));
 
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
