@@ -238,10 +238,12 @@ module.exports = function posPedidoRoutes(db) {
     });
   });
 
+
   router.post("/anadir-producto", requiereLoginJson, (req, res) => {
     const numeroMesa = req.body.mesa;
     const productoId = Number(req.body.producto);
     const cantidad = Math.max(1, Number(req.body.cantidad || 1));
+    const nota = String(req.body.nota || req.body.punto_coccion || "").trim();
 
     if (!numeroMesa || !productoId) {
       return res.status(400).json({ error: "Faltan datos" });
@@ -257,45 +259,36 @@ module.exports = function posPedidoRoutes(db) {
         obtenerTablaLineas(db, (err3, tablaLineas) => {
           if (err3) return res.status(500).json({ error: err3.message });
 
-          columnasTabla(db, tablaLineas, (err4, cols) => {
+          columnasTabla(db, tablaLineas, (err4, colsIniciales) => {
             if (err4) return res.status(500).json({ error: err4.message });
 
-            const precioCol = cols.includes("precio_unitario")
-              ? "precio_unitario"
-              : cols.includes("precio")
-                ? "precio"
-                : null;
+            function continuarConColumnas(cols) {
+              const precioCol = cols.includes("precio_unitario")
+                ? "precio_unitario"
+                : cols.includes("precio")
+                  ? "precio"
+                  : null;
 
-            db.get(
-              "SELECT id, cantidad FROM " + tablaLineas + " WHERE pedido_id=? AND producto_id=? ORDER BY id DESC LIMIT 1",
-              [pedido.id, productoId],
-              (err5, linea) => {
-                if (err5) return res.status(500).json({ error: err5.message });
+              const notaCol = cols.includes("nota")
+                ? "nota"
+                : cols.includes("notas")
+                  ? "notas"
+                  : null;
 
-                function terminar() {
-                  actualizarTotalPedido(db, pedido.id, (errTotal, total) => {
-                    if (errTotal) return res.status(500).json({ error: errTotal.message });
+              function terminar() {
+                actualizarTotalPedido(db, pedido.id, (errTotal, total) => {
+                  if (errTotal) return res.status(500).json({ error: errTotal.message });
 
-                    res.json({
-                      ok: true,
-                      mesa: mesa.numero,
-                      pedido: pedido.id,
-                      total: total
-                    });
+                  res.json({
+                    ok: true,
+                    mesa: mesa.numero,
+                    pedido: pedido.id,
+                    total: total
                   });
-                }
+                });
+              }
 
-                if (linea) {
-                  return db.run(
-                    "UPDATE " + tablaLineas + " SET cantidad=? WHERE id=?",
-                    [Number(linea.cantidad || 0) + cantidad, linea.id],
-                    (err6) => {
-                      if (err6) return res.status(500).json({ error: err6.message });
-                      terminar();
-                    }
-                  );
-                }
-
+              function insertarLineaNueva() {
                 const colsInsert = ["pedido_id", "producto_id", "cantidad"];
                 const params = [pedido.id, productoId, cantidad];
 
@@ -304,19 +297,70 @@ module.exports = function posPedidoRoutes(db) {
                   params.push(Number(producto.precio || 0));
                 }
 
+                if (notaCol && nota) {
+                  colsInsert.push(notaCol);
+                  params.push(nota);
+                }
+
                 const sqlInsert = "INSERT INTO " + tablaLineas + " (" + colsInsert.join(",") + ") VALUES (" + colsInsert.map(() => "?").join(",") + ")";
 
-                db.run(sqlInsert, params, (err7) => {
-                  if (err7) return res.status(500).json({ error: err7.message });
+                db.run(sqlInsert, params, (errInsert) => {
+                  if (errInsert) return res.status(500).json({ error: errInsert.message });
                   terminar();
                 });
               }
-            );
+
+              if (nota) {
+                return insertarLineaNueva();
+              }
+
+              const filtroNotaVacia = notaCol ? " AND COALESCE(" + notaCol + ", '') = ''" : "";
+
+              db.get(
+                "SELECT id, cantidad FROM " + tablaLineas + " WHERE pedido_id=? AND producto_id=?" + filtroNotaVacia + " ORDER BY id DESC LIMIT 1",
+                [pedido.id, productoId],
+                (err5, linea) => {
+                  if (err5) return res.status(500).json({ error: err5.message });
+
+                  if (linea) {
+                    return db.run(
+                      "UPDATE " + tablaLineas + " SET cantidad=? WHERE id=?",
+                      [Number(linea.cantidad || 0) + cantidad, linea.id],
+                      (err6) => {
+                        if (err6) return res.status(500).json({ error: err6.message });
+                        terminar();
+                      }
+                    );
+                  }
+
+                  insertarLineaNueva();
+                }
+              );
+            }
+
+            const tieneNota = colsIniciales.includes("nota") || colsIniciales.includes("notas");
+
+            if (tieneNota) {
+              return continuarConColumnas(colsIniciales);
+            }
+
+            db.run("ALTER TABLE " + tablaLineas + " ADD COLUMN nota TEXT", [], (errAlter) => {
+              if (errAlter && !String(errAlter.message || "").includes("duplicate column")) {
+                return res.status(500).json({ error: errAlter.message });
+              }
+
+              columnasTabla(db, tablaLineas, (errColumnasFinales, colsFinales) => {
+                if (errColumnasFinales) return res.status(500).json({ error: errColumnasFinales.message });
+                continuarConColumnas(colsFinales);
+              });
+            });
           });
         });
       });
     });
   });
+
+
 
 
   router.post("/linea/:linea/cantidad", requiereLoginJson, (req, res) => {
