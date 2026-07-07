@@ -111,6 +111,8 @@ function esRutaPublica(req) {
   if (ruta === "/logout") return true;
   if (ruta === "/registro") return true;
   if (ruta === "/pago-requerido") return true;
+  if (ruta === "/pago-online-pendiente") return true;
+  if (ruta === "/activar-suscripcion") return true;
   if (ruta === "/aviso-legal") return true;
   if (ruta === "/privacidad") return true;
   if (ruta === "/cookies") return true;
@@ -183,12 +185,19 @@ function renderPagoRequerido() {
     '.precio{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:20px;padding:18px;color:#166534;font-weight:900;font-size:22px;margin:22px 0;text-align:center;}',
     '.precio span{display:block;font-size:13px;color:#15803d;margin-top:6px;}',
     '.bloqueo{background:#fff7ed;border:1px solid #fed7aa;border-radius:18px;padding:16px;color:#9a3412;font-weight:800;line-height:1.45;margin-top:16px;}',
-    '.acciones{display:grid;grid-template-columns:1fr;gap:12px;margin-top:24px;}',
+    '.acciones{display:grid;grid-template-columns:1fr;gap:12px;margin-top:18px;}',
+    'form{margin-top:18px;}',
+    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
+    'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:15px;background:white;}',
+    'button{width:100%;border:none;border-radius:15px;padding:14px 18px;background:#16a34a;color:white;font-weight:900;font-size:15px;cursor:pointer;margin-top:12px;}',
+    'button:hover{background:#15803d;}',
     'a{display:block;text-align:center;border-radius:15px;padding:14px 18px;text-decoration:none;font-weight:900;}',
     '.principal{background:#16a34a;color:white;}',
     '.principal:hover{background:#15803d;}',
     '.secundario{background:#111827;color:white;}',
     '.secundario:hover{background:#000;}',
+    '.salir{background:#e5e7eb;color:#111827;}',
+    '.salir:hover{background:#d1d5db;}',
     '.legal{font-size:12px;color:#94a3b8;text-align:center;line-height:1.55;font-weight:800;}',
     '.legal a{display:inline;color:#cbd5e1;background:none;padding:0;border-radius:0;}',
     '.legal a:hover{color:white;text-decoration:underline;}',
@@ -206,9 +215,17 @@ function renderPagoRequerido() {
     '<h1>Activa tu suscripción</h1>',
     '<p>La prueba gratuita ha finalizado o la suscripción no está activa. Para seguir usando el POS, activa el plan del restaurante.</p>',
     '<div class="precio">7,50 €/mes<span>Plan Restaurant Service POS</span></div>',
-    '<div class="bloqueo">El pago online se conectará en la siguiente fase. De momento esta pantalla bloquea el acceso cuando la prueba termina.</div>',
     '<div class="acciones">',
-    '<a class="principal" href="/login">Volver al login</a>',
+    '<a class="principal" href="/pago-online-pendiente">Activar plan 7,50 €/mes</a>',
+    '</div>',
+    '<div class="bloqueo">Si ya tienes un código de activación, introdúcelo aquí. Si no, activa el plan mensual.</div>',
+    '<form method="POST" action="/activar-suscripcion">',
+    '<label>Código de activación</label>',
+    '<input name="codigo_activacion" type="text" placeholder="Introduce tu código" required>',
+    '<button type="submit">Activar con código</button>',
+    '</form>',
+    '<div class="acciones">',
+    '<a class="salir" href="/logout">Cerrar sesión</a>',
     '<a class="secundario" href="/aviso-legal">Ver aviso legal</a>',
     '</div>',
     '</section>',
@@ -226,9 +243,58 @@ function renderPagoRequerido() {
   ].join('\n');
 }
 
+function renderPagoOnlinePendiente() {
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="es">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    '<title>Pago online pendiente - Restaurant Service POS</title>',
+    '<style>',
+    '*{box-sizing:border-box;}',
+    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:#111827;}',
+    '.pagina{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 470px;}',
+    '.zona-foto{min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden;}',
+    '.zona-foto img{width:108%;height:108%;object-fit:contain;object-position:center center;display:block;}',
+    '.panel-derecho{min-height:100vh;background:#0f172a;padding:34px;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:-18px 0 45px rgba(0,0,0,.25);}',
+    '.card{background:rgba(255,255,255,.97);border-radius:28px;padding:32px;box-shadow:0 24px 70px rgba(0,0,0,.35);}',
+    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;margin-bottom:18px;}',
+    'h1{margin:0;font-size:34px;letter-spacing:-.8px;color:#111827;}',
+    'p{color:#475569;font-size:16px;line-height:1.5;font-weight:700;}',
+    '.aviso{background:#eff6ff;border:1px solid #bfdbfe;border-radius:18px;padding:16px;color:#1e3a8a;font-weight:900;line-height:1.45;margin:22px 0;}',
+    '.acciones{display:grid;grid-template-columns:1fr;gap:12px;margin-top:22px;}',
+    'a{display:block;text-align:center;border-radius:15px;padding:14px 18px;text-decoration:none;font-weight:900;}',
+    '.principal{background:#16a34a;color:white;}',
+    '.secundario{background:#111827;color:white;}',
+    '@media(max-width:950px){.pagina{grid-template-columns:1fr;}.zona-foto{display:none;}.panel-derecho{padding:20px;}.card{border-radius:22px;padding:24px;}}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="pagina">',
+    '<div class="zona-foto"><img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS"></div>',
+    '<div class="panel-derecho">',
+    '<section class="card">',
+    '<div class="marca">Restaurant Service POS</div>',
+    '<h1>Pago online pendiente</h1>',
+    '<p>La pasarela de pago todavía no está conectada. En la siguiente fase conectaremos el pago mensual del plan Restaurant Service POS.</p>',
+    '<div class="aviso">De momento, la activación se realiza con código manual después de confirmar el pago.</div>',
+    '<div class="acciones">',
+    '<a class="principal" href="/pago-requerido">Volver a activación</a>',
+    '<a class="secundario" href="/logout">Cerrar sesión</a>',
+    '</div>',
+    '</section>',
+    '</div>',
+    '</div>',
+    '</body>',
+    '</html>'
+  ].join('\n');
+}
+
 
 module.exports = {
   middlewareSuscripcion,
   leerEstadoSuscripcion,
-  renderPagoRequerido
+  renderPagoRequerido,
+  renderPagoOnlinePendiente
 };

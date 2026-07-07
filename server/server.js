@@ -1,4 +1,5 @@
-const { middlewareSuscripcion, renderPagoRequerido } = require("./suscripcion");
+const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
+const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
@@ -41,6 +42,7 @@ const db = new sqlite3.Database(
 );
 
 app.use(middlewareSuscripcion(db));
+app.use(activacionSuscripcionRoutes(db));
 
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
@@ -751,6 +753,11 @@ app.get('/terminos', (req, res) => {
 
 app.get('/pago-requerido', (req, res) => {
   res.send(renderPagoRequerido());
+});
+
+
+app.get('/pago-online-pendiente', (req, res) => {
+  res.send(renderPagoOnlinePendiente());
 });
 
 app.post('/login', (req, res) => {
