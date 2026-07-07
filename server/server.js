@@ -1,3 +1,4 @@
+const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
@@ -43,6 +44,7 @@ const db = new sqlite3.Database(
 );
 
 app.use(middlewareSuscripcion(db));
+app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
 app.use(panelSuscripcionRoutes(db));
 
