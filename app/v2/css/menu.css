@@ -27,3 +27,81 @@
 .producto-btn:hover{
     opacity:.9;
 }
+
+/* V2.2.7 - Puntos de cocción */
+
+.badge-coccion-v2{
+    display:inline-block;
+    margin-top:6px;
+    padding:4px 7px;
+    border-radius:999px;
+    background:#fff7ed;
+    color:#9a3412;
+    font-size:11px;
+    font-weight:800;
+}
+
+.modal-coccion-v2{
+    position:fixed;
+    inset:0;
+    background:rgba(17,24,39,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    padding:18px;
+}
+
+.modal-coccion-card-v2{
+    width:min(360px, 100%);
+    background:#ffffff;
+    border-radius:22px;
+    padding:22px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.24);
+}
+
+.modal-coccion-card-v2 h3{
+    margin:0 0 6px 0;
+    color:#111827;
+    font-size:23px;
+}
+
+.modal-coccion-card-v2 p{
+    margin:0 0 16px 0;
+    color:#6b7280;
+    font-weight:700;
+}
+
+.modal-coccion-opciones-v2{
+    display:grid;
+    gap:9px;
+}
+
+.modal-coccion-opciones-v2 button{
+    min-height:48px;
+    border:2px solid #fed7aa;
+    background:#fff7ed;
+    color:#9a3412;
+    border-radius:14px;
+    font-weight:900;
+    font-size:15px;
+    cursor:pointer;
+}
+
+.modal-coccion-opciones-v2 button:hover{
+    background:#ffedd5;
+}
+
+.modal-coccion-cancelar-v2{
+    width:100%;
+    min-height:44px;
+    margin-top:13px;
+    border:1px solid #d1d5db;
+    background:#ffffff;
+    color:#374151;
+    border-radius:13px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+/* FIN V2.2.7 */

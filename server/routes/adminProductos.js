@@ -29,6 +29,29 @@ function numeroPrecio(valor) {
   return Math.round(n * 100) / 100;
 }
 
+
+function asegurarPuntoCoccionProductos(db, callback) {
+  db.all("PRAGMA table_info(productos)", [], (err, columnas) => {
+    if (err) return callback(err);
+
+    const existe = (columnas || []).some((c) => c.name === "requiere_coccion");
+
+    if (existe) return callback();
+
+    db.run(
+      "ALTER TABLE productos ADD COLUMN requiere_coccion INTEGER DEFAULT 0",
+      [],
+      (errAlter) => {
+        if (errAlter && !String(errAlter.message || "").includes("duplicate column")) {
+          return callback(errAlter);
+        }
+
+        callback();
+      }
+    );
+  });
+}
+
 function renderPagina(categorias, productos, mensaje) {
   const opcionesCategorias = categorias.map((cat) => {
     return '<option value="' + cat.id + '">' + escapar(cat.nombre) + ' · ' + escapar(cat.destino || "sin destino") + '</option>';
@@ -81,6 +104,10 @@ function renderPagina(categorias, productos, mensaje) {
           </option>
           `).join("")}
         </select>
+        <label class="checkline">
+          <input type="checkbox" name="requiere_coccion" value="1" ${Number(p.requiere_coccion || 0) === 1 ? "checked" : ""}>
+          Requiere punto de cocción
+        </label>
       </div>
     </div>
 
@@ -412,6 +439,24 @@ grid-column:auto;
 padding:20px;
 }
 }
+
+.checkline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#fff7ed;
+  color:#9a3412;
+  font-weight:800;
+  font-size:13px;
+}
+
+.checkline input{
+  width:18px;
+  height:18px;
+}
 </style>
 </head>
 
@@ -476,6 +521,10 @@ ${mensaje ? '<div class="mensaje">' + escapar(mensaje) + '</div>' : ""}
         <select name="categoria_id" required>
           ${opcionesCategorias}
         </select>
+        <label class="checkline">
+          <input type="checkbox" name="requiere_coccion" value="1">
+          Requiere punto de cocción
+        </label>
       </div>
     </div>
 
@@ -581,7 +630,7 @@ module.exports = function adminProductosRoutes(db) {
         (errProd, productos) => {
           if (errProd) return res.status(500).send("Error cargando productos");
 
-          res.send(renderPagina(categorias || [], productos || [], req.query.ok || ""));
+          res.send(renderPagina(categorias || [], productos || [], req.query.ok || req.query.error || ""));
         }
       );
     });
@@ -614,18 +663,41 @@ module.exports = function adminProductosRoutes(db) {
     );
   });
 
+
+
+
+
+  
+
   router.post("/configuracion-productos/productos", requiereConfig, (req, res) => {
     const nombre = String(req.body.nombre || "").trim();
     const precio = numeroPrecio(req.body.precio);
     const categoriaId = Number(req.body.categoria_id);
+    const requiereCoccion = req.body.requiere_coccion ? 1 : 0;
 
-    if (!nombre || !categoriaId) return res.redirect("/configuracion-productos");
+    if (!nombre || !categoriaId) {
+      return res.redirect("/configuracion-productos?error=Faltan datos del producto");
+    }
 
-    db.run(
-      "INSERT INTO productos (nombre, precio, categoria_id, disponible) VALUES (?, ?, ?, 1)",
-      [nombre, precio, categoriaId],
-      () => res.redirect("/configuracion-productos?ok=Producto creado")
-    );
+    asegurarPuntoCoccionProductos(db, (errColumna) => {
+      if (errColumna) {
+        console.error("Error preparando columna requiere_coccion:", errColumna.message);
+        return res.redirect("/configuracion-productos?error=No se pudo preparar productos");
+      }
+
+      db.run(
+        "INSERT INTO productos (nombre, precio, categoria_id, requiere_coccion, disponible) VALUES (?, ?, ?, ?, 1)",
+        [nombre, precio, categoriaId, requiereCoccion],
+        function(err) {
+          if (err) {
+            console.error("Error creando producto:", err.message);
+            return res.redirect("/configuracion-productos?error=No se pudo crear el producto");
+          }
+
+          res.redirect("/configuracion-productos?ok=Producto creado");
+        }
+      );
+    });
   });
 
   router.post("/configuracion-productos/productos/:id", requiereConfig, (req, res) => {
@@ -633,15 +705,33 @@ module.exports = function adminProductosRoutes(db) {
     const nombre = String(req.body.nombre || "").trim();
     const precio = numeroPrecio(req.body.precio);
     const categoriaId = Number(req.body.categoria_id);
+    const requiereCoccion = req.body.requiere_coccion ? 1 : 0;
 
-    if (!id || !nombre || !categoriaId) return res.redirect("/configuracion-productos");
+    if (!id || !nombre || !categoriaId) {
+      return res.redirect("/configuracion-productos?error=Faltan datos del producto");
+    }
 
-    db.run(
-      "UPDATE productos SET nombre=?, precio=?, categoria_id=? WHERE id=?",
-      [nombre, precio, categoriaId, id],
-      () => res.redirect("/configuracion-productos?ok=Producto actualizado")
-    );
+    asegurarPuntoCoccionProductos(db, (errColumna) => {
+      if (errColumna) {
+        console.error("Error preparando columna requiere_coccion:", errColumna.message);
+        return res.redirect("/configuracion-productos?error=No se pudo preparar productos");
+      }
+
+      db.run(
+        "UPDATE productos SET nombre=?, precio=?, categoria_id=?, requiere_coccion=? WHERE id=?",
+        [nombre, precio, categoriaId, requiereCoccion, id],
+        function(err) {
+          if (err) {
+            console.error("Error actualizando producto:", err.message);
+            return res.redirect("/configuracion-productos?error=No se pudo actualizar el producto");
+          }
+
+          res.redirect("/configuracion-productos?ok=Producto actualizado");
+        }
+      );
+    });
   });
+
 
   router.post("/configuracion-productos/productos/:id/disponible", requiereConfig, (req, res) => {
     const id = Number(req.params.id);

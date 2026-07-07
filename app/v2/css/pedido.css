@@ -423,3 +423,18 @@
     }
 
 }
+
+/* V2.2.7 - Nota punto de cocción */
+
+.linea-nota-v2{
+    display:block;
+    margin-top:6px;
+    padding:5px 8px;
+    border-radius:10px;
+    background:#fff7ed;
+    color:#9a3412;
+    font-weight:900;
+    font-size:12px;
+}
+
+/* FIN V2.2.7 */
