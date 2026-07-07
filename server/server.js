@@ -1,3 +1,4 @@
+const posPedidoRoutes = require("./routes/posPedido");
 const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
@@ -35,10 +36,23 @@ secret: "restaurant-service-secret",
 resave: false,
 saveUninitialized: false
 }));
+
+// Proteccion POS V2: sin login no se puede entrar al POS
+app.use('/app/v2', (req, res, next) => {
+  if (!req.session || !req.session.usuario) {
+    return res.redirect('/login');
+  }
+
+  next();
+});
+
+app.use('/app', express.static(path.join(__dirname, '..', 'app')));
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+
+app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
-app.use('/app', express.static(path.join(__dirname, '..', 'app')));
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
@@ -53,6 +67,7 @@ app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
 app.use(cajaRoutes(db));
 app.use(mesasRoutes(db));
+app.use(posPedidoRoutes(db));
 app.use(ticketRoutes(db));
 app.use(adminProductosRoutes(db));
 app.use(posRoutes(db));
@@ -1219,6 +1234,93 @@ app.post('/mesa/:mesa/ocupar-reserva', (req, res) => {
 
 
 const PUERTO_RESTAURANT_SERVICE = process.env.PORT || 3000;
+
+
+
+
+
+
+
+
+
+
+app.get('/mesas', (req, res) => {
+  if (!req.session || !req.session.usuario) {
+    return res.status(401).json({ error: "No autorizado" });
+  }
+
+  db.all("PRAGMA table_info(mesas)", [], (errMesas, columnasMesas) => {
+    if (errMesas) {
+      console.error("Error leyendo columnas mesas:", errMesas.message);
+      return res.status(500).json({ error: "Error cargando mesas" });
+    }
+
+    db.all("PRAGMA table_info(zonas)", [], (errZonas, columnasZonas) => {
+      if (errZonas) {
+        console.error("Error leyendo columnas zonas:", errZonas.message);
+        return res.status(500).json({ error: "Error cargando zonas" });
+      }
+
+      const colsMesas = (columnasMesas || []).map(c => c.name);
+      const colsZonas = (columnasZonas || []).map(c => c.name);
+      const condiciones = [];
+
+      if (colsMesas.includes("activo")) {
+        condiciones.push("COALESCE(mesas.activo, 1) = 1");
+      }
+
+      if (colsZonas.includes("activo")) {
+        condiciones.push("COALESCE(zonas.activo, 1) = 1");
+      }
+
+      const where = condiciones.length ? "WHERE " + condiciones.join(" AND ") : "";
+
+      const sql = `
+        SELECT
+          mesas.id,
+          mesas.numero,
+          CASE
+            WHEN COALESCE(pedidos_abiertos.pedido_estado, '') = 'cuenta' THEN 'cuenta'
+            WHEN COALESCE(mesas.estado, 'libre') = 'cuenta' THEN 'cuenta'
+            WHEN pedidos_abiertos.pedido_id IS NOT NULL THEN 'ocupada'
+            WHEN COALESCE(mesas.estado, 'libre') = 'reservada' THEN 'reservada'
+            WHEN COALESCE(mesas.estado, 'libre') = 'ocupada' THEN 'ocupada'
+            ELSE 'libre'
+          END AS estado,
+          mesas.zona_id,
+          zonas.nombre AS zona,
+          pedidos_abiertos.pedido_id AS pedido_abierto
+        FROM mesas
+        LEFT JOIN zonas ON zonas.id = mesas.zona_id
+        LEFT JOIN (
+          SELECT
+            p1.mesa_id,
+            p1.id AS pedido_id,
+            p1.estado AS pedido_estado
+          FROM pedidos p1
+          INNER JOIN (
+            SELECT mesa_id, MAX(id) AS max_id
+            FROM pedidos
+            WHERE estado != 'cerrado'
+            GROUP BY mesa_id
+          ) ultimos ON ultimos.max_id = p1.id
+        ) pedidos_abiertos ON pedidos_abiertos.mesa_id = mesas.id
+        ${where}
+        ORDER BY zonas.nombre COLLATE NOCASE, mesas.numero COLLATE NOCASE
+      `;
+
+      db.all(sql, [], (err, rows) => {
+        if (err) {
+          console.error("Error cargando mesas:", err.message);
+          return res.status(500).json({ error: "Error cargando mesas" });
+        }
+
+        res.json(rows || []);
+      });
+    });
+  });
+});
+
 
 app.listen(PUERTO_RESTAURANT_SERVICE, () => {
   console.log("Restaurant Service POS activo en http://localhost:" + PUERTO_RESTAURANT_SERVICE);

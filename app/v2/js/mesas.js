@@ -35,10 +35,11 @@ async function cargarMesasV2(){
         zonas[nombre].forEach(mesa=>{
 
             let icono="🟢";
+            if(mesa.estado=="libre") icono="🟢";
 
-            if(mesa.estado=="ocupada") icono="🔴";
-            if(mesa.estado=="reservada") icono="🟡";
-            if(mesa.estado=="cuenta") icono="🔵";
+            if(mesa.estado=="ocupada") icono="🔵";
+            if(mesa.estado=="reservada") icono="🔴";
+            if(mesa.estado=="cuenta") icono="🟡";
 
             const card=document.createElement("div");
 

@@ -89,3 +89,28 @@
     background:#dbeafe;
 
 }
+
+/* V2.2.4 - Estados reales mesas */
+.mesa-card.libre,
+.libre {
+    background: #eafaf1 !important;
+    border-color: #27ae60 !important;
+}
+
+.mesa-card.ocupada,
+.ocupada {
+    background: #eef5ff !important;
+    border-color: #2f80ed !important;
+}
+
+.mesa-card.cuenta,
+.cuenta {
+    background: #fff7df !important;
+    border-color: #f2c94c !important;
+}
+
+.mesa-card.reservada,
+.reservada {
+    background: #fdeaea !important;
+    border-color: #eb5757 !important;
+}

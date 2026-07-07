@@ -78,6 +78,16 @@ async function cargarPedidoV2(numeroMesa){
 
         data.productos.forEach(p=>{
 
+            const precioLinea = Number(p.precio || p.precio_unitario || 0);
+            const cantidadLinea = Number(p.cantidad || 0);
+            const subtotalLinea = Number(
+                p.subtotal !== undefined && p.subtotal !== null ? p.subtotal :
+                p.total_linea !== undefined && p.total_linea !== null ? p.total_linea :
+                p.importe !== undefined && p.importe !== null ? p.importe :
+                p.total !== undefined && p.total !== null ? p.total :
+                precioLinea * cantidadLinea
+            );
+
             html+=`
 
             <div class="linea-pedido">
@@ -88,7 +98,7 @@ async function cargarPedidoV2(numeroMesa){
 
                     <span>Cantidad: ${p.cantidad}</span>
 
-                    <small>${Number(p.precio).toFixed(2)} € / unidad</small>
+                    <small>${precioLinea.toFixed(2)} € / unidad</small>
 
                 </div>
 
@@ -116,7 +126,7 @@ async function cargarPedidoV2(numeroMesa){
 
                 <div class="linea-subtotal-v2">
 
-                    ${Number(p.subtotal).toFixed(2)} €
+                    ${subtotalLinea.toFixed(2)} €
 
                 </div>
 
