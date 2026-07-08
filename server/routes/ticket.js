@@ -1,3 +1,4 @@
+const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
 const express = require("express");
 
 function ticketRoutes(db) {
@@ -76,6 +77,96 @@ function ticketRoutes(db) {
 
   }
 
+
+  function obtenerConfigTicketCentroImpresion(config) {
+    try {
+      const centro = config && config.config_impresion_json
+        ? JSON.parse(config.config_impresion_json)
+        : null;
+
+      return centro && centro.ticket ? centro.ticket : { modo: "preview" };
+    } catch (e) {
+      return { modo: "preview" };
+    }
+  }
+
+  function generarTextoTicketCentroImpresion(config, pedido, productos, pagos, tipo) {
+    const titulo = tipo === "final" ? "TICKET FINAL" : "PRECUENTA";
+    const total = Number(pedido.total || 0);
+    const nombreRestaurante = config.nombre_ristorante || "Restaurant Service";
+    const mensajeFinal = config.mensaje_ticket || "Gracias por su visita";
+
+    let texto = "";
+    texto += "================================\n";
+    texto += String(nombreRestaurante).toUpperCase() + "\n";
+    texto += "================================\n";
+    texto += titulo + "\n";
+    texto += "MESA: " + pedido.mesa + "\n";
+    texto += "PEDIDO: " + pedido.id + "\n";
+    texto += "FECHA: " + new Date().toLocaleString("es-ES") + "\n";
+    texto += "--------------------------------\n";
+
+    (productos || []).forEach((p) => {
+      const cantidad = Number(p.cantidad || 0);
+      const nombre = String(p.nombre || p.producto || "Producto").toUpperCase();
+      const precio = Number(p.precio || 0);
+      const subtotal = Number(p.subtotal || (cantidad * precio) || 0);
+
+      texto += cantidad + " x " + nombre + "\n";
+      texto += "  " + precio.toFixed(2) + " EUR  " + subtotal.toFixed(2) + " EUR\n";
+
+      if (p.nota) {
+        texto += "  >>> NOTA <<<\n";
+        texto += "  " + String(p.nota).toUpperCase() + "\n";
+      }
+    });
+
+    texto += "--------------------------------\n";
+    texto += "TOTAL: " + total.toFixed(2) + " EUR\n";
+
+    if (Array.isArray(pagos) && pagos.length > 0) {
+      texto += "--------------------------------\n";
+      texto += "PAGOS\n";
+
+      pagos.forEach((pago) => {
+        texto += String(pago.metodo || "pago").toUpperCase() + ": " + Number(pago.importe || 0).toFixed(2) + " EUR\n";
+      });
+    }
+
+    if (tipo !== "final") {
+      texto += "--------------------------------\n";
+      texto += "PRECUENTA INFORMATIVA\n";
+      texto += "REVise SU PEDIDO ANTES DEL PAGO\n";
+    }
+
+    texto += "--------------------------------\n";
+    texto += String(mensajeFinal).toUpperCase() + "\n";
+    texto += "================================\n\n\n";
+
+    return texto;
+  }
+
+  function imprimirTicketCentroImpresion(db, config, pedido, productos, pagos, tipo) {
+    const cfgTicket = obtenerConfigTicketCentroImpresion(config);
+
+    imprimirCentroImpresion(
+      db,
+      "ticket",
+      generarTextoTicketCentroImpresion(config, pedido, productos, pagos, tipo),
+      function(resultadoImpresion) {
+        if (resultadoImpresion && resultadoImpresion.modo === "escpos_red" && !resultadoImpresion.ok) {
+          console.log("[TICKET] Ticket registrado, pero no se pudo imprimir por ESC/POS:", resultadoImpresion.motivo || resultadoImpresion.error || "sin detalle");
+        }
+
+        if (resultadoImpresion && resultadoImpresion.modo === "escpos_red" && resultadoImpresion.ok) {
+          console.log("[TICKET] Ticket enviado por ESC/POS correctamente.");
+        }
+      }
+    );
+
+    return cfgTicket;
+  }
+
   function generarHTMLTicket(config, pedido, productos, pagos, tipo) {
 
     const fecha = new Date().toLocaleString("es-ES");
@@ -140,6 +231,10 @@ function ticketRoutes(db) {
       : "";
 
     const mensajeFinal = config.mensaje_ticket || "Gracias por su visita";
+
+    const ticketCentroConfig = obtenerConfigTicketCentroImpresion(config);
+    const ticketModoImpresion = String(ticketCentroConfig.modo || "preview");
+    const autoPrintSistema = ticketModoImpresion === "sistema";
 
     const tituloDocumento = tipo === "final" ? "Ticket final" : "Precuenta";
     const avisoHtml = tipo === "final"
@@ -441,6 +536,15 @@ function ticketRoutes(db) {
 
         <div class="acciones-ticket">
           <button onclick="window.print()">Imprimir</button>
+          ${autoPrintSistema ? `
+          <script>
+            window.addEventListener('load', function(){
+              setTimeout(function(){
+                window.print();
+              }, 600);
+            });
+          </script>
+          ` : ""}
         </div>
       </body>
       </html>
@@ -497,6 +601,8 @@ function ticketRoutes(db) {
         obtenerLineasPedido(pedido.id, (err, productos) => {
 
           if (err) return res.status(500).send(err.message);
+
+          imprimirTicketCentroImpresion(db, config, pedido, productos, [], "precuenta");
 
           const html = generarHTMLTicket(config, pedido, productos, [], "precuenta");
 
@@ -562,6 +668,8 @@ function ticketRoutes(db) {
           obtenerPagosPedido(pedido.id, (err, pagos) => {
 
             if (err) return res.status(500).send(err.message);
+
+            imprimirTicketCentroImpresion(db, config, pedido, productos, pagos, "final");
 
             const html = generarHTMLTicket(config, pedido, productos, pagos, "final");
 
