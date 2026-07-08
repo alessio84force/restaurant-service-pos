@@ -1,3 +1,7 @@
+function mesaArgV2(numeroMesa){
+    return JSON.stringify(String(numeroMesa)).replace(/"/g, "&quot;");
+}
+
 function escaparHtmlPedidoV2(texto){
     return String(texto || "")
         .replace(/&/g, "&amp;")
@@ -23,7 +27,7 @@ async function cargarPedidoV2(numeroMesa){
 
                 <p>No hay pedido abierto.</p>
 
-                <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${numeroMesa})">
+                <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
                     Abrir mesa
 
@@ -111,7 +115,7 @@ async function cargarPedidoV2(numeroMesa){
 
                     ${p.nota ? '<small class="linea-nota-v2">' + escaparHtmlPedidoV2(p.nota) + '</small>' : ''}
 
-                    <button class="btn-nota-linea-v2" onclick="editarNotaLineaV2(${p.id}, ${numeroMesa}, '${encodeURIComponent(p.nota || "")}')">
+                    <button class="btn-nota-linea-v2" onclick="editarNotaLineaV2(${p.id}, ${mesaArgV2(numeroMesa)}, '${encodeURIComponent(p.nota || "")}')">
                         📝 ${p.nota ? "Editar nota" : "Añadir nota"}
                     </button>
 
@@ -119,7 +123,7 @@ async function cargarPedidoV2(numeroMesa){
 
                 <div class="linea-controles-v2">
 
-                    <button class="btn-cantidad-v2 menos" onclick="cambiarCantidadLineaV2(${p.id}, -1, ${numeroMesa})">
+                    <button class="btn-cantidad-v2 menos" onclick="cambiarCantidadLineaV2(${p.id}, -1, ${mesaArgV2(numeroMesa)})">
 
                         −
 
@@ -131,7 +135,7 @@ async function cargarPedidoV2(numeroMesa){
 
                     </div>
 
-                    <button class="btn-cantidad-v2 mas" onclick="cambiarCantidadLineaV2(${p.id}, 1, ${numeroMesa})">
+                    <button class="btn-cantidad-v2 mas" onclick="cambiarCantidadLineaV2(${p.id}, 1, ${mesaArgV2(numeroMesa)})">
 
                         +
 
@@ -177,7 +181,7 @@ async function cargarPedidoV2(numeroMesa){
 
             </button>
 
-            <button onclick="generarPrecuenta(${numeroMesa})">
+            <button onclick="generarPrecuenta(${mesaArgV2(numeroMesa)})">
 
                 🧾 CUENTA
 
@@ -235,7 +239,7 @@ async function abrirMesaV2(numeroMesa){
 
                 <p>No se pudo abrir la mesa.</p>
 
-                <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${numeroMesa})">
+                <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
                     Intentar de nuevo
 
@@ -507,9 +511,21 @@ async function enviarComandaV2(numeroMesa, destino){
 
         mostrarToastPedidoV2("Enviando comanda a " + destinoTitulo + "...", "info");
 
+        const ventanaPreviewComandaV2 = window.open("", "_blank", "width=420,height=720");
+
+        if(ventanaPreviewComandaV2){
+            ventanaPreviewComandaV2.document.open();
+            ventanaPreviewComandaV2.document.write("<html><body style='font-family:Arial;padding:20px;'><h2>Preparando comanda...</h2><p>Un momento.</p></body></html>");
+            ventanaPreviewComandaV2.document.close();
+        }
+
         const respuesta = await apiPost(endpoint, {});
 
         const lineas = Array.isArray(respuesta.lineas) ? respuesta.lineas : [];
+
+        if(ventanaPreviewComandaV2 && lineas.length === 0){
+            ventanaPreviewComandaV2.close();
+        }
 
         await cargarPedidoV2(numeroMesa);
 
@@ -523,6 +539,8 @@ async function enviarComandaV2(numeroMesa, destino){
 
         }
 
+        mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaPreviewComandaV2);
+
         mostrarToastPedidoV2("Comanda enviada a " + destinoTitulo + ". Líneas enviadas: " + lineas.length + ".", "correcto");
 
     }catch(error){
@@ -535,6 +553,199 @@ async function enviarComandaV2(numeroMesa, destino){
 
     }
 
+}
+
+
+function escaparHtmlComandaPreviewV2(texto){
+    return String(texto || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaExistente){
+
+    const destino = String(destinoTitulo || "").toUpperCase();
+    const pedido = lineas && lineas.length > 0 ? (lineas[0].pedido || lineas[0].pedido_id || "") : "";
+    const ahora = new Date().toLocaleString("es-ES");
+
+    const lineasHtml = (lineas || []).map((linea)=>{
+        const cantidad = Number(linea.cantidad || 0);
+        const nombre = escaparHtmlComandaPreviewV2(linea.nombre || linea.producto || "Producto");
+        const nota = String(linea.nota || "").trim();
+
+        return `
+            <div class="linea-ticket">
+                <div class="producto">${cantidad} x ${nombre.toUpperCase()}</div>
+
+                ${nota ? `
+                    <div class="nota-ticket">
+                        &gt;&gt;&gt; NOTA ${destino} &lt;&lt;&lt;<br>
+                        ${escaparHtmlComandaPreviewV2(nota.toUpperCase())}
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    }).join("");
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Comanda ${destino} Mesa ${numeroMesa}</title>
+<style>
+    body{
+        margin:0;
+        padding:18px;
+        background:#f3f4f6;
+        font-family:Arial, sans-serif;
+    }
+
+    .ticket{
+        width:320px;
+        max-width:100%;
+        margin:0 auto;
+        background:#ffffff;
+        color:#111827;
+        padding:18px;
+        border-radius:14px;
+        box-shadow:0 14px 34px rgba(0,0,0,0.16);
+        font-family:"Courier New", monospace;
+    }
+
+    .centro{
+        text-align:center;
+    }
+
+    .titulo{
+        font-size:18px;
+        font-weight:900;
+        margin-bottom:8px;
+    }
+
+    .subtitulo{
+        font-size:15px;
+        font-weight:900;
+        margin-bottom:5px;
+    }
+
+    .dato{
+        font-size:13px;
+        margin:3px 0;
+    }
+
+    .sep{
+        border-top:2px dashed #111827;
+        margin:13px 0;
+    }
+
+    .linea-ticket{
+        margin-bottom:13px;
+    }
+
+    .producto{
+        font-size:16px;
+        font-weight:900;
+        line-height:1.25;
+    }
+
+    .nota-ticket{
+        margin-top:6px;
+        padding:8px;
+        border:2px solid #111827;
+        background:#fff7ed;
+        color:#9a3412;
+        font-size:13px;
+        font-weight:900;
+        line-height:1.35;
+    }
+
+    .acciones{
+        width:320px;
+        max-width:100%;
+        margin:14px auto 0 auto;
+        display:flex;
+        gap:8px;
+    }
+
+    .acciones button{
+        flex:1;
+        min-height:42px;
+        border:0;
+        border-radius:10px;
+        font-weight:900;
+        cursor:pointer;
+    }
+
+    .imprimir{
+        background:#111827;
+        color:#ffffff;
+    }
+
+    .cerrar{
+        background:#ffffff;
+        color:#111827;
+        border:1px solid #d1d5db !important;
+    }
+
+    @media print{
+        body{
+            background:#ffffff;
+            padding:0;
+        }
+
+        .ticket{
+            box-shadow:none;
+            border-radius:0;
+            width:100%;
+        }
+
+        .acciones{
+            display:none;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="ticket">
+        <div class="centro">
+            <div class="titulo">RESTAURANT SERVICE</div>
+            <div class="subtitulo">COMANDA ${destino}</div>
+            <div class="dato">MESA: ${escaparHtmlComandaPreviewV2(numeroMesa)}</div>
+            <div class="dato">PEDIDO: ${escaparHtmlComandaPreviewV2(pedido)}</div>
+            <div class="dato">HORA: ${escaparHtmlComandaPreviewV2(ahora)}</div>
+        </div>
+
+        <div class="sep"></div>
+
+        ${lineasHtml || "<p>No hay líneas nuevas para enviar.</p>"}
+
+        <div class="sep"></div>
+
+        <div class="centro dato">TOTAL LINEAS: ${(lineas || []).length}</div>
+    </div>
+
+    <div class="acciones">
+        <button class="imprimir" onclick="window.print()">Imprimir prueba</button>
+        <button class="cerrar" onclick="window.close()">Cerrar</button>
+    </div>
+</body>
+</html>
+    `;
+
+    const ventana = ventanaExistente || window.open("", "_blank", "width=420,height=720");
+
+    if(!ventana){
+        alert("El navegador bloqueó la vista previa. Permite ventanas emergentes para ver el ticket.");
+        return;
+    }
+
+    ventana.document.open();
+    ventana.document.write(html);
+    ventana.document.close();
 }
 
 async function generarPrecuenta(numeroMesa){

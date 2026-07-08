@@ -44,7 +44,8 @@ function formatearComandaCocina(mesa, lineas) {
     texto += l.cantidad + " x " + limpiarTextoTicket(l.nombre).toUpperCase() + "\n";
 
     if (l.nota) {
-      texto += "  NOTA: " + limpiarTextoTicket(l.nota).toUpperCase() + "\n";
+      texto += "  >>> NOTA COCINA <<<\n";
+      texto += "  " + limpiarTextoTicket(l.nota).toUpperCase() + "\n";
     }
 
   });

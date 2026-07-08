@@ -1,3 +1,7 @@
+function mesaArgV2(numeroMesa){
+    return JSON.stringify(String(numeroMesa)).replace(/"/g, "&quot;");
+}
+
 async function cargarMesasV2(){
 
     const mesas = await apiGet("/mesas");
@@ -63,7 +67,7 @@ async function cargarMesasV2(){
 
             card.onclick=()=>{
 
-                mesaSeleccionada=mesa.numero;
+                mesaSeleccionada=String(mesa.numero);
 
                 document.querySelectorAll(".mesa-card").forEach(c=>{
 
@@ -73,7 +77,7 @@ async function cargarMesasV2(){
 
                 card.style.borderColor="#2563eb";
 
-                cargarPedidoV2(mesa.numero);
+                cargarPedidoV2(String(mesa.numero));
 
             };
 
