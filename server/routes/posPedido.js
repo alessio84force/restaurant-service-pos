@@ -363,6 +363,70 @@ module.exports = function posPedidoRoutes(db) {
 
 
 
+
+  router.post("/linea/:linea/nota", requiereLoginJson, (req, res) => {
+    const lineaId = Number(req.params.linea);
+    const nota = String(req.body.nota || "").trim();
+
+    if (!lineaId) {
+      return res.status(400).json({ error: "Línea no válida" });
+    }
+
+    obtenerTablaLineas(db, (err, tablaLineas) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      columnasTabla(db, tablaLineas, (errCols, colsIniciales) => {
+        if (errCols) return res.status(500).json({ error: errCols.message });
+
+        function actualizarNota(cols) {
+          const notaCol = cols.includes("nota")
+            ? "nota"
+            : cols.includes("notas")
+              ? "notas"
+              : "nota";
+
+          db.get(
+            "SELECT id FROM " + tablaLineas + " WHERE id=?",
+            [lineaId],
+            (errLinea, linea) => {
+              if (errLinea) return res.status(500).json({ error: errLinea.message });
+              if (!linea) return res.status(404).json({ error: "Línea no encontrada" });
+
+              db.run(
+                "UPDATE " + tablaLineas + " SET " + notaCol + "=? WHERE id=?",
+                [nota, lineaId],
+                (errUpdate) => {
+                  if (errUpdate) return res.status(500).json({ error: errUpdate.message });
+
+                  res.json({
+                    ok: true,
+                    linea: lineaId,
+                    nota: nota
+                  });
+                }
+              );
+            }
+          );
+        }
+
+        if (colsIniciales.includes("nota") || colsIniciales.includes("notas")) {
+          return actualizarNota(colsIniciales);
+        }
+
+        db.run("ALTER TABLE " + tablaLineas + " ADD COLUMN nota TEXT", [], (errAlter) => {
+          if (errAlter && !String(errAlter.message || "").includes("duplicate column")) {
+            return res.status(500).json({ error: errAlter.message });
+          }
+
+          columnasTabla(db, tablaLineas, (errColsFinales, colsFinales) => {
+            if (errColsFinales) return res.status(500).json({ error: errColsFinales.message });
+            actualizarNota(colsFinales);
+          });
+        });
+      });
+    });
+  });
+
   router.post("/linea/:linea/cantidad", requiereLoginJson, (req, res) => {
     const lineaId = Number(req.params.linea);
     const cambio = Number(req.body.cambio || req.body.delta || 0);

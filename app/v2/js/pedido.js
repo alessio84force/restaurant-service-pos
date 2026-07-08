@@ -1,3 +1,12 @@
+function escaparHtmlPedidoV2(texto){
+    return String(texto || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 async function cargarPedidoV2(numeroMesa){
 
     const data = await apiGet("/pedido/" + numeroMesa);
@@ -99,6 +108,12 @@ async function cargarPedidoV2(numeroMesa){
                     <span>Cantidad: ${p.cantidad}</span>
 
                     <small>${precioLinea.toFixed(2)} € / unidad</small>
+
+                    ${p.nota ? '<small class="linea-nota-v2">' + escaparHtmlPedidoV2(p.nota) + '</small>' : ''}
+
+                    <button class="btn-nota-linea-v2" onclick="editarNotaLineaV2(${p.id}, ${numeroMesa}, '${encodeURIComponent(p.nota || "")}')">
+                        📝 ${p.nota ? "Editar nota" : "Añadir nota"}
+                    </button>
 
                 </div>
 
@@ -259,6 +274,116 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
         mostrarToastPedidoV2("No se pudo modificar la cantidad del producto.", "error");
 
     }
+
+}
+
+
+async function editarNotaLineaV2(lineaId, numeroMesa, notaCodificada){
+
+    const notaActual = decodeURIComponent(notaCodificada || "");
+    const nuevaNota = await abrirModalNotaLineaV2(notaActual);
+
+    if(nuevaNota === null){
+        return;
+    }
+
+    try{
+
+        await apiPost("/linea/" + lineaId + "/nota", {
+            nota: nuevaNota
+        });
+
+        await cargarPedidoV2(numeroMesa);
+        await cargarMesasV2();
+
+        if(nuevaNota.trim()){
+            mostrarToastPedidoV2("Nota guardada.", "correcto");
+        }else{
+            mostrarToastPedidoV2("Nota eliminada.", "correcto");
+        }
+
+    }catch(error){
+
+        console.error("Error guardando nota:", error);
+        mostrarToastPedidoV2("No se pudo guardar la nota.", "error");
+
+    }
+
+}
+
+function abrirModalNotaLineaV2(notaActual){
+
+    return new Promise((resolve)=>{
+
+        const overlay = document.createElement("div");
+        overlay.className = "modal-nota-v2";
+
+        overlay.innerHTML = `
+            <div class="modal-nota-card-v2">
+                <h3>Nota del producto</h3>
+                <p>Escribe la petición exacta del cliente.</p>
+
+                <textarea id="textarea-nota-linea-v2" maxlength="180" placeholder="Ej. Sin cebolla, salsa aparte, alergia frutos secos...">${escaparHtmlPedidoV2(notaActual)}</textarea>
+
+                <div class="modal-nota-contador-v2">
+                    Máximo 180 caracteres
+                </div>
+
+                <div class="modal-nota-acciones-v2">
+                    <button type="button" class="nota-cancelar-v2">Cancelar</button>
+                    <button type="button" class="nota-eliminar-v2">Quitar nota</button>
+                    <button type="button" class="nota-guardar-v2">Guardar nota</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const textarea = overlay.querySelector("#textarea-nota-linea-v2");
+
+        setTimeout(()=>{
+            textarea.focus();
+            textarea.selectionStart = textarea.value.length;
+            textarea.selectionEnd = textarea.value.length;
+        }, 50);
+
+        overlay.querySelector(".nota-cancelar-v2").addEventListener("click", ()=>{
+            overlay.remove();
+            resolve(null);
+        });
+
+        overlay.querySelector(".nota-eliminar-v2").addEventListener("click", ()=>{
+            overlay.remove();
+            resolve("");
+        });
+
+        overlay.querySelector(".nota-guardar-v2").addEventListener("click", ()=>{
+            const valor = textarea.value.trim();
+            overlay.remove();
+            resolve(valor);
+        });
+
+        overlay.addEventListener("click", (event)=>{
+            if(event.target === overlay){
+                overlay.remove();
+                resolve(null);
+            }
+        });
+
+        textarea.addEventListener("keydown", (event)=>{
+            if(event.key === "Escape"){
+                overlay.remove();
+                resolve(null);
+            }
+
+            if((event.metaKey || event.ctrlKey) && event.key === "Enter"){
+                const valor = textarea.value.trim();
+                overlay.remove();
+                resolve(valor);
+            }
+        });
+
+    });
 
 }
 

@@ -438,3 +438,118 @@
 }
 
 /* FIN V2.2.7 */
+
+/* V2.2.8 - Nota libre por línea */
+
+.btn-nota-linea-v2{
+    margin-top:8px;
+    border:1px solid #d1d5db;
+    background:#ffffff;
+    color:#374151;
+    border-radius:10px;
+    padding:6px 9px;
+    font-size:12px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.btn-nota-linea-v2:hover{
+    background:#f9fafb;
+}
+
+.modal-nota-v2{
+    position:fixed;
+    inset:0;
+    background:rgba(17,24,39,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+    padding:18px;
+}
+
+.modal-nota-card-v2{
+    width:min(420px, 100%);
+    background:#ffffff;
+    border-radius:22px;
+    padding:22px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.24);
+}
+
+.modal-nota-card-v2 h3{
+    margin:0 0 6px 0;
+    color:#111827;
+    font-size:23px;
+}
+
+.modal-nota-card-v2 p{
+    margin:0 0 14px 0;
+    color:#6b7280;
+    font-weight:700;
+}
+
+.modal-nota-card-v2 textarea{
+    width:100%;
+    min-height:110px;
+    resize:vertical;
+    border:2px solid #d1d5db;
+    border-radius:14px;
+    padding:12px;
+    box-sizing:border-box;
+    font-size:16px;
+    font-weight:700;
+    color:#111827;
+}
+
+.modal-nota-card-v2 textarea:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 4px rgba(37,99,235,0.12);
+}
+
+.modal-nota-contador-v2{
+    margin-top:8px;
+    color:#6b7280;
+    font-size:12px;
+    font-weight:800;
+}
+
+.modal-nota-acciones-v2{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    margin-top:14px;
+}
+
+.modal-nota-acciones-v2 button{
+    min-height:44px;
+    border-radius:13px;
+    font-weight:900;
+    cursor:pointer;
+}
+
+.nota-cancelar-v2{
+    border:1px solid #d1d5db;
+    background:#ffffff;
+    color:#374151;
+}
+
+.nota-eliminar-v2{
+    border:1px solid #fecaca;
+    background:#fef2f2;
+    color:#991b1b;
+}
+
+.nota-guardar-v2{
+    border:0;
+    background:#111827;
+    color:#ffffff;
+}
+
+@media(max-width:700px){
+    .modal-nota-acciones-v2{
+        grid-template-columns:1fr;
+    }
+}
+
+/* FIN V2.2.8 */
