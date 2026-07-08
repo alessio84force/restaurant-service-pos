@@ -634,6 +634,31 @@ function renderPagina(config, mensaje) {
 function centroImpresionRoutes(db) {
   const router = express.Router();
 
+
+  router.get("/api/centro-impresion", (req, res) => {
+    if (!req.session || !req.session.usuario) {
+      return res.status(401).json({
+        ok: false,
+        error: "No autorizado"
+      });
+    }
+
+    cargarCentroImpresion(db, (err, config) => {
+      if (err) {
+        console.error("Error API centro de impresión:", err.message);
+        return res.status(500).json({
+          ok: false,
+          error: "Error cargando centro de impresión"
+        });
+      }
+
+      res.json({
+        ok: true,
+        config: config
+      });
+    });
+  });
+
   router.get("/configuracion-impresoras", requiereConfig, (req, res) => {
     cargarCentroImpresion(db, (err, config) => {
       if (err) {

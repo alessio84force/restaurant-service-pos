@@ -513,11 +513,14 @@ async function enviarComandaV2(numeroMesa, destino){
 
         const ventanaPreviewComandaV2 = window.open("", "_blank", "width=420,height=720");
 
-        if(ventanaPreviewComandaV2){
-            ventanaPreviewComandaV2.document.open();
-            ventanaPreviewComandaV2.document.write("<html><body style='font-family:Arial;padding:20px;'><h2>Preparando comanda...</h2><p>Un momento.</p></body></html>");
-            ventanaPreviewComandaV2.document.close();
-        }
+        const centroImpresionComandaV2 = await obtenerCentroImpresionComandaV2();
+        const configDestinoImpresionV2 = obtenerDestinoImpresionComandaV2(centroImpresionComandaV2, destinoTitulo);
+
+        escribirVentanaPreparandoComandaV2(
+            ventanaPreviewComandaV2,
+            destinoTitulo,
+            configDestinoImpresionV2.modo || "preview"
+        );
 
         const respuesta = await apiPost(endpoint, {});
 
@@ -539,7 +542,13 @@ async function enviarComandaV2(numeroMesa, destino){
 
         }
 
-        mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaPreviewComandaV2);
+        gestionarSalidaComandaCentroImpresionV2(
+            destinoTitulo,
+            numeroMesa,
+            lineas,
+            ventanaPreviewComandaV2,
+            configDestinoImpresionV2
+        );
 
         mostrarToastPedidoV2("Comanda enviada a " + destinoTitulo + ". Líneas enviadas: " + lineas.length + ".", "correcto");
 
@@ -746,6 +755,143 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     ventana.document.open();
     ventana.document.write(html);
     ventana.document.close();
+}
+
+
+async function obtenerCentroImpresionComandaV2(){
+    try{
+        const respuesta = await fetch("/api/centro-impresion", {
+            method: "GET",
+            credentials: "same-origin"
+        });
+
+        const datos = await respuesta.json();
+
+        if(datos && datos.ok && datos.config){
+            return datos.config;
+        }
+    }catch(error){
+        console.warn("No se pudo cargar centro de impresión:", error);
+    }
+
+    return {};
+}
+
+function obtenerDestinoImpresionComandaV2(config, destinoTitulo){
+    const destino = String(destinoTitulo || "").toLowerCase();
+
+    if(destino.includes("cocina")){
+        return config.cocina || { modo:"preview" };
+    }
+
+    if(destino.includes("bar")){
+        return config.bar || { modo:"preview" };
+    }
+
+    return { modo:"preview" };
+}
+
+function escribirVentanaPreparandoComandaV2(ventana, destinoTitulo, modo){
+    if(!ventana){
+        return;
+    }
+
+    const destino = String(destinoTitulo || "").toUpperCase();
+    const modoTexto = String(modo || "preview").toUpperCase();
+
+    ventana.document.open();
+    ventana.document.write(
+        "<html>" +
+        "<head><meta charset='UTF-8'><title>Preparando comanda</title></head>" +
+        "<body style='font-family:Arial;padding:20px;background:#f3f4f6;color:#111827;'>" +
+        "<div style='max-width:360px;margin:auto;background:white;padding:20px;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,0.12);'>" +
+        "<h2 style='margin-top:0;'>Preparando comanda " + destino + "</h2>" +
+        "<p><strong>Modo impresión:</strong> " + modoTexto + "</p>" +
+        "<p>Un momento.</p>" +
+        "</div>" +
+        "</body></html>"
+    );
+    ventana.document.close();
+}
+
+function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, lineas, ventana, configDestino){
+    const modo = String((configDestino && configDestino.modo) || "preview");
+    const nombre = String((configDestino && configDestino.nombre) || "");
+    const ip = String((configDestino && configDestino.ip) || "");
+    const puerto = String((configDestino && configDestino.puerto) || "");
+    const destino = String(destinoTitulo || "").toUpperCase();
+
+    if(lineas.length === 0){
+        if(ventana){
+            ventana.close();
+        }
+        return;
+    }
+
+    if(modo === "preview"){
+        mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventana);
+        return;
+    }
+
+    if(modo === "sistema"){
+        mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventana);
+
+        setTimeout(function(){
+            try{
+                if(ventana){
+                    ventana.print();
+                }
+            }catch(error){
+                console.warn("No se pudo abrir impresión del sistema:", error);
+            }
+        }, 700);
+
+        return;
+    }
+
+    if(modo === "escpos_red" || modo === "escpos_usb"){
+        if(!ventana){
+            alert("Comanda enviada. Modo " + modo + " preparado, impresión directa en próxima fase.");
+            return;
+        }
+
+        const lineasHtml = lineas.map(function(linea){
+            const cantidad = Number(linea.cantidad || 0);
+            const nombreProducto = String(linea.nombre || linea.producto || "Producto").toUpperCase();
+            const nota = String(linea.nota || "").trim().toUpperCase();
+
+            return "<div style='padding:10px 0;border-bottom:1px dashed #d1d5db;'>" +
+                "<strong>" + cantidad + " x " + nombreProducto + "</strong>" +
+                (nota ? "<div style='margin-top:6px;padding:8px;border:2px solid #111827;color:#9a3412;font-weight:900;'>&gt;&gt;&gt; NOTA " + destino + " &lt;&lt;&lt;<br>" + nota + "</div>" : "") +
+                "</div>";
+        }).join("");
+
+        ventana.document.open();
+        ventana.document.write(
+            "<html>" +
+            "<head><meta charset='UTF-8'><title>Comanda " + destino + "</title></head>" +
+            "<body style='font-family:Arial;padding:20px;background:#f3f4f6;color:#111827;'>" +
+            "<div style='max-width:420px;margin:auto;background:white;padding:20px;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,0.12);'>" +
+            "<h2 style='margin-top:0;'>Comanda " + destino + " enviada</h2>" +
+            "<p><strong>Mesa:</strong> " + String(numeroMesa) + "</p>" +
+            "<p><strong>Modo:</strong> " + modo + "</p>" +
+            "<p><strong>Impresora:</strong> " + (nombre || "Sin nombre configurado") + "</p>" +
+            "<p><strong>IP:</strong> " + (ip || "Sin IP") + "</p>" +
+            "<p><strong>Puerto:</strong> " + (puerto || "Sin puerto") + "</p>" +
+            "<div style='background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:12px;border-radius:12px;font-weight:900;margin:14px 0;'>" +
+            "La comanda ya se ha registrado. La impresión directa " + modo + " se activará en la siguiente fase." +
+            "</div>" +
+            lineasHtml +
+            "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>Cerrar</button>" +
+            "</div>" +
+            "</body></html>"
+        );
+        ventana.document.close();
+
+        return;
+    }
+
+    mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventana);
 }
 
 async function generarPrecuenta(numeroMesa){
