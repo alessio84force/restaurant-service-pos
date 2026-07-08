@@ -1,3 +1,4 @@
+const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -707,6 +708,12 @@ function centroImpresionRoutes(db) {
           }
 
           guardarPrueba(destino, config);
+
+          imprimirCentroImpresion(db, destino.id, textoPrueba(destino, config), function(resultadoImpresion) {
+            if (resultadoImpresion && resultadoImpresion.modo === "escpos_red" && !resultadoImpresion.ok) {
+              console.log("[PRUEBA ESC/POS]", destino.id, "NO ENVIADA:", resultadoImpresion.motivo || resultadoImpresion.error || "sin detalle");
+            }
+          });
 
           res.redirect("/configuracion-impresoras?ok=Prueba generada en prints/" + destino.archivo);
         });

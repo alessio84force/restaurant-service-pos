@@ -1,3 +1,4 @@
+const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -110,6 +111,12 @@ function cocinaRoutes(db) {
       const rutaPrint = path.join(carpetaPrint, "comanda_cocina.txt");
 
       fs.writeFileSync(rutaPrint, ticket);
+
+      imprimirCentroImpresion(db, "cocina", ticket, function(resultadoImpresion) {
+        if (resultadoImpresion && resultadoImpresion.modo === "escpos_red" && !resultadoImpresion.ok) {
+          console.log("[COCINA] Comanda registrada, pero no se pudo imprimir por ESC/POS:", resultadoImpresion.motivo || resultadoImpresion.error || "sin detalle");
+        }
+      });
 
       const ids = lineas.map(l => l.id);
 

@@ -879,7 +879,7 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
             "<p><strong>IP:</strong> " + (ip || "Sin IP") + "</p>" +
             "<p><strong>Puerto:</strong> " + (puerto || "Sin puerto") + "</p>" +
             "<div style='background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:12px;border-radius:12px;font-weight:900;margin:14px 0;'>" +
-            "La comanda ya se ha registrado. La impresión directa " + modo + " se activará en la siguiente fase." +
+            "La comanda ya se ha registrado. El POS ha intentado enviarla por " + modo + ". Si no hay impresora conectada, revisa el Terminal del servidor." +
             "</div>" +
             lineasHtml +
             "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>Cerrar</button>" +
