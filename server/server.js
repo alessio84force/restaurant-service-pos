@@ -1,3 +1,4 @@
+const centroImpresionRoutes = require("./routes/centroImpresion");
 const posPedidoRoutes = require("./routes/posPedido");
 const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
@@ -62,6 +63,7 @@ app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
 app.use(panelSuscripcionRoutes(db));
 
+app.use(centroImpresionRoutes(db));
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
