@@ -19,6 +19,8 @@ const cocinaRoutes = require("./routes/cocina");
 const zonasRoutes = require("./routes/zonas");
 const pagosRoutes = require("./routes/pagos");
 const cajaProfesionalRoutes = require("./routes/cajaProfesional");
+const mobileCamareroRoutes = require("./routes/mobileCamarero");
+const estadoMesasRealRoutes = require("./routes/estadoMesasReal");
 const cajaRoutes = require("./routes/caja");
 const adminProductosRoutes = require("./routes/adminProductos");
 const categoriasRoutes = require("./routes/categorias");
@@ -55,6 +57,15 @@ app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
+app.get("/camarero", (req, res) => {
+  res.redirect("/app/v2/mobile/index.html");
+});
+
+app.get("/movil", (req, res) => {
+  res.redirect("/app/v2/mobile/index.html");
+});
+
+
 const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
@@ -68,6 +79,8 @@ app.use(centroImpresionRoutes(db));
 app.use(configurazioneRoutes(db));
 app.use(zonasRoutes(db));
 app.use(pagosRoutes(db));
+app.use(mobileCamareroRoutes(db));
+app.use(estadoMesasRealRoutes(db));
 app.use(cajaProfesionalRoutes(db));
 app.use(cajaRoutes(db));
 app.use(mesasRoutes(db));
@@ -855,7 +868,7 @@ app.post('/login', (req, res) => {
       }
 
       if (usuario.rol === "camarero") {
-        return res.redirect("/app/v2/index.html");
+        return res.redirect("/camarero");
       }
 
       if (usuario.rol === "cocina") {

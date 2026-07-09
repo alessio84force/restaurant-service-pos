@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Restaurant Service POS - Camarero móvil</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="stylesheet" href="css/mobile.css?v=241h">
+</head>
+<body>
+
+<header class="mobile-topbar">
+  <div>
+    <strong>Restaurant Service</strong>
+    <span>Camarero móvil</span>
+  </div>
+  <button onclick="recargarTodoMobile()">Actualizar</button>
+</header>
+
+<nav class="mobile-tabs">
+  <button id="tab-mesas" onclick="cambiarVistaMobile('mesas')">Mesas</button>
+  <button id="tab-pedido" onclick="cambiarVistaMobile('pedido')">Pedido</button>
+  <button id="tab-productos" onclick="cambiarVistaMobile('productos')">Productos</button>
+</nav>
+
+<main id="mobile-app">
+  <section class="mobile-loading">
+    Cargando POS móvil...
+  </section>
+</main>
+
+<footer class="mobile-footer">
+  <a href="/app/v2/index.html">POS completo</a>
+  <a href="/logout">Salir</a>
+</footer>
+
+<div id="mobile-toast"></div>
+<div id="mobile-modal"></div>
+
+<script src="js/mobile.js?v=241h"></script>
+</body>
+</html>
