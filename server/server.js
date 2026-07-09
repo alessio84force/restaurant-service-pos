@@ -12,6 +12,7 @@ const cors = require('cors');
 const session = require("express-session");
 const { generarTicketHTML } = require("./printing/ticketGenerator");
 const { requiereLogin, requiereRol } = require("./middleware/auth");
+const permisosProfesionales = require("./middleware/permisosProfesionales");
 const productosRoutes = require("./routes/productos");
 const barRoutes = require("./routes/bar");
 const configurazioneRoutes = require("./routes/configurazione");
@@ -47,7 +48,25 @@ app.use('/app/v2', (req, res, next) => {
     return res.redirect('/login');
   }
 
-  next();
+  const rol = String(req.session.usuario.rol || '').toLowerCase();
+
+  if (req.path.startsWith('/mobile')) {
+    if (['admin','gerente','camarero'].includes(rol)) {
+      return next();
+    }
+
+    return res.status(403).send('Acceso no autorizado');
+  }
+
+  if (['admin','gerente'].includes(rol)) {
+    return next();
+  }
+
+  if (rol === 'camarero') {
+    return res.redirect('/camarero');
+  }
+
+  return res.status(403).send('Acceso no autorizado');
 });
 
 app.use('/app', express.static(path.join(__dirname, '..', 'app')));
@@ -57,6 +76,7 @@ app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
+app.use(permisosProfesionales());
 app.get("/camarero", (req, res) => {
   res.redirect("/app/v2/mobile/index.html");
 });
