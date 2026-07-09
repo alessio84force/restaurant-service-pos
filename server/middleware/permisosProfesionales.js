@@ -210,6 +210,10 @@ function permisosProfesionales(){
       return pedirLogin(req,res);
     }
 
+    if(path === "/creador" || path.startsWith("/api/creador")){
+      return requiereRoles(req,res,next,["admin"]);
+    }
+
     if(rol === "admin" || rol === "gerente"){
       return next();
     }

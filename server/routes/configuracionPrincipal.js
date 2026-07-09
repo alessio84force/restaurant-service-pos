@@ -316,6 +316,67 @@ ${cards.map((card) => `
 
 </main>
 
+
+<script>
+/* V2.5.0G - Card panel creador en configuracion */
+(function(){
+  async function insertarCardCreador(){
+    try{
+      if(document.getElementById("card-creador-configuracion")){
+        return;
+      }
+
+      const res = await fetch("/api/creador/soy-creador", {
+        credentials: "include",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      if(!res.ok){
+        return;
+      }
+
+      const data = await res.json();
+
+      if(!data || data.creador !== true){
+        return;
+      }
+
+      const card = document.createElement("a");
+      card.id = "card-creador-configuracion";
+      card.href = "/creador";
+      card.className = "card creador";
+      card.style.border = "2px solid #7c3aed";
+      card.style.background = "linear-gradient(135deg,#7c3aed,#111827)";
+      card.style.color = "#ffffff";
+      card.style.textDecoration = "none";
+
+      card.innerHTML = ""
+        + "<div class='icono'>👑</div>"
+        + "<h2>Panel creador</h2>"
+        + "<p style='color:#ede9fe;'>Control interno de clientes, usuarios, pruebas gratuitas, suscripciones y pagos.</p>"
+        + "<span class='entrar' style='background:#ffffff;color:#7c3aed;'>Entrar</span>";
+
+      const contenedor =
+        document.querySelector(".grid") ||
+        document.querySelector(".cards") ||
+        document.querySelector(".config-grid") ||
+        document.querySelector("main");
+
+      if(contenedor){
+        contenedor.insertBefore(card, contenedor.firstChild);
+      }
+    }catch(e){
+      console.warn("No se pudo insertar card creador:", e.message);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", insertarCardCreador);
+  setTimeout(insertarCardCreador, 700);
+})();
+</script>
+
 </body>
 </html>
 `;
