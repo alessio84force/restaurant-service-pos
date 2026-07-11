@@ -1,4 +1,5 @@
 const express = require("express");
+const passwords = require("../utils/passwords");
 const { requiereRol } = require("../middleware/auth");
 
 function usuariosRoutes(db){
@@ -594,7 +595,7 @@ return res.redirect("/configuracion-usuarios?error=Ya existe un usuario con ese 
 
 db.run(
 "INSERT INTO usuarios(nombre,email,password,rol,activo) VALUES(?,?,?,?,1)",
-[nombre,email,password,rol],
+[nombre,email,passwords.hashPassword(password),rol],
 function(err){
 
 if(err) return res.status(500).send(err.message);
@@ -634,7 +635,7 @@ if(password){
 
 db.run(
 "UPDATE usuarios SET nombre=?, email=?, password=?, rol=? WHERE id=?",
-[nombre,email,password,rol,id],
+[nombre,email,passwords.hashPassword(password),rol,id],
 function(err){
 
 if(err) return res.status(500).send(err.message);

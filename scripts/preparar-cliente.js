@@ -164,6 +164,8 @@ try {
   sqlite3 = require("../server/node_modules/sqlite3").verbose();
 }
 
+const passwords = require("../server/utils/passwords");
+
 const ROOT = path.join(__dirname, "..");
 const DB_PATH = path.join(ROOT, "database", "restaurant_service.db");
 const BACKUP_DIR = path.join(ROOT, "database", "backups");
@@ -285,7 +287,7 @@ async function prepararCliente() {
 
       await run(
         "INSERT INTO usuarios(nombre,email,password,rol,activo,creado_en) VALUES(?,?,?,?,1,?)",
-        [PROPIETARIO, EMAIL, PASSWORD, "admin", ahora.toISOString()]
+        [PROPIETARIO, EMAIL, passwords.hashPassword(PASSWORD), "admin", ahora.toISOString()]
       );
 
       console.log("Admin cliente creado:", EMAIL);

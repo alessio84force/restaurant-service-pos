@@ -6,6 +6,7 @@ const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const passwordEyeMiddleware = require("./middleware/passwordEye");
+const passwords = require("./utils/passwords");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
@@ -607,7 +608,7 @@ function crearUsuarioPropietarioRegistro(datos, callback) {
     const mapa = {
       nombre: datos.nombre_propietario,
       email: datos.email,
-      password: datos.password,
+      password: passwords.hashPassword(datos.password),
       rol: "admin",
       activo: 1
     };
@@ -837,8 +838,8 @@ app.post('/login', (req, res) => {
   const password = req.body.password;
 
   db.get(
-    'SELECT id, nombre, email, rol FROM usuarios WHERE email=? AND password=? AND activo=1',
-    [email, password],
+    'SELECT id, nombre, email, password, rol FROM usuarios WHERE email=? AND activo=1',
+    [email],
     (err, usuario) => {
 
       if (err) {
@@ -895,6 +896,37 @@ app.post('/login', (req, res) => {
           </html>
         `);
       }
+
+      
+      if(!passwords.verificarPassword(password, usuario.password)){
+        return res.send(`
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Login incorrecto</title>
+              <style>
+                body{font-family:Arial;background:#f3f4f6;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+                .box{background:#fff;padding:30px;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.12);max-width:420px;text-align:center;}
+                a{display:inline-block;margin-top:18px;background:#111827;color:white;text-decoration:none;padding:12px 18px;border-radius:12px;}
+              </style>
+            </head>
+            <body>
+              <div class="box">
+                <h2>Contraseña incorrecta</h2>
+                <p>Revisa el email y la contraseña.</p>
+                <a href="/login">Volver al login</a>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
+      if(passwords.necesitaRehash(usuario.password)){
+        const nuevoHash = passwords.hashPassword(password);
+        db.run("UPDATE usuarios SET password=? WHERE id=?", [nuevoHash, usuario.id]);
+      }
+
+      delete usuario.password;
 
       req.session.usuario = usuario;
 
