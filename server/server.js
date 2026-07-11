@@ -77,6 +77,8 @@ app.use('/app', express.static(path.join(__dirname, '..', 'app')));
 
 app.use(cors({ origin: true, credentials: true }));
 
+
+
 app.use("/stripe/webhook", express.raw({ type: "application/json" }), function(req, res, next){
   return stripeWebhookRoutes(db)(req, res, next);
 });
