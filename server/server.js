@@ -1,7 +1,9 @@
+require("dotenv").config();
 const centroImpresionRoutes = require("./routes/centroImpresion");
 const posPedidoRoutes = require("./routes/posPedido");
 const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
+const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
@@ -91,6 +93,7 @@ const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
 
+app.use(stripeSuscripcionRoutes(db));
 app.use(middlewareSuscripcion(db));
 app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));

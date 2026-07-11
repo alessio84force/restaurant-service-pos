@@ -29,3 +29,5 @@ app/components/
 app/js/
 app/script.before-menu-replace.js
 server/private/
+.env
+.env.*

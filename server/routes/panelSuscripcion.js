@@ -401,6 +401,149 @@ grid-template-columns:1fr;
 }
 }
 </style>
+
+<style>
+/* V2.5.1E - Botón de pago profesional */
+.form-stripe-pago{
+  display:inline-flex !important;
+  margin:0 10px 0 0 !important;
+  vertical-align:middle !important;
+}
+
+.btn-pago-suscripcion,
+button.btn-pago-suscripcion,
+.btn-stripe,
+button.btn-stripe{
+  min-height:52px !important;
+  padding:0 24px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:#16a34a !important;
+  color:#ffffff !important;
+  font-size:16px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-decoration:none !important;
+  line-height:1 !important;
+  box-shadow:0 8px 18px rgba(22,163,74,.24) !important;
+  font-family:Arial,sans-serif !important;
+}
+
+.btn-pago-suscripcion:hover,
+button.btn-pago-suscripcion:hover{
+  background:#15803d !important;
+}
+</style>
+
+
+<style>
+/* V2.5.1F - Botón suscripción premium */
+.stripe-box{
+  margin:26px 0 !important;
+  padding:24px !important;
+  border-radius:22px !important;
+  background:linear-gradient(135deg,#ecfdf5,#f0fdf4) !important;
+  border:2px solid #22c55e !important;
+  box-shadow:0 16px 34px rgba(22,163,74,.16) !important;
+}
+
+.stripe-box h2{
+  margin:0 0 8px !important;
+  color:#14532d !important;
+  font-size:24px !important;
+  font-weight:900 !important;
+}
+
+.stripe-box p{
+  margin:0 0 18px !important;
+  color:#166534 !important;
+  font-size:15px !important;
+  font-weight:800 !important;
+}
+
+.form-stripe-pago{
+  display:inline-flex !important;
+  margin:0 12px 0 0 !important;
+  vertical-align:middle !important;
+}
+
+.btn-pago-suscripcion-premium{
+  min-height:66px !important;
+  min-width:310px !important;
+  padding:0 34px !important;
+  border:0 !important;
+  border-radius:20px !important;
+  background:linear-gradient(135deg,#22c55e,#15803d) !important;
+  color:#ffffff !important;
+  font-size:19px !important;
+  font-weight:950 !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:12px !important;
+  text-decoration:none !important;
+  line-height:1 !important;
+  box-shadow:0 16px 30px rgba(22,163,74,.34) !important;
+  font-family:Arial,sans-serif !important;
+  letter-spacing:.2px !important;
+  transition:transform .12s ease, box-shadow .12s ease, filter .12s ease !important;
+}
+
+.btn-pago-suscripcion-premium:hover{
+  transform:translateY(-1px) !important;
+  filter:brightness(1.04) !important;
+  box-shadow:0 20px 38px rgba(22,163,74,.42) !important;
+}
+
+.btn-pago-suscripcion-premium:active{
+  transform:translateY(1px) !important;
+}
+
+.icono-pago{
+  font-size:24px !important;
+  line-height:1 !important;
+}
+
+@media(max-width:700px){
+  .form-stripe-pago{
+    display:flex !important;
+    width:100% !important;
+    margin:0 0 12px 0 !important;
+  }
+
+  .btn-pago-suscripcion-premium{
+    width:100% !important;
+    min-width:0 !important;
+  }
+}
+</style>
+
+
+<style>
+/* V2.5.1G - Ajuste tamaño botón premium */
+.btn-pago-suscripcion-premium{
+  min-height:58px !important;
+  min-width:250px !important;
+  max-width:100% !important;
+  padding:0 26px !important;
+  border-radius:18px !important;
+  font-size:17px !important;
+  box-sizing:border-box !important;
+}
+
+.icono-pago{
+  font-size:21px !important;
+}
+
+.stripe-box{
+  padding:21px !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -439,7 +582,10 @@ Consulta el estado actual de la prueba gratuita, el plan activo y la activación
 
 <div class="acciones">
 <a class="btn-oscuro" href="/configuracion">Configuración</a>
-<a class="btn-verde" href="/pago-requerido">Activar plan</a>
+<form method="POST" action="/stripe/crear-checkout-suscripcion" class="form-stripe-pago">
+  <button class="btn-pago-suscripcion-premium" type="submit"><span class="icono-pago">💳</span><span>Pagar suscripción</span></button>
+</form>
+<a class="btn-secundario" href="/pago-requerido">Activación manual</a>
 </div>
 </section>
 

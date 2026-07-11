@@ -210,7 +210,7 @@ function permisosProfesionales(){
       return pedirLogin(req,res);
     }
 
-    if(path === "/creador" || path.startsWith("/api/creador")){
+    if(path === "/creador" || path.startsWith("/api/creador") || path.startsWith("/stripe/")){
       return requiereRoles(req,res,next,["admin"]);
     }
 
