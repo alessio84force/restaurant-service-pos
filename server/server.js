@@ -5,6 +5,7 @@ const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
+const passwordEyeMiddleware = require("./middleware/passwordEye");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
@@ -87,6 +88,7 @@ app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
+app.use(passwordEyeMiddleware());
 app.use(permisosProfesionales());
 app.get("/camarero", (req, res) => {
   res.redirect("/app/v2/mobile/index.html");
