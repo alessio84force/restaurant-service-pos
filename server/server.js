@@ -4,6 +4,7 @@ const posPedidoRoutes = require("./routes/posPedido");
 const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
+const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
@@ -75,6 +76,11 @@ app.use('/app/v2', (req, res, next) => {
 app.use('/app', express.static(path.join(__dirname, '..', 'app')));
 
 app.use(cors({ origin: true, credentials: true }));
+
+app.use("/stripe/webhook", express.raw({ type: "application/json" }), function(req, res, next){
+  return stripeWebhookRoutes(db)(req, res, next);
+});
+
 app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
