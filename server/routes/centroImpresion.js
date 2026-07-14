@@ -11,6 +11,16 @@ function escaparHTML(texto) {
     .replace(/"/g, "&quot;");
 }
 
+function normalizarDestino(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
 function requiereConfig(req, res, next) {
   if (!req.session || !req.session.usuario) {
     return res.redirect("/login");
@@ -25,98 +35,34 @@ function requiereConfig(req, res, next) {
   return res.status(403).send("No autorizado");
 }
 
-const DESTINOS = [
-  {
+function destinoTicket() {
+  return {
     id: "ticket",
     titulo: "Ticket / caja",
     descripcion: "Tickets finales, precuentas y apertura de cajón.",
-    archivo: "prueba_ticket.txt"
-  },
-  {
-    id: "bar",
-    titulo: "Bar",
-    descripcion: "Comandas de bebidas, cafés y barra.",
-    archivo: "prueba_bar.txt"
-  },
-  {
-    id: "cocina",
-    titulo: "Cocina",
-    descripcion: "Comandas de cocina con notas y puntos de cocción.",
-    archivo: "prueba_cocina.txt"
-  },
-  {
-    id: "reportes",
-    titulo: "Reportes / A4",
-    descripcion: "Cierres de caja, informes y documentos de administración.",
-    archivo: "prueba_reportes.txt"
-  }
-];
-
-function configBase() {
-  return {
-    ticket: {
-      modo: "preview",
-      tipo: "termica",
-      nombre: "",
-      ancho: "80",
-      ip: "",
-      puerto: "9100",
-      cortar: 1,
-      cajon: 1
-    },
-    bar: {
-      modo: "preview",
-      tipo: "termica",
-      nombre: "",
-      ancho: "80",
-      ip: "",
-      puerto: "9100",
-      cortar: 1,
-      cajon: 0
-    },
-    cocina: {
-      modo: "preview",
-      tipo: "termica",
-      nombre: "",
-      ancho: "80",
-      ip: "",
-      puerto: "9100",
-      cortar: 1,
-      cajon: 0
-    },
-    reportes: {
-      modo: "preview",
-      tipo: "a4",
-      nombre: "",
-      ancho: "A4",
-      ip: "",
-      puerto: "",
-      cortar: 0,
-      cajon: 0
-    }
+    archivo: "prueba_ticket.txt",
+    tipoSistema: "ticket"
   };
 }
 
-function mezclarConfig(configGuardada, fila) {
-  const base = configBase();
+function destinoReportes() {
+  return {
+    id: "reportes",
+    titulo: "Reportes / A4",
+    descripcion: "Cierres de caja, informes y documentos de administración.",
+    archivo: "prueba_reportes.txt",
+    tipoSistema: "reportes"
+  };
+}
 
-  if (configGuardada && typeof configGuardada === "object") {
-    DESTINOS.forEach((destino) => {
-      base[destino.id] = Object.assign(
-        {},
-        base[destino.id],
-        configGuardada[destino.id] || {}
-      );
-    });
-  }
+function descripcionComanda(id, nombre) {
+  if (id === "bar") return "Comandas de bebidas, cafés y barra.";
+  if (id === "cocina") return "Comandas de cocina con notas y puntos de cocción.";
+  return "Comandas de " + nombre + ".";
+}
 
-  if (fila) {
-    if (fila.stampante_ticket && !base.ticket.nombre) base.ticket.nombre = fila.stampante_ticket;
-    if (fila.stampante_bar && !base.bar.nombre) base.bar.nombre = fila.stampante_bar;
-    if (fila.stampante_cocina && !base.cocina.nombre) base.cocina.nombre = fila.stampante_cocina;
-  }
-
-  return base;
+function archivoPruebaDestino(id) {
+  return "prueba_" + normalizarDestino(id) + ".txt";
 }
 
 function asegurarCentroImpresion(db, callback) {
@@ -159,24 +105,203 @@ function asegurarCentroImpresion(db, callback) {
   );
 }
 
+function asegurarDestinosComanda(db, callback) {
+  db.serialize(() => {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS destinos_comanda (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        activo INTEGER DEFAULT 1,
+        orden INTEGER DEFAULT 0,
+        creado_en TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `, [], (errTabla) => {
+      if (errTabla) return callback(errTabla);
+
+      db.run(
+        "INSERT OR IGNORE INTO destinos_comanda(id,nombre,activo,orden) VALUES('bar','Bar',1,10)",
+        [],
+        (errBar) => {
+          if (errBar) return callback(errBar);
+
+          db.run(
+            "INSERT OR IGNORE INTO destinos_comanda(id,nombre,activo,orden) VALUES('cocina','Cocina',1,20)",
+            [],
+            callback
+          );
+        }
+      );
+    });
+  });
+}
+
+function cargarDestinosCentro(db, callback) {
+  asegurarDestinosComanda(db, (err) => {
+    if (err) return callback(err);
+
+    db.all(
+      `SELECT id,nombre,activo,orden
+       FROM destinos_comanda
+       WHERE activo=1
+       ORDER BY orden ASC, nombre COLLATE NOCASE ASC`,
+      [],
+      (errDestinos, filas) => {
+        if (errDestinos) return callback(errDestinos);
+
+        const destinos = [destinoTicket()];
+        const vistos = { ticket: true };
+
+        (filas || []).forEach((fila) => {
+          const id = normalizarDestino(fila.id || fila.nombre);
+          const nombre = String(fila.nombre || id).trim();
+
+          if (!id || vistos[id]) return;
+
+          destinos.push({
+            id,
+            titulo: nombre,
+            descripcion: descripcionComanda(id, nombre),
+            archivo: archivoPruebaDestino(id),
+            tipoSistema: "comanda"
+          });
+
+          vistos[id] = true;
+        });
+
+        if (!vistos.bar) {
+          destinos.push({
+            id: "bar",
+            titulo: "Bar",
+            descripcion: descripcionComanda("bar", "Bar"),
+            archivo: "prueba_bar.txt",
+            tipoSistema: "comanda"
+          });
+          vistos.bar = true;
+        }
+
+        if (!vistos.cocina) {
+          destinos.push({
+            id: "cocina",
+            titulo: "Cocina",
+            descripcion: descripcionComanda("cocina", "Cocina"),
+            archivo: "prueba_cocina.txt",
+            tipoSistema: "comanda"
+          });
+          vistos.cocina = true;
+        }
+
+        destinos.push(destinoReportes());
+
+        callback(null, destinos);
+      }
+    );
+  });
+}
+
+function configDefaultDestino(destino) {
+  if (destino.id === "ticket") {
+    return {
+      modo: "preview",
+      tipo: "termica",
+      nombre: "",
+      ancho: "80",
+      ip: "",
+      puerto: "9100",
+      cortar: 1,
+      cajon: 1
+    };
+  }
+
+  if (destino.id === "reportes") {
+    return {
+      modo: "preview",
+      tipo: "a4",
+      nombre: "",
+      ancho: "A4",
+      ip: "",
+      puerto: "",
+      cortar: 0,
+      cajon: 0
+    };
+  }
+
+  return {
+    modo: "preview",
+    tipo: "termica",
+    nombre: "",
+    ancho: "80",
+    ip: "",
+    puerto: "9100",
+    cortar: 1,
+    cajon: 0
+  };
+}
+
+function configBase(destinos) {
+  const base = {};
+
+  destinos.forEach((destino) => {
+    base[destino.id] = configDefaultDestino(destino);
+  });
+
+  return base;
+}
+
+function mezclarConfig(configGuardada, fila, destinos) {
+  const base = configBase(destinos);
+
+  if (configGuardada && typeof configGuardada === "object") {
+    Object.keys(configGuardada).forEach((key) => {
+      const id = normalizarDestino(key);
+
+      if (!id) return;
+
+      const destinoDef = destinos.find((d) => d.id === id) || { id };
+      const def = base[id] || configDefaultDestino(destinoDef);
+
+      base[id] = Object.assign({}, def, configGuardada[key] || {});
+    });
+  }
+
+  if (fila) {
+    if (fila.stampante_ticket && base.ticket && !base.ticket.nombre) {
+      base.ticket.nombre = fila.stampante_ticket;
+    }
+
+    if (fila.stampante_bar && base.bar && !base.bar.nombre) {
+      base.bar.nombre = fila.stampante_bar;
+    }
+
+    if (fila.stampante_cocina && base.cocina && !base.cocina.nombre) {
+      base.cocina.nombre = fila.stampante_cocina;
+    }
+  }
+
+  return base;
+}
+
 function cargarCentroImpresion(db, callback) {
   asegurarCentroImpresion(db, (err) => {
     if (err) return callback(err);
 
-    db.get("SELECT * FROM configurazione WHERE id=1", [], (errGet, fila) => {
-      if (errGet) return callback(errGet);
+    cargarDestinosCentro(db, (errDestinos, destinos) => {
+      if (errDestinos) return callback(errDestinos);
 
-      let configGuardada = null;
+      db.get("SELECT * FROM configurazione WHERE id=1", [], (errGet, fila) => {
+        if (errGet) return callback(errGet);
 
-      try {
-        configGuardada = fila && fila.config_impresion_json
-          ? JSON.parse(fila.config_impresion_json)
-          : null;
-      } catch (e) {
-        configGuardada = null;
-      }
+        let configGuardada = null;
 
-      callback(null, mezclarConfig(configGuardada, fila || {}), fila || {});
+        try {
+          configGuardada = fila && fila.config_impresion_json
+            ? JSON.parse(fila.config_impresion_json)
+            : null;
+        } catch (e) {
+          configGuardada = null;
+        }
+
+        callback(null, mezclarConfig(configGuardada, fila || {}, destinos), fila || {}, destinos);
+      });
     });
   });
 }
@@ -193,27 +318,27 @@ function guardarCentroImpresion(db, config, callback) {
     [
       JSON.stringify(config),
       "centro_impresion",
-      config.ticket.nombre || "",
-      config.bar.nombre || "",
-      config.cocina.nombre || ""
+      config.ticket ? (config.ticket.nombre || "") : "",
+      config.bar ? (config.bar.nombre || "") : "",
+      config.cocina ? (config.cocina.nombre || "") : ""
     ],
     callback
   );
 }
 
-function leerConfigFormulario(body) {
-  const config = configBase();
+function leerConfigFormulario(body, destinos) {
+  const config = configBase(destinos);
 
-  DESTINOS.forEach((destino) => {
+  destinos.forEach((destino) => {
     const id = destino.id;
 
     config[id] = {
-      modo: String(body[id + "_modo"] || "preview"),
-      tipo: String(body[id + "_tipo"] || "termica"),
+      modo: String(body[id + "_modo"] || config[id].modo || "preview"),
+      tipo: String(body[id + "_tipo"] || config[id].tipo || "termica"),
       nombre: String(body[id + "_nombre"] || "").trim(),
-      ancho: String(body[id + "_ancho"] || "80"),
+      ancho: String(body[id + "_ancho"] || config[id].ancho || "80"),
       ip: String(body[id + "_ip"] || "").trim(),
-      puerto: String(body[id + "_puerto"] || "").trim(),
+      puerto: String(body[id + "_puerto"] || config[id].puerto || "").trim(),
       cortar: body[id + "_cortar"] ? 1 : 0,
       cajon: body[id + "_cajon"] ? 1 : 0
     };
@@ -276,7 +401,7 @@ function renderSelect(nombre, valor, opciones) {
   `;
 }
 
-function renderPagina(config, mensaje) {
+function renderPagina(config, mensaje, destinos) {
   const modos = [
     { value: "preview", label: "Modo prueba / vista previa" },
     { value: "sistema", label: "Impresión del sistema" },
@@ -298,7 +423,7 @@ function renderPagina(config, mensaje) {
     { value: "etiqueta", label: "Etiqueta" }
   ];
 
-  const cards = DESTINOS.map((destino) => {
+  const cards = destinos.map((destino) => {
     const c = config[destino.id] || {};
 
     return `
@@ -324,7 +449,7 @@ function renderPagina(config, mensaje) {
 
           <label>
             Nombre impresora sistema
-            <input name="${destino.id}_nombre" value="${escaparHTML(c.nombre || "")}" placeholder="Ej. EPSON TM-T20 Cocina">
+            <input name="${destino.id}_nombre" value="${escaparHTML(c.nombre || "")}" placeholder="Ej. EPSON TM-T20 ${escaparHTML(destino.titulo)}">
           </label>
 
           <label>
@@ -356,11 +481,11 @@ function renderPagina(config, mensaje) {
         </div>
 
         <div class="test-row">
-          <button class="btn-test" type="submit" formaction="/configuracion-impresoras/probar-${destino.id}">
+          <button class="btn-test" type="submit" formaction="/configuracion-impresoras/probar-${escaparHTML(destino.id)}">
             Generar prueba ${escaparHTML(destino.titulo)}
           </button>
 
-          <a class="btn-link" target="_blank" href="/configuracion-impresoras/ver-prueba/${destino.id}">
+          <a class="btn-link" target="_blank" href="/configuracion-impresoras/ver-prueba/${escaparHTML(destino.id)}">
             Ver última prueba
           </a>
         </div>
@@ -376,227 +501,34 @@ function renderPagina(config, mensaje) {
 <title>Centro de impresión - Restaurant Service POS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body{
-    margin:0;
-    font-family:Arial, sans-serif;
-    background:#f3f4f6;
-    color:#111827;
-  }
-
-  .page{
-    max-width:1180px;
-    margin:0 auto;
-    padding:28px;
-  }
-
-  .topbar{
-    display:flex;
-    justify-content:space-between;
-    gap:14px;
-    align-items:center;
-    margin-bottom:22px;
-  }
-
-  h1{
-    margin:0;
-    font-size:34px;
-  }
-
-  .sub{
-    margin:8px 0 0 0;
-    color:#6b7280;
-    font-weight:700;
-  }
-
-  .btn-back{
-    text-decoration:none;
-    background:#ffffff;
-    color:#111827;
-    border:1px solid #d1d5db;
-    padding:12px 16px;
-    border-radius:14px;
-    font-weight:900;
-  }
-
-  .notice{
-    background:#ecfdf5;
-    border:1px solid #a7f3d0;
-    color:#065f46;
-    padding:13px 16px;
-    border-radius:14px;
-    font-weight:900;
-    margin-bottom:18px;
-  }
-
-  .intro{
-    background:#ffffff;
-    border:1px solid #e5e7eb;
-    border-radius:22px;
-    padding:18px;
-    margin-bottom:18px;
-    box-shadow:0 10px 24px rgba(15,23,42,0.06);
-  }
-
-  .intro strong{
-    color:#111827;
-  }
-
-  .intro p{
-    margin:8px 0;
-    color:#374151;
-    font-weight:700;
-  }
-
-  form{
-    display:grid;
-    gap:18px;
-  }
-
-  .printer-card{
-    background:#ffffff;
-    border:1px solid #e5e7eb;
-    border-radius:24px;
-    padding:20px;
-    box-shadow:0 12px 28px rgba(15,23,42,0.07);
-  }
-
-  .printer-head{
-    display:flex;
-    justify-content:space-between;
-    gap:14px;
-    align-items:flex-start;
-    margin-bottom:16px;
-  }
-
-  .printer-head h2{
-    margin:0;
-    font-size:24px;
-  }
-
-  .printer-head p{
-    margin:6px 0 0 0;
-    color:#6b7280;
-    font-weight:700;
-  }
-
-  .printer-head span{
-    background:#eff6ff;
-    color:#1d4ed8;
-    border:1px solid #bfdbfe;
-    padding:7px 10px;
-    border-radius:999px;
-    font-size:12px;
-    font-weight:900;
-    white-space:nowrap;
-  }
-
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:14px;
-  }
-
-  label{
-    display:grid;
-    gap:7px;
-    font-size:13px;
-    font-weight:900;
-    color:#374151;
-  }
-
-  input,
-  select{
-    min-height:42px;
-    border:1px solid #d1d5db;
-    border-radius:12px;
-    padding:0 11px;
-    font-size:14px;
-    font-weight:700;
-    background:#ffffff;
-    color:#111827;
-    box-sizing:border-box;
-    width:100%;
-  }
-
-  .checks{
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-    margin-top:14px;
-  }
-
-  .checks label{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:#f9fafb;
-    border:1px solid #e5e7eb;
-    border-radius:12px;
-    padding:10px 12px;
-  }
-
-  .checks input{
-    width:18px;
-    min-height:18px;
-  }
-
-  .test-row{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:16px;
-  }
-
-  .btn-main,
-  .btn-test,
-  .btn-link{
-    border:0;
-    border-radius:14px;
-    min-height:44px;
-    padding:0 16px;
-    font-weight:900;
-    cursor:pointer;
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-  }
-
-  .btn-main{
-    background:#111827;
-    color:#ffffff;
-    min-height:54px;
-    font-size:16px;
-    position:sticky;
-    bottom:18px;
-    box-shadow:0 14px 34px rgba(17,24,39,0.22);
-  }
-
-  .btn-test{
-    background:#2563eb;
-    color:#ffffff;
-  }
-
-  .btn-link{
-    background:#f9fafb;
-    color:#111827;
-    border:1px solid #d1d5db;
-  }
-
-  @media(max-width:900px){
-    .grid{
-      grid-template-columns:1fr;
-    }
-
-    .topbar{
-      flex-direction:column;
-      align-items:flex-start;
-    }
-
-    .page{
-      padding:18px;
-    }
-  }
+  body{margin:0;font-family:Arial,sans-serif;background:#f3f4f6;color:#111827;}
+  .page{max-width:1180px;margin:0 auto;padding:28px;}
+  .topbar{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-bottom:22px;}
+  h1{margin:0;font-size:34px;}
+  .sub{margin:8px 0 0 0;color:#6b7280;font-weight:700;}
+  .btn-back{text-decoration:none;background:#ffffff;color:#111827;border:1px solid #d1d5db;padding:12px 16px;border-radius:14px;font-weight:900;}
+  .notice{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:13px 16px;border-radius:14px;font-weight:900;margin-bottom:18px;}
+  .intro{background:#ffffff;border:1px solid #e5e7eb;border-radius:22px;padding:18px;margin-bottom:18px;box-shadow:0 10px 24px rgba(15,23,42,0.06);}
+  .intro p{margin:8px 0;color:#374151;font-weight:700;}
+  form{display:grid;gap:18px;}
+  .printer-card{background:#ffffff;border:1px solid #e5e7eb;border-radius:24px;padding:20px;box-shadow:0 12px 28px rgba(15,23,42,0.07);}
+  .printer-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:16px;}
+  .printer-head h2{margin:0;font-size:24px;}
+  .printer-head p{margin:7px 0 0;color:#6b7280;font-weight:700;}
+  .printer-head span{background:#111827;color:white;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900;text-transform:uppercase;}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  label{display:grid;gap:7px;font-weight:900;color:#374151;}
+  input,select{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:11px;font-size:15px;background:white;}
+  .checks{display:flex;gap:18px;flex-wrap:wrap;margin-top:15px;}
+  .checks label{display:flex;align-items:center;gap:8px;}
+  .checks input{width:auto;}
+  .test-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}
+  button,.btn-save,.btn-test,.btn-link{border:0;border-radius:14px;padding:12px 16px;font-weight:900;text-decoration:none;cursor:pointer;}
+  .btn-save{background:#16a34a;color:white;font-size:17px;}
+  .btn-test{background:#111827;color:white;}
+  .btn-link{background:#f3f4f6;color:#111827;border:1px solid #d1d5db;}
+  .save-box{position:sticky;bottom:0;background:#f3f4f6;border-top:1px solid #e5e7eb;padding:16px 0;}
+  @media(max-width:800px){.grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
@@ -604,96 +536,91 @@ function renderPagina(config, mensaje) {
     <div class="topbar">
       <div>
         <h1>Centro de impresión</h1>
-        <p class="sub">Preparado para prueba, impresión del sistema y ESC/POS.</p>
+        <p class="sub">Configura ticket, reportes y todos los destinos de comanda.</p>
       </div>
-
-      <a class="btn-back" href="/configuracion">← Volver a configuración</a>
+      <a class="btn-back" href="/configuracion">Volver a configuración</a>
     </div>
 
     ${mensaje ? `<div class="notice">${escaparHTML(mensaje)}</div>` : ""}
 
-    <div class="intro">
-      <p><strong>Modo prueba / vista previa:</strong> ideal ahora, sin impresoras físicas.</p>
-      <p><strong>Impresión del sistema:</strong> usará impresoras instaladas en el ordenador.</p>
-      <p><strong>ESC/POS red/IP:</strong> pensado para térmicas de restaurante por red, puerto habitual 9100.</p>
-      <p><strong>ESC/POS USB:</strong> reservado para una fase posterior.</p>
-    </div>
+    <section class="intro">
+      <p><strong>Multidestino:</strong> si creas Pizzería, Parrilla o Coctelería en Destinos de comanda, aquí aparece automáticamente su impresora.</p>
+      <p>Modo prueba genera archivos TXT en la carpeta prints. ESC/POS red enviará directamente a la IP configurada.</p>
+    </section>
 
     <form method="POST" action="/configuracion-impresoras">
       ${cards}
 
-      <button class="btn-main" type="submit">
-        Guardar centro de impresión
-      </button>
+      <div class="save-box">
+        <button class="btn-save" type="submit">Guardar centro de impresión</button>
+      </div>
     </form>
   </main>
 </body>
 </html>
-  `;
+`;
+}
+
+function buscarDestino(destinos, id) {
+  const limpio = normalizarDestino(id);
+  return destinos.find((d) => d.id === limpio) || null;
 }
 
 function centroImpresionRoutes(db) {
   const router = express.Router();
 
-
-  router.get("/api/centro-impresion", (req, res) => {
-    if (!req.session || !req.session.usuario) {
-      return res.status(401).json({
-        ok: false,
-        error: "No autorizado"
-      });
-    }
-
-    cargarCentroImpresion(db, (err, config) => {
-      if (err) {
-        console.error("Error API centro de impresión:", err.message);
-        return res.status(500).json({
-          ok: false,
-          error: "Error cargando centro de impresión"
-        });
-      }
-
-      res.json({
-        ok: true,
-        config: config
-      });
-    });
-  });
-
   router.get("/configuracion-impresoras", requiereConfig, (req, res) => {
-    cargarCentroImpresion(db, (err, config) => {
+    cargarCentroImpresion(db, (err, config, fila, destinos) => {
       if (err) {
         console.error("Error cargando centro de impresión:", err.message);
-        return res.status(500).send("Error cargando centro de impresión");
+        return res.status(500).send("Error cargando centro de impresión: " + err.message);
       }
 
-      res.send(renderPagina(config, req.query.ok || ""));
+      res.send(renderPagina(config, req.query.ok || "", destinos));
     });
   });
 
   router.post("/configuracion-impresoras", requiereConfig, (req, res) => {
-    const config = leerConfigFormulario(req.body || {});
-
-    asegurarCentroImpresion(db, (errAsegurar) => {
-      if (errAsegurar) {
-        console.error("Error preparando centro de impresión:", errAsegurar.message);
-        return res.redirect("/configuracion-impresoras?ok=Error preparando centro de impresión");
+    cargarDestinosCentro(db, (errDestinos, destinos) => {
+      if (errDestinos) {
+        console.error("Error cargando destinos:", errDestinos.message);
+        return res.redirect("/configuracion-impresoras?ok=Error cargando destinos");
       }
 
-      guardarCentroImpresion(db, config, (errGuardar) => {
-        if (errGuardar) {
-          console.error("Error guardando centro de impresión:", errGuardar.message);
-          return res.redirect("/configuracion-impresoras?ok=Error guardando centro de impresión");
+      const config = leerConfigFormulario(req.body || {}, destinos);
+
+      asegurarCentroImpresion(db, (errAsegurar) => {
+        if (errAsegurar) {
+          console.error("Error preparando centro de impresión:", errAsegurar.message);
+          return res.redirect("/configuracion-impresoras?ok=Error preparando centro de impresión");
         }
 
-        res.redirect("/configuracion-impresoras?ok=Centro de impresión guardado correctamente");
+        guardarCentroImpresion(db, config, (errGuardar) => {
+          if (errGuardar) {
+            console.error("Error guardando centro de impresión:", errGuardar.message);
+            return res.redirect("/configuracion-impresoras?ok=Error guardando centro de impresión");
+          }
+
+          res.redirect("/configuracion-impresoras?ok=Centro de impresión guardado correctamente");
+        });
       });
     });
   });
 
-  DESTINOS.forEach((destino) => {
-    router.post("/configuracion-impresoras/probar-" + destino.id, requiereConfig, (req, res) => {
-      const config = leerConfigFormulario(req.body || {});
+  router.post("/configuracion-impresoras/probar-:destinoId", requiereConfig, (req, res) => {
+    cargarDestinosCentro(db, (errDestinos, destinos) => {
+      if (errDestinos) {
+        console.error("Error cargando destinos prueba:", errDestinos.message);
+        return res.redirect("/configuracion-impresoras?ok=Error cargando destinos");
+      }
+
+      const destino = buscarDestino(destinos, req.params.destinoId);
+
+      if (!destino) {
+        return res.redirect("/configuracion-impresoras?ok=Destino no encontrado");
+      }
+
+      const config = leerConfigFormulario(req.body || {}, destinos);
 
       asegurarCentroImpresion(db, (errAsegurar) => {
         if (errAsegurar) {
@@ -719,8 +646,20 @@ function centroImpresionRoutes(db) {
         });
       });
     });
+  });
 
-    router.get("/configuracion-impresoras/ver-prueba/" + destino.id, requiereConfig, (req, res) => {
+  router.get("/configuracion-impresoras/ver-prueba/:destinoId", requiereConfig, (req, res) => {
+    cargarDestinosCentro(db, (errDestinos, destinos) => {
+      if (errDestinos) {
+        return res.type("text/plain").send("Error cargando destinos: " + errDestinos.message);
+      }
+
+      const destino = buscarDestino(destinos, req.params.destinoId);
+
+      if (!destino) {
+        return res.type("text/plain").send("Destino no encontrado.");
+      }
+
       const ruta = path.join(process.cwd(), "prints", destino.archivo);
 
       if (!fs.existsSync(ruta)) {
@@ -729,11 +668,6 @@ function centroImpresionRoutes(db) {
 
       res.type("text/plain").send(fs.readFileSync(ruta, "utf8"));
     });
-  });
-
-  router.post("/configuracion-impresoras/probar-ticket", requiereConfig, (req, res) => {
-    req.url = "/configuracion-impresoras/probar-ticket";
-    res.redirect("/configuracion-impresoras?ok=Usa el botón Ticket / caja del nuevo Centro de impresión");
   });
 
   return router;

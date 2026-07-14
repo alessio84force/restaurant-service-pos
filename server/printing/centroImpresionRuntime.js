@@ -1,11 +1,33 @@
 const { enviarEscposRed } = require("./escposRed");
 
+function normalizarDestinoRuntime(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function configDefaultRuntime(destino) {
+  if (destino === "ticket") {
+    return { modo: "preview", tipo: "termica", nombre: "", ancho: "80", ip: "", puerto: "9100", cortar: 1, cajon: 1 };
+  }
+
+  if (destino === "reportes") {
+    return { modo: "preview", tipo: "a4", nombre: "", ancho: "A4", ip: "", puerto: "", cortar: 0, cajon: 0 };
+  }
+
+  return { modo: "preview", tipo: "termica", nombre: "", ancho: "80", ip: "", puerto: "9100", cortar: 1, cajon: 0 };
+}
+
 function configBaseImpresionRuntime() {
   return {
-    ticket: { modo: "preview", ip: "", puerto: "9100", cortar: 1, cajon: 1 },
-    bar: { modo: "preview", ip: "", puerto: "9100", cortar: 1, cajon: 0 },
-    cocina: { modo: "preview", ip: "", puerto: "9100", cortar: 1, cajon: 0 },
-    reportes: { modo: "preview", ip: "", puerto: "", cortar: 0, cajon: 0 }
+    ticket: configDefaultRuntime("ticket"),
+    bar: configDefaultRuntime("bar"),
+    cocina: configDefaultRuntime("cocina"),
+    reportes: configDefaultRuntime("reportes")
   };
 }
 
@@ -24,8 +46,16 @@ function cargarConfigImpresionRuntime(db, callback) {
     try {
       const guardada = JSON.parse(fila.config_impresion_json);
 
-      Object.keys(base).forEach((destino) => {
-        base[destino] = Object.assign({}, base[destino], guardada[destino] || {});
+      Object.keys(guardada || {}).forEach((destinoOriginal) => {
+        const destino = normalizarDestinoRuntime(destinoOriginal);
+
+        if (!destino) return;
+
+        base[destino] = Object.assign(
+          {},
+          base[destino] || configDefaultRuntime(destino),
+          guardada[destinoOriginal] || {}
+        );
       });
 
       return callback(null, base);
@@ -36,7 +66,7 @@ function cargarConfigImpresionRuntime(db, callback) {
 }
 
 function imprimirCentroImpresion(db, destino, texto, callback) {
-  const destinoId = String(destino || "").toLowerCase();
+  const destinoId = normalizarDestinoRuntime(destino);
 
   cargarConfigImpresionRuntime(db, (err, config) => {
     if (err) {
@@ -53,7 +83,7 @@ function imprimirCentroImpresion(db, destino, texto, callback) {
       return;
     }
 
-    const c = config[destinoId] || {};
+    const c = config[destinoId] || configDefaultRuntime(destinoId);
     const modo = String(c.modo || "preview");
 
     if (modo !== "escpos_red") {
