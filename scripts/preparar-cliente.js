@@ -23,7 +23,7 @@ function parseArgs() {
         out[key] = next;
         i++;
       } else {
-        out[key] = "si";
+        out[key] = key === "promo" ? "" : "si";
       }
     }
   }
@@ -122,7 +122,15 @@ function validarPromo(codigo) {
 }
 
 function getValue(argName, envName, fallback = "") {
-  return String(args[argName] || process.env[envName] || fallback).trim();
+  if (Object.prototype.hasOwnProperty.call(args, argName)) {
+    return String(args[argName] || "").trim();
+  }
+
+  if (Object.prototype.hasOwnProperty.call(process.env, envName)) {
+    return String(process.env[envName] || "").trim();
+  }
+
+  return String(fallback || "").trim();
 }
 
 const RESTAURANTE = getValue("restaurante", "CLIENTE_RESTAURANTE");

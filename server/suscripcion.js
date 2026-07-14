@@ -1,160 +1,245 @@
+function renderPagoRequerido() {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Pago requerido - Restaurant Service POS</title>
+  <style>
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:Arial, sans-serif;
+      background:#f3f4f6;
+      color:#111827;
+    }
+    .card{
+      width:min(520px, calc(100% - 32px));
+      background:white;
+      border-radius:22px;
+      padding:34px;
+      box-shadow:0 18px 45px rgba(15,23,42,.14);
+      text-align:center;
+    }
+    h1{margin:0 0 12px;font-size:28px;}
+    p{color:#4b5563;font-size:16px;line-height:1.5;}
+    .precio{
+      margin:22px auto;
+      padding:18px;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+      font-size:20px;
+      font-weight:800;
+    }
+    button,.btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:52px;
+      padding:0 24px;
+      border:0;
+      border-radius:16px;
+      background:#111827;
+      color:white;
+      font-weight:800;
+      font-size:16px;
+      cursor:pointer;
+      text-decoration:none;
+      margin-top:8px;
+    }
+    .sec{
+      background:#e5e7eb;
+      color:#111827;
+      margin-left:8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Suscripción requerida</h1>
+    <p>La prueba gratuita ha finalizado o la suscripción no está activa.</p>
+    <div class="precio">Restaurant Service POS · 7,50 €/mes</div>
+    <form method="POST" action="/stripe/crear-checkout-suscripcion">
+      <button type="submit">Pagar suscripción</button>
+      <a class="btn sec" href="/login">Volver al login</a>
+    </form>
+  </div>
+</body>
+</html>
+`;
+}
+
+function renderPagoOnlinePendiente() {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Pago online pendiente</title>
+  <style>
+    body{font-family:Arial;background:#f3f4f6;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+    .card{background:white;border-radius:22px;padding:34px;box-shadow:0 18px 45px rgba(15,23,42,.14);max-width:520px;text-align:center;}
+    a{display:inline-block;margin-top:18px;background:#111827;color:white;text-decoration:none;padding:14px 22px;border-radius:16px;font-weight:800;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Pago online pendiente</h1>
+    <p>Cuando el pago se confirme, la suscripción quedará activa.</p>
+    <a href="/login">Volver al login</a>
+  </div>
+</body>
+</html>
+`;
+}
+
+function esRutaEstatica(ruta) {
+  return /\.(css|js|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|map)$/i.test(ruta);
+}
+
+function esRutaPublica(ruta) {
+  if (!ruta) return true;
+
+  const publicasExactas = [
+    "/",
+    "/login",
+    "/logout",
+    "/registro",
+    "/aviso-legal",
+    "/privacidad",
+    "/cookies",
+    "/terminos",
+    "/pago-requerido",
+    "/pago-online-pendiente",
+    "/activar-suscripcion"
+  ];
+
+  if (publicasExactas.includes(ruta)) return true;
+
+  const prefijos = [
+    "/stripe",
+    "/app/assets",
+    "/assets",
+    "/public",
+    "/css",
+    "/js",
+    "/img",
+    "/images"
+  ];
+
+  if (prefijos.some((p) => ruta.startsWith(p))) return true;
+  if (esRutaEstatica(ruta)) return true;
+
+  return false;
+}
+
 function obtenerTablaConfiguracion(db, callback) {
   db.get(
     "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('configurazione','configuracion') ORDER BY CASE WHEN name='configurazione' THEN 0 ELSE 1 END LIMIT 1",
     [],
     (err, row) => {
       if (err) return callback(err);
-      if (!row) return callback(null, null);
-      callback(null, row.name);
+      callback(null, row ? row.name : null);
     }
   );
 }
 
-function leerEstadoSuscripcion(db, callback) {
+function obtenerConfigSuscripcion(db, callback) {
   obtenerTablaConfiguracion(db, (err, tabla) => {
     if (err) return callback(err);
 
     if (!tabla) {
       return callback(null, {
-        accesoPermitido: true,
-        estado: "activo",
-        motivo: "sin_tabla_configuracion"
+        suscripcion_estado: "activo",
+        trial_fin: null
       });
     }
 
-    db.all("PRAGMA table_info(" + tabla + ")", [], (err2, columnas) => {
-      if (err2) return callback(err2);
+    db.get(
+      "SELECT * FROM " + tabla + " WHERE id=1",
+      [],
+      (err2, config) => {
+        if (err2) return callback(err2);
 
-      const nombres = columnas.map((c) => c.name);
-
-      if (!nombres.includes("suscripcion_estado")) {
-        return callback(null, {
-          accesoPermitido: true,
-          estado: "activo",
-          motivo: "instalacion_antigua"
+        callback(null, config || {
+          suscripcion_estado: "activo",
+          trial_fin: null
         });
       }
-
-      db.get("SELECT * FROM " + tabla + " ORDER BY id LIMIT 1", [], (err3, config) => {
-        if (err3) return callback(err3);
-
-        if (!config) {
-          return callback(null, {
-            accesoPermitido: true,
-            estado: "activo",
-            motivo: "sin_configuracion"
-          });
-        }
-
-        const estado = String(config.suscripcion_estado || "activo").trim();
-
-        if (!estado || estado === "activo" || estado === "gratis_vida") {
-          return callback(null, {
-            accesoPermitido: true,
-            estado: estado || "activo",
-            trialFin: config.trial_fin || null
-          });
-        }
-
-        if (estado === "prueba") {
-          if (!config.trial_fin) {
-            return callback(null, {
-              accesoPermitido: false,
-              estado,
-              motivo: "prueba_sin_fecha"
-            });
-          }
-
-          const ahora = new Date();
-          const fin = new Date(config.trial_fin);
-
-          if (isNaN(fin.getTime())) {
-            return callback(null, {
-              accesoPermitido: false,
-              estado,
-              motivo: "fecha_prueba_no_valida"
-            });
-          }
-
-          if (ahora <= fin) {
-            return callback(null, {
-              accesoPermitido: true,
-              estado,
-              trialFin: config.trial_fin
-            });
-          }
-
-          return callback(null, {
-            accesoPermitido: false,
-            estado,
-            trialFin: config.trial_fin,
-            motivo: "prueba_caducada"
-          });
-        }
-
-        return callback(null, {
-          accesoPermitido: false,
-          estado,
-          trialFin: config.trial_fin || null,
-          motivo: "suscripcion_no_activa"
-        });
-      });
-    });
+    );
   });
 }
 
-function esRutaPublica(req) {
-  const ruta = req.path || "";
+function trialActivo(config) {
+  const estado = String(config && config.suscripcion_estado || "").trim().toLowerCase();
+  const trialFin = config && config.trial_fin;
 
-  if (ruta === "/") return true;
-  if (ruta === "/login") return true;
-  if (ruta === "/logout") return true;
-  if (ruta === "/registro") return true;
-  if (ruta === "/pago-requerido") return true;
-  if (ruta === "/pago-online-pendiente") return true;
-  if (ruta === "/activar-suscripcion") return true;
-  if (ruta === "/aviso-legal") return true;
-  if (ruta === "/privacidad") return true;
-  if (ruta === "/cookies") return true;
-  if (ruta === "/terminos") return true;
+  if (estado !== "trial" && estado !== "prueba") {
+    return false;
+  }
 
-  if (ruta.startsWith("/app/assets/")) return true;
-  if (ruta.startsWith("/favicon")) return true;
+  if (!trialFin) {
+    return false;
+  }
+
+  const fin = new Date(trialFin).getTime();
+
+  if (!Number.isFinite(fin)) {
+    return false;
+  }
+
+  return fin > Date.now();
+}
+
+function suscripcionPermiteAcceso(config) {
+  const estado = String(config && config.suscripcion_estado || "activo").trim().toLowerCase();
+
+  if (!estado) return true;
+  if (estado === "activo") return true;
+  if (estado === "gratis_vida") return true;
+  if (trialActivo(config)) return true;
 
   return false;
 }
 
-function quiereJson(req) {
-  const accept = String(req.headers.accept || "");
-  const contentType = String(req.headers["content-type"] || "");
+function esPeticionApi(req) {
+  const ruta = String(req.path || "");
+  const acepta = String(req.headers.accept || "");
 
-  return accept.includes("application/json") || contentType.includes("application/json") || req.xhr;
+  return ruta.startsWith("/api/") || acepta.includes("application/json");
 }
 
 function middlewareSuscripcion(db) {
   return function(req, res, next) {
-    if (esRutaPublica(req)) {
+    const ruta = String(req.path || "");
+
+    if (esRutaPublica(ruta)) {
       return next();
     }
 
-    if (!req.session || !req.session.usuario) {
+    if (ruta === "/configuracion-suscripcion") {
       return next();
     }
 
-    leerEstadoSuscripcion(db, (err, estado) => {
+    obtenerConfigSuscripcion(db, (err, config) => {
       if (err) {
-        console.error("Error controlando suscripcion:", err.message);
+        console.error("Error comprobando suscripción:", err.message);
         return next();
       }
 
-      if (estado.accesoPermitido) {
+      if (suscripcionPermiteAcceso(config)) {
         return next();
       }
 
-      if (quiereJson(req)) {
+      if (esPeticionApi(req)) {
         return res.status(402).json({
-          error: "Suscripción no activa",
-          motivo: estado.motivo || "suscripcion_no_activa"
+          ok: false,
+          error: "suscripcion_requerida",
+          redirect: "/pago-requerido"
         });
       }
 
@@ -163,138 +248,10 @@ function middlewareSuscripcion(db) {
   };
 }
 
-function renderPagoRequerido() {
-  return [
-    '<!DOCTYPE html>',
-    '<html lang="es">',
-    '<head>',
-    '<meta charset="UTF-8">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    '<title>Activar suscripción - Restaurant Service POS</title>',
-    '<style>',
-    '*{box-sizing:border-box;}',
-    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:#111827;}',
-    '.pagina{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 470px;}',
-    '.zona-foto{min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden;}',
-    '.zona-foto img{width:108%;height:108%;object-fit:contain;object-position:center center;display:block;}',
-    '.panel-derecho{min-height:100vh;background:#0f172a;padding:34px;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:-18px 0 45px rgba(0,0,0,.25);}',
-    '.card{background:rgba(255,255,255,.97);border-radius:28px;padding:30px;box-shadow:0 24px 70px rgba(0,0,0,.35);}',
-    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;margin-bottom:18px;}',
-    'h1{margin:0;font-size:34px;letter-spacing:-.8px;color:#111827;}',
-    'p{color:#475569;font-size:16px;line-height:1.5;font-weight:700;}',
-    '.precio{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:20px;padding:18px;color:#166534;font-weight:900;font-size:22px;margin:22px 0;text-align:center;}',
-    '.precio span{display:block;font-size:13px;color:#15803d;margin-top:6px;}',
-    '.bloqueo{background:#fff7ed;border:1px solid #fed7aa;border-radius:18px;padding:16px;color:#9a3412;font-weight:800;line-height:1.45;margin-top:16px;}',
-    '.acciones{display:grid;grid-template-columns:1fr;gap:12px;margin-top:18px;}',
-    'form{margin-top:18px;}',
-    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
-    'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:15px;background:white;}',
-    'button{width:100%;border:none;border-radius:15px;padding:14px 18px;background:#16a34a;color:white;font-weight:900;font-size:15px;cursor:pointer;margin-top:12px;}',
-    'button:hover{background:#15803d;}',
-    'a{display:block;text-align:center;border-radius:15px;padding:14px 18px;text-decoration:none;font-weight:900;}',
-    '.principal{background:#16a34a;color:white;}',
-    '.principal:hover{background:#15803d;}',
-    '.secundario{background:#111827;color:white;}',
-    '.secundario:hover{background:#000;}',
-    '.salir{background:#e5e7eb;color:#111827;}',
-    '.salir:hover{background:#d1d5db;}',
-    '.legal{font-size:12px;color:#94a3b8;text-align:center;line-height:1.55;font-weight:800;}',
-    '.legal a{display:inline;color:#cbd5e1;background:none;padding:0;border-radius:0;}',
-    '.legal a:hover{color:white;text-decoration:underline;}',
-    '@media(max-width:950px){.pagina{grid-template-columns:1fr;}.zona-foto{display:none;}.panel-derecho{padding:20px;}.card{border-radius:22px;padding:24px;}}',
-    '</style>',
-    '</head>',
-    '<body>',
-    '<div class="pagina">',
-    '<div class="zona-foto">',
-    '<img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS">',
-    '</div>',
-    '<div class="panel-derecho">',
-    '<section class="card">',
-    '<div class="marca">Restaurant Service POS</div>',
-    '<h1>Activa tu suscripción</h1>',
-    '<p>La prueba gratuita ha finalizado o la suscripción no está activa. Para seguir usando el POS, activa el plan del restaurante.</p>',
-    '<div class="precio">7,50 €/mes<span>Plan Restaurant Service POS</span></div>',
-    '<div class="acciones">',
-    '<a class="principal" href="/pago-online-pendiente">Activar plan 7,50 €/mes</a>',
-    '</div>',
-    '<div class="bloqueo">Si ya tienes un código de activación, introdúcelo aquí. Si no, activa el plan mensual.</div>',
-    '<form method="POST" action="/activar-suscripcion">',
-    '<label>Código de activación</label>',
-    '<input name="codigo_activacion" type="text" placeholder="Introduce tu código" required>',
-    '<button type="submit">Activar con código</button>',
-    '</form>',
-    '<div class="acciones">',
-    '<a class="salir" href="/logout">Cerrar sesión</a>',
-    '<a class="secundario" href="/aviso-legal">Ver aviso legal</a>',
-    '</div>',
-    '</section>',
-    '<div class="legal">',
-    '© 2026 Restaurant Service POS™. Todos los derechos reservados.<br>',
-    '<a href="/aviso-legal">Aviso legal</a> · ',
-    '<a href="/privacidad">Privacidad</a> · ',
-    '<a href="/cookies">Cookies</a> · ',
-    '<a href="/terminos">Términos</a>',
-    '</div>',
-    '</div>',
-    '</div>',
-    '</body>',
-    '</html>'
-  ].join('\n');
-}
-
-function renderPagoOnlinePendiente() {
-  return [
-    '<!DOCTYPE html>',
-    '<html lang="es">',
-    '<head>',
-    '<meta charset="UTF-8">',
-    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-    '<title>Pago online pendiente - Restaurant Service POS</title>',
-    '<style>',
-    '*{box-sizing:border-box;}',
-    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:#111827;}',
-    '.pagina{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 470px;}',
-    '.zona-foto{min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden;}',
-    '.zona-foto img{width:108%;height:108%;object-fit:contain;object-position:center center;display:block;}',
-    '.panel-derecho{min-height:100vh;background:#0f172a;padding:34px;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:-18px 0 45px rgba(0,0,0,.25);}',
-    '.card{background:rgba(255,255,255,.97);border-radius:28px;padding:32px;box-shadow:0 24px 70px rgba(0,0,0,.35);}',
-    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;margin-bottom:18px;}',
-    'h1{margin:0;font-size:34px;letter-spacing:-.8px;color:#111827;}',
-    'p{color:#475569;font-size:16px;line-height:1.5;font-weight:700;}',
-    '.aviso{background:#eff6ff;border:1px solid #bfdbfe;border-radius:18px;padding:16px;color:#1e3a8a;font-weight:900;line-height:1.45;margin:22px 0;}',
-    '.acciones{display:grid;grid-template-columns:1fr;gap:12px;margin-top:22px;}',
-    'a{display:block;text-align:center;border-radius:15px;padding:14px 18px;text-decoration:none;font-weight:900;}',
-    '.principal{background:#16a34a;color:white;}',
-    '.secundario{background:#111827;color:white;}',
-    '@media(max-width:950px){.pagina{grid-template-columns:1fr;}.zona-foto{display:none;}.panel-derecho{padding:20px;}.card{border-radius:22px;padding:24px;}}',
-    '</style>',
-    '</head>',
-    '<body>',
-    '<div class="pagina">',
-    '<div class="zona-foto"><img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS"></div>',
-    '<div class="panel-derecho">',
-    '<section class="card">',
-    '<div class="marca">Restaurant Service POS</div>',
-    '<h1>Pago online pendiente</h1>',
-    '<p>La pasarela de pago todavía no está conectada. En la siguiente fase conectaremos el pago mensual del plan Restaurant Service POS.</p>',
-    '<div class="aviso">De momento, la activación se realiza con código manual después de confirmar el pago.</div>',
-    '<div class="acciones">',
-    '<a class="principal" href="/pago-requerido">Volver a activación</a>',
-    '<a class="secundario" href="/logout">Cerrar sesión</a>',
-    '</div>',
-    '</section>',
-    '</div>',
-    '</div>',
-    '</body>',
-    '</html>'
-  ].join('\n');
-}
-
-
 module.exports = {
   middlewareSuscripcion,
-  leerEstadoSuscripcion,
   renderPagoRequerido,
-  renderPagoOnlinePendiente
+  renderPagoOnlinePendiente,
+  suscripcionPermiteAcceso,
+  trialActivo
 };
