@@ -24,7 +24,8 @@ function permisosProfesionales(){
            req.path.startsWith("/anadir-producto") ||
            req.path.startsWith("/abrir-mesa") ||
            req.path.startsWith("/bar/enviar") ||
-           req.path.startsWith("/cocina/enviar");
+           req.path.startsWith("/cocina/enviar") ||
+           req.path.startsWith("/comandas/enviar");
   }
 
   function noAutorizado(req,res){
@@ -173,6 +174,7 @@ function permisosProfesionales(){
            path.startsWith("/mobile/") ||
            path.startsWith("/bar/enviar/") ||
            path.startsWith("/cocina/enviar/") ||
+           path.startsWith("/comandas/enviar/") ||
            path.startsWith("/ticket/") ||
            path.startsWith("/api/estado-mesas-real") ||
            path.startsWith("/api/centro-impresion");

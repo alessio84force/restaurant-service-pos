@@ -24,6 +24,7 @@ const productosRoutes = require("./routes/productos");
 const barRoutes = require("./routes/bar");
 const configurazioneRoutes = require("./routes/configurazione");
 const cocinaRoutes = require("./routes/cocina");
+const comandasRoutes = require("./routes/comandas");
 const zonasRoutes = require("./routes/zonas");
 const pagosRoutes = require("./routes/pagos");
 const cajaProfesionalRoutes = require("./routes/cajaProfesional");
@@ -137,6 +138,7 @@ app.use(variantesRoutes(db));
 app.use(categoriasRoutes(db));
 app.use(productosRoutes(db));
 app.use(barRoutes(db));
+app.use(comandasRoutes(db));
 app.use(cocinaRoutes(db));
 
 app.get('/', (req, res) => {

@@ -367,8 +367,7 @@ function renderPedidoMobile(){
       <div class="mobile-actions">
         <button class="mobile-btn blue" onclick="cambiarVistaMobile('productos')">Añadir productos</button>
         <button class="mobile-btn yellow" onclick="generarPrecuentaMobile()">Precuenta</button>
-        <button class="mobile-btn green" onclick="enviarComandaMobile('bar')">Enviar bar</button>
-        <button class="mobile-btn red" onclick="enviarComandaMobile('cocina')">Enviar cocina</button>
+        <button class="mobile-btn blue" onclick="enviarTodasComandasMobile()">Enviar comandas</button>
       </div>
     </section>
 
@@ -655,6 +654,63 @@ async function enviarComandaMobile(destino){
     toastMobile("No se pudo enviar la comanda", "error");
   }
 }
+
+
+async function enviarTodasComandasMobile(){
+  if(!estadoMobile.mesa || !estadoMobile.pedido){
+    toastMobile("No hay pedido abierto", "error");
+    return;
+  }
+
+  try{
+    const respuestaDestinos = await fetch("/api/destinos-comanda");
+    const dataDestinos = await respuestaDestinos.json();
+    const destinos = Array.isArray(dataDestinos.destinos) ? dataDestinos.destinos : [];
+
+    const enviados = [];
+
+    for(const destino of destinos){
+      const id = String(destino.id || "").trim().toLowerCase();
+
+      if(!id){
+        continue;
+      }
+
+      let endpoint = "";
+
+      if(id === "bar"){
+        endpoint = "/bar/enviar/" + encodeURIComponent(estadoMobile.mesa);
+      }else if(id === "cocina"){
+        endpoint = "/cocina/enviar/" + encodeURIComponent(estadoMobile.mesa);
+      }else{
+        endpoint = "/comandas/enviar/" + encodeURIComponent(id) + "/" + encodeURIComponent(estadoMobile.mesa);
+      }
+
+      const data = await apiMobile(endpoint, {
+        method:"POST",
+        body:{}
+      });
+
+      if(data && data.ok && data.lineas && data.lineas.length > 0){
+        enviados.push(data.destino_nombre || destino.nombre || id);
+      }
+    }
+
+    await cargarPedidoMobile(estadoMobile.mesa);
+    await cargarMesasMobile();
+    renderMobile();
+
+    if(enviados.length > 0){
+      toastMobile("Comandas enviadas: " + enviados.join(", "), "ok");
+    }else{
+      toastMobile("No hay productos nuevos para enviar", "info");
+    }
+  }catch(error){
+    console.error(error);
+    toastMobile("No se pudieron enviar las comandas", "error");
+  }
+}
+
 
 async function generarPrecuentaMobile(){
   if(!estadoMobile.mesa || !estadoMobile.pedido){

@@ -169,15 +169,9 @@ async function cargarPedidoV2(numeroMesa){
 
         <div class="acciones">
 
-            <button onclick="enviarBar(${numeroMesa})">
+            <button onclick="enviarTodasComandasV2(${numeroMesa})">
 
-                🍺 BAR
-
-            </button>
-
-            <button onclick="enviarCocina(${numeroMesa})">
-
-                👨‍🍳 COCINA
+                📤 ENVIAR COMANDAS
 
             </button>
 
@@ -484,6 +478,72 @@ function bloquearAccionesPedidoV2(bloquear){
     });
 
 }
+
+
+async function enviarTodasComandasV2(numeroMesa){
+
+    try{
+
+        bloquearAccionesPedidoV2(true);
+
+        mostrarToastPedidoV2("Enviando comandas...", "info");
+
+        const respuestaDestinos = await fetch("/api/destinos-comanda");
+        const dataDestinos = await respuestaDestinos.json();
+        const destinos = Array.isArray(dataDestinos.destinos) ? dataDestinos.destinos : [];
+
+        const enviados = [];
+
+        for(const destino of destinos){
+
+            const id = String(destino.id || "").trim().toLowerCase();
+
+            if(!id){
+                continue;
+            }
+
+            let endpoint = "";
+
+            if(id === "bar"){
+                endpoint = "/bar/enviar/" + numeroMesa;
+            }else if(id === "cocina"){
+                endpoint = "/cocina/enviar/" + numeroMesa;
+            }else{
+                endpoint = "/comandas/enviar/" + encodeURIComponent(id) + "/" + encodeURIComponent(numeroMesa);
+            }
+
+            const respuesta = await apiPost(endpoint, {});
+            const lineas = Array.isArray(respuesta.lineas) ? respuesta.lineas : [];
+
+            if(lineas.length > 0){
+                enviados.push(respuesta.destino_nombre || destino.nombre || id);
+            }
+
+        }
+
+        await cargarPedidoV2(numeroMesa);
+        await cargarMesasV2();
+
+        if(enviados.length > 0){
+            mostrarToastPedidoV2("Comandas enviadas: " + enviados.join(", ") + ".", "correcto");
+        }else{
+            mostrarToastPedidoV2("No hay productos nuevos para enviar.", "aviso");
+        }
+
+        bloquearAccionesPedidoV2(false);
+
+    }catch(error){
+
+        console.error("Error enviando comandas:", error);
+
+        bloquearAccionesPedidoV2(false);
+
+        mostrarToastPedidoV2("No se pudieron enviar las comandas.", "error");
+
+    }
+
+}
+
 
 async function enviarBar(numeroMesa){
 
