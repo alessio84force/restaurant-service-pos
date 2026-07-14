@@ -5,20 +5,63 @@ function destinosSelectMiddleware(){
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  margin:10px 0 14px;
-  padding:10px 14px;
-  border-radius:12px;
+  margin:14px 0 18px;
+  padding:12px 16px;
+  border-radius:14px;
   background:#111827;
   color:white !important;
   text-decoration:none;
-  font-weight:800;
+  font-weight:900;
+  box-shadow:0 8px 18px rgba(15,23,42,.16);
 }
-.rs-destinos-link:hover{opacity:.9;}
+.rs-destinos-link:hover{opacity:.92;}
+.rs-destinos-box{
+  margin:14px 0 18px;
+  padding:14px 16px;
+  border-radius:16px;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+}
+.rs-destinos-box strong{
+  display:block;
+  margin-bottom:6px;
+}
+.rs-destinos-box p{
+  margin:0 0 10px;
+  color:#4b5563;
+}
 </style>
 <script id="rs-destinos-personalizables-script">
 (function(){
+  function insertarBoton(){
+    if(document.querySelector('.rs-destinos-link')) return;
+
+    var box = document.createElement('div');
+    box.className = 'rs-destinos-box';
+    box.innerHTML =
+      '<strong>Destinos de comanda</strong>' +
+      '<p>Crea destinos como Pizzería, Parrilla, Coctelería, Sushi o Pastelería y asígnalos a las categorías.</p>' +
+      '<a class="rs-destinos-link" href="/configuracion-destinos">Configurar / crear destinos</a>';
+
+    var h1 = document.querySelector('h1');
+    if(h1 && h1.parentNode){
+      h1.parentNode.insertBefore(box, h1.nextSibling);
+      return;
+    }
+
+    var main = document.querySelector('main');
+    if(main){
+      main.insertBefore(box, main.firstChild);
+      return;
+    }
+
+    document.body.insertBefore(box, document.body.firstChild);
+  }
+
   function cargarDestinos(){
     if(!document.querySelector('select[name="destino"]')) return;
+
+    insertarBoton();
 
     fetch('/api/destinos-comanda')
       .then(function(r){ return r.json(); })
@@ -52,20 +95,10 @@ function destinosSelectMiddleware(){
             select.appendChild(optActual);
           }
         });
-
-        if(!document.querySelector('.rs-destinos-link')){
-          var h1 = document.querySelector('h1');
-          var link = document.createElement('a');
-          link.href = '/configuracion-destinos';
-          link.className = 'rs-destinos-link';
-          link.textContent = 'Configurar destinos de comanda';
-
-          if(h1 && h1.parentNode){
-            h1.parentNode.insertBefore(link, h1.nextSibling);
-          }
-        }
       })
-      .catch(function(){});
+      .catch(function(){
+        insertarBoton();
+      });
   }
 
   if(document.readyState === 'loading'){

@@ -14,7 +14,15 @@ function renderConfiguracion(usuario) {
   const rol = usuario && usuario.rol ? usuario.rol : "admin";
 
   const cards = [
+    
     {
+      icono: "🎯",
+      titulo: "Destinos de comanda",
+      texto: "Crea destinos como Bar, Cocina, Pizzería, Parrilla o Coctelería.",
+      url: "/configuracion-destinos",
+      boton: "Configurar destinos"
+    },
+{
       icono: "🏪",
       titulo: "Restaurante y ticket",
       texto: "Datos del restaurante, logo, IVA, mensaje de ticket y datos fiscales.",
