@@ -5,7 +5,9 @@ const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
+const destinosRoutes = require("./routes/destinos");
 const passwordEyeMiddleware = require("./middleware/passwordEye");
+const destinosSelectMiddleware = require("./middleware/destinosSelect");
 const passwords = require("./utils/passwords");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
@@ -90,6 +92,7 @@ app.use(express.json());
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
 app.use(passwordEyeMiddleware());
+app.use(destinosSelectMiddleware());
 app.use(permisosProfesionales());
 app.get("/camarero", (req, res) => {
   res.redirect("/app/v2/mobile/index.html");
@@ -105,6 +108,7 @@ const db = new sqlite3.Database(
 );
 
 app.use(stripeSuscripcionRoutes(db));
+app.use(destinosRoutes(db));
 app.use(middlewareSuscripcion(db));
 app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
