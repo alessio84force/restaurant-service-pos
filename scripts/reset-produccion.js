@@ -8,12 +8,15 @@ try {
   sqlite3 = require("../server/node_modules/sqlite3").verbose();
 }
 
+const passwords = require("../server/utils/passwords");
+
 const ROOT = path.join(__dirname, "..");
 const DB_PATH = path.join(ROOT, "database", "restaurant_service.db");
 const BACKUP_DIR = path.join(ROOT, "database", "backups");
 
 const OWNER_EMAIL = process.env.RESET_OWNER_EMAIL || "alessio84force@gmail.com";
 const OWNER_NAME = process.env.RESET_OWNER_NAME || "Alessio";
+const OWNER_PASSWORD = process.env.RESET_OWNER_PASSWORD || "";
 const RESTAURANT_NAME = process.env.RESET_RESTAURANT_NAME || "Restaurant Service POS";
 
 function timestamp() {
@@ -117,15 +120,31 @@ async function resetProduccion() {
     }
 
     if (await tableExists("usuarios")) {
+      const existentes = await all(
+        "SELECT id FROM usuarios WHERE LOWER(email)=LOWER(?) LIMIT 1",
+        [OWNER_EMAIL]
+      );
+
       await run(
         "DELETE FROM usuarios WHERE LOWER(email) <> LOWER(?)",
         [OWNER_EMAIL]
       );
 
-      await run(
-        "UPDATE usuarios SET nombre=?, rol='admin', activo=1 WHERE LOWER(email)=LOWER(?)",
-        [OWNER_NAME, OWNER_EMAIL]
-      );
+      if (existentes.length > 0) {
+        await run(
+          "UPDATE usuarios SET nombre=?, rol='admin', activo=1 WHERE LOWER(email)=LOWER(?)",
+          [OWNER_NAME, OWNER_EMAIL]
+        );
+      } else {
+        if (!OWNER_PASSWORD) {
+          throw new Error("No existe el usuario owner y falta RESET_OWNER_PASSWORD para crearlo.");
+        }
+
+        await run(
+          "INSERT INTO usuarios(nombre,email,password,rol,activo,creado_en) VALUES(?,?,?,?,1,?)",
+          [OWNER_NAME, OWNER_EMAIL, passwords.hashPassword(OWNER_PASSWORD), "admin", new Date().toISOString()]
+        );
+      }
 
       console.log("Usuarios limpiados. Se mantiene:", OWNER_EMAIL);
     }
