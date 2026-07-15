@@ -1,4 +1,5 @@
 const express = require("express");
+const { enviarEmailEvento } = require("../services/emailService");
 
 function stripeSuscripcionRoutes(db){
   const router = express.Router();
@@ -35,6 +36,26 @@ function stripeSuscripcionRoutes(db){
   function nombreUsuario(req){
     return String((req.session && req.session.usuario && req.session.usuario.nombre) || "Propietario");
   }
+
+
+
+  function notificarEmailSuscripcionStripe(req, callback){
+    enviarEmailEvento(db, "suscripcion_activada", {
+      to: emailUsuario(req),
+      propietario_email: emailUsuario(req),
+      propietario_nombre: nombreUsuario(req),
+      precio: precioMensual().toFixed(2).replace(".", ",") + " €/mes"
+    }, (err, resultado) => {
+      if(err){
+        console.error("[EMAIL STRIPE SUCCESS]", err.message);
+      }else{
+        console.log("[EMAIL STRIPE SUCCESS]", resultado && resultado.ruta_txt ? resultado.ruta_txt : "ok");
+      }
+
+      callback();
+    });
+  }
+
 
   function asegurarTablaClientes(callback){
     db.serialize(()=>{

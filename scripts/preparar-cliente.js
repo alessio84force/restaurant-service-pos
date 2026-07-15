@@ -173,6 +173,7 @@ try {
 }
 
 const passwords = require("../server/utils/passwords");
+const { enviarEmailEvento } = require("../server/services/emailService");
 
 const ROOT = path.join(__dirname, "..");
 const DB_PATH = path.join(ROOT, "database", "restaurant_service.db");
@@ -200,6 +201,21 @@ function backupDatabase() {
 }
 
 const db = new sqlite3.Database(DB_PATH);
+
+
+function enviarEmailPrepararCliente(tipo, extra) {
+  return new Promise((resolve) => {
+    enviarEmailEvento(db, tipo, extra || {}, (err, resultado) => {
+      if (err) {
+        console.log("[EMAIL CLIENTE]", tipo, "no generado:", err.message);
+      } else {
+        console.log("[EMAIL CLIENTE]", tipo, "generado:", resultado && resultado.ruta_txt ? resultado.ruta_txt : "ok");
+      }
+
+      resolve();
+    });
+  });
+}
 
 function run(sql, params = []) {
   return new Promise((resolve, reject) => {
@@ -361,6 +377,37 @@ async function prepararCliente() {
     }
 
     await run("COMMIT");
+
+    await enviarEmailPrepararCliente("cuenta_creada", {
+      to: EMAIL,
+      propietario_nombre: PROPIETARIO,
+      propietario_email: EMAIL,
+      nome_ristorante: RESTAURANTE,
+      trial_fin: trialFin,
+      promocion_aplicada: promo.codigo,
+      precio: "7,50 €/mes"
+    });
+
+    if (promo.tipo === "gratis_vida") {
+      await enviarEmailPrepararCliente("suscripcion_activada", {
+        to: EMAIL,
+        propietario_nombre: PROPIETARIO,
+        propietario_email: EMAIL,
+        nome_ristorante: RESTAURANTE,
+        promocion_aplicada: promo.codigo,
+        precio: "7,50 €/mes"
+      });
+    } else {
+      await enviarEmailPrepararCliente("trial_iniciado", {
+        to: EMAIL,
+        propietario_nombre: PROPIETARIO,
+        propietario_email: EMAIL,
+        nome_ristorante: RESTAURANTE,
+        trial_fin: trialFin,
+        promocion_aplicada: promo.codigo,
+        precio: "7,50 €/mes"
+      });
+    }
 
     console.log("");
     console.log("===== CLIENTE PREPARADO =====");

@@ -1,3 +1,4 @@
+const { enviarEmailEvento } = require("./services/emailService");
 require("dotenv").config();
 const centroImpresionRoutes = require("./routes/centroImpresion");
 const posPedidoRoutes = require("./routes/posPedido");
@@ -683,6 +684,40 @@ function actualizarConfiguracionRegistro(tabla, datos, callback) {
       continuar(this.lastID);
     });
   });
+}
+
+
+function enviarEmailsAutomaticosRegistro(estado, payload, callback) {
+  const eventos = ["cuenta_creada"];
+
+  if (estado === "gratis_vida") {
+    eventos.push("suscripcion_activada");
+  } else {
+    eventos.push("trial_iniciado");
+  }
+
+  let indice = 0;
+
+  function siguiente() {
+    if (indice >= eventos.length) {
+      return callback();
+    }
+
+    const tipo = eventos[indice];
+    indice++;
+
+    enviarEmailEvento(db, tipo, payload, (err, resultado) => {
+      if (err) {
+        console.error("[EMAIL REGISTRO]", tipo, err.message);
+      } else {
+        console.log("[EMAIL REGISTRO]", tipo, resultado && resultado.ruta_txt ? resultado.ruta_txt : "ok");
+      }
+
+      siguiente();
+    });
+  }
+
+  siguiente();
 }
 
 app.get('/registro', (req, res) => {
