@@ -1,4 +1,5 @@
 const express = require("express");
+const { enviarEmailEvento } = require("../services/emailService");
 
 function stripeWebhookRoutes(db){
   const router = express.Router();
@@ -290,7 +291,52 @@ function stripeWebhookRoutes(db){
     });
   }
 
+
+
+  function notificarPagoFallidoWebhook(datos, callback){
+    const email = String(datos.email || "").toLowerCase();
+
+    if(!email){
+      console.log("[EMAIL WEBHOOK PAGO FALLIDO] sin email destinatario");
+      return callback();
+    }
+
+    enviarEmailEvento(db, "pago_fallido", {
+      to: email,
+      propietario_email: email,
+      precio: precioMensual().toFixed(2).replace(".", ",") + " €/mes",
+      stripe_customer_id: datos.customerId || "",
+      stripe_subscription_id: datos.subscriptionId || ""
+    }, (err, resultado) => {
+      if(err){
+        console.error("[EMAIL WEBHOOK PAGO FALLIDO]", err.message);
+      }else{
+        console.log("[EMAIL WEBHOOK PAGO FALLIDO]", resultado && resultado.ruta_txt ? resultado.ruta_txt : "ok");
+      }
+
+      callback();
+    });
+  }
+
+
   function actualizarEstadoStripe(estado, datos, callback){
+    const callbackOriginalEstadoStripe = callback || function(){};
+    const callbackConEmailPagoFallido = function(err){
+      if(err){
+        return callbackOriginalEstadoStripe(err);
+      }
+
+      if(String(estado || "").toLowerCase() !== "pendiente_pago"){
+        return callbackOriginalEstadoStripe(null);
+      }
+
+      return notificarPagoFallidoWebhook(datos, function(){
+        return callbackOriginalEstadoStripe(null);
+      });
+    };
+
+    callback = callbackConEmailPagoFallido;
+
     const fecha = ahoraISO();
     const email = String(datos.email || "").toLowerCase();
     const customerId = String(datos.customerId || "");
