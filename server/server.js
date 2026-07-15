@@ -7,6 +7,7 @@ const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
 const passwordEyeMiddleware = require("./middleware/passwordEye");
+const trialBienvenidaMiddleware = require("./middleware/trialBienvenida");
 const destinosSelectMiddleware = require("./middleware/destinosSelect");
 const passwords = require("./utils/passwords");
 const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
@@ -111,6 +112,10 @@ const db = new sqlite3.Database(
 app.use(stripeSuscripcionRoutes(db));
 app.use(destinosRoutes(db));
 app.use(middlewareSuscripcion(db));
+app.use(function(req, res, next){
+  return trialBienvenidaMiddleware(db)(req, res, next);
+});
+
 app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
 app.use(panelSuscripcionRoutes(db));
