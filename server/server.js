@@ -7,6 +7,7 @@ const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const panelSuscripcionProfesionalRoutes = require("./routes/panelSuscripcionProfesional");
 const legalProfesionalRoutes = require("./routes/legalProfesional");
 const registroLegalMiddleware = require("./middleware/registroLegal");
+const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
@@ -99,6 +100,10 @@ app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets'
 app.use(express.urlencoded({ extended: true }));
 app.use(function(req, res, next) {
   return registroLegalMiddleware(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return legalLinksGlobalMiddleware()(req, res, next);
 });
 app.use(passwordEyeMiddleware());
 app.use(destinosSelectMiddleware());
