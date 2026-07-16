@@ -118,7 +118,9 @@ function permisosProfesionales(){
            path === "/aviso-legal" ||
            path === "/privacidad" ||
            path === "/cookies" ||
-           path === "/terminos" ||
+           path === "/terminos",
+    "/encargo-tratamiento",
+    "/condiciones-suscripcion" ||
            path === "/pago-requerido" ||
            path === "/pago-online-pendiente" ||
            path.startsWith("/app/assets/");

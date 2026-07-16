@@ -113,6 +113,8 @@ function esRutaPublica(ruta) {
     "/privacidad",
     "/cookies",
     "/terminos",
+    "/encargo-tratamiento",
+    "/condiciones-suscripcion",
     "/pago-requerido",
     "/pago-online-pendiente",
     "/activar-suscripcion"

@@ -5,6 +5,7 @@ const posPedidoRoutes = require("./routes/posPedido");
 const configuracionPrincipalRoutes = require("./routes/configuracionPrincipal");
 const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const panelSuscripcionProfesionalRoutes = require("./routes/panelSuscripcionProfesional");
+const legalProfesionalRoutes = require("./routes/legalProfesional");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
@@ -120,6 +121,7 @@ app.use(function(req, res, next){
 
 app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
+app.use(legalProfesionalRoutes());
 app.use(panelSuscripcionProfesionalRoutes(db));
 app.use(panelSuscripcionRoutes(db));
 
