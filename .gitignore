@@ -31,3 +31,4 @@ app/script.before-menu-replace.js
 server/private/
 .env
 .env.*
+prints/emails/
