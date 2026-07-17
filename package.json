@@ -8,6 +8,7 @@
     "reset-produccion": "node scripts/reset-produccion.js",
     "preparar-cliente": "node scripts/preparar-cliente.js",
     "probar-emails": "node scripts/probar-emails.js",
-    "aviso-trial": "node scripts/enviar-aviso-trial.js"
+    "aviso-trial": "node scripts/enviar-aviso-trial.js",
+    "check-produccion": "node scripts/check-produccion.js"
   }
 }
