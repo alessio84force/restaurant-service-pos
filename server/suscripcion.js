@@ -117,6 +117,7 @@ function esRutaPublica(ruta) {
     "/ayuda",
     "/onboarding",
     "/configuracion-backups",
+    "/configuracion-reportes",
     "/primeros-pasos",
     "/manual",
     "/condiciones-suscripcion",
