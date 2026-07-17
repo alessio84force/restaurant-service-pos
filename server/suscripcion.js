@@ -115,6 +115,8 @@ function esRutaPublica(ruta) {
     "/terminos",
     "/encargo-tratamiento",
     "/ayuda",
+    "/onboarding",
+    "/primeros-pasos",
     "/manual",
     "/condiciones-suscripcion",
     "/pago-requerido",

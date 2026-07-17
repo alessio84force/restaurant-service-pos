@@ -7,9 +7,11 @@ const panelSuscripcionRoutes = require("./routes/panelSuscripcion");
 const panelSuscripcionProfesionalRoutes = require("./routes/panelSuscripcionProfesional");
 const legalProfesionalRoutes = require("./routes/legalProfesional");
 const manualClienteRoutes = require("./routes/manualCliente");
+const onboardingClienteRoutes = require("./routes/onboardingCliente");
 const registroLegalMiddleware = require("./middleware/registroLegal");
 const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
 const manualClienteLinkMiddleware = require("./middleware/manualClienteLink");
+const onboardingClienteLinkMiddleware = require("./middleware/onboardingClienteLink");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
@@ -111,6 +113,10 @@ app.use(function(req, res, next) {
 app.use(function(req, res, next) {
   return manualClienteLinkMiddleware()(req, res, next);
 });
+
+app.use(function(req, res, next) {
+  return onboardingClienteLinkMiddleware()(req, res, next);
+});
 app.use(passwordEyeMiddleware());
 app.use(destinosSelectMiddleware());
 app.use(permisosProfesionales());
@@ -138,6 +144,7 @@ app.use(configuracionPrincipalRoutes());
 app.use(activacionSuscripcionRoutes(db));
 app.use(legalProfesionalRoutes());
 app.use(manualClienteRoutes());
+app.use(onboardingClienteRoutes(db));
 app.use(panelSuscripcionProfesionalRoutes(db));
 app.use(panelSuscripcionRoutes(db));
 

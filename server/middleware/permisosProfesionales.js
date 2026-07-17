@@ -121,6 +121,8 @@ function permisosProfesionales(){
            path === "/terminos",
     "/encargo-tratamiento",
     "/ayuda",
+    "/onboarding",
+    "/primeros-pasos",
     "/manual",
     "/condiciones-suscripcion" ||
            path === "/pago-requerido" ||
