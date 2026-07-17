@@ -20,13 +20,10 @@ function rutaConAyuda(path) {
     path === "/login" ||
     path === "/registro" ||
     path === "/configuracion" ||
-    path === "/configuracion-suscripcion" ||
-    path === "/pago-requerido" ||
-    path === "/app/v2" ||
-    path === "/app/v2/" ||
-    path === "/camarero" ||
     path === "/manual" ||
-    path === "/ayuda"
+    path === "/ayuda" ||
+    path === "/primeros-pasos" ||
+    path === "/onboarding"
   ) {
     return true;
   }
@@ -52,7 +49,7 @@ function botonManual() {
   font-size:14px;
   border-radius:999px;
   padding:12px 16px;
-  box-shadow:0 14px 35px rgba(37,99,235,.35);
+  box-shadow:0 14px 35px rgba(37,99,235,.28);
   border:1px solid rgba(255,255,255,.35);
 }
 .rs-manual-help-btn:hover{

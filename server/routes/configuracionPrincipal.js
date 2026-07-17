@@ -353,6 +353,11 @@ ${cards.map((card) => `
 
       const card = document.createElement("a");
       card.id = "card-creador-configuracion";
+      if (document.querySelector('[data-rs-panel-creador="1"], a[href="/creador"]')) {
+        return;
+      }
+
+      card.setAttribute("data-rs-panel-creador", "1");
       card.href = "/creador";
       card.className = "card creador";
       card.style.border = "2px solid #7c3aed";

@@ -16,6 +16,7 @@ const manualClienteLinkMiddleware = require("./middleware/manualClienteLink");
 const onboardingClienteLinkMiddleware = require("./middleware/onboardingClienteLink");
 const backupRestauranteLinkMiddleware = require("./middleware/backupRestauranteLink");
 const reportesRestauranteLinkMiddleware = require("./middleware/reportesRestauranteLink");
+const configuracionHerramientasClienteMiddleware = require("./middleware/configuracionHerramientasCliente");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
@@ -128,6 +129,10 @@ app.use(function(req, res, next) {
 
 app.use(function(req, res, next) {
   return reportesRestauranteLinkMiddleware()(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return configuracionHerramientasClienteMiddleware()(req, res, next);
 });
 app.use(passwordEyeMiddleware());
 app.use(destinosSelectMiddleware());

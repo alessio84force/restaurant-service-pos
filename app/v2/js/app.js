@@ -86,8 +86,7 @@ async function cargarUsuarioTopbarV2(){
             ${puedeConfigurar ? `
                 <a 
                     class="btn-configuracion-v2" 
-                    href="${API}/configuracion" 
-                    target="_blank"
+                    href="${API}/configuracion"
                 >
                     ⚙️ Configuración
                 </a>

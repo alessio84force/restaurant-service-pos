@@ -15,19 +15,11 @@ function rutaExcluida(path) {
 function rutaConOnboarding(path) {
   path = String(path || "");
 
-  if (
+  return (
     path === "/configuracion" ||
-    path === "/configuracion-suscripcion" ||
-    path === "/manual" ||
     path === "/primeros-pasos" ||
     path === "/onboarding"
-  ) {
-    return true;
-  }
-
-  if (path.startsWith("/configuracion-")) return true;
-
-  return false;
+  );
 }
 
 function boton() {
@@ -46,7 +38,7 @@ function boton() {
   font-size:14px;
   border-radius:999px;
   padding:12px 16px;
-  box-shadow:0 14px 35px rgba(22,163,74,.35);
+  box-shadow:0 14px 35px rgba(22,163,74,.28);
   border:1px solid rgba(255,255,255,.35);
 }
 .rs-onboarding-btn:hover{
