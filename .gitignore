@@ -32,3 +32,4 @@ server/private/
 .env
 .env.*
 prints/emails/
+database/backups/

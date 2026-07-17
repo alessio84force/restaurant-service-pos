@@ -116,6 +116,7 @@ function esRutaPublica(ruta) {
     "/encargo-tratamiento",
     "/ayuda",
     "/onboarding",
+    "/configuracion-backups",
     "/primeros-pasos",
     "/manual",
     "/condiciones-suscripcion",

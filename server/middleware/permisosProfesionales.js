@@ -122,6 +122,7 @@ function permisosProfesionales(){
     "/encargo-tratamiento",
     "/ayuda",
     "/onboarding",
+    "/configuracion-backups",
     "/primeros-pasos",
     "/manual",
     "/condiciones-suscripcion" ||
