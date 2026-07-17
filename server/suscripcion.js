@@ -114,6 +114,8 @@ function esRutaPublica(ruta) {
     "/cookies",
     "/terminos",
     "/encargo-tratamiento",
+    "/ayuda",
+    "/manual",
     "/condiciones-suscripcion",
     "/pago-requerido",
     "/pago-online-pendiente",

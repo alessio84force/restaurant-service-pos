@@ -120,6 +120,8 @@ function permisosProfesionales(){
            path === "/cookies" ||
            path === "/terminos",
     "/encargo-tratamiento",
+    "/ayuda",
+    "/manual",
     "/condiciones-suscripcion" ||
            path === "/pago-requerido" ||
            path === "/pago-online-pendiente" ||
