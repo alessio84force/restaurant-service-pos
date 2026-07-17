@@ -2,6 +2,121 @@ const express = require("express");
 const { enviarEmailEvento } = require("../services/emailService");
 
 function stripeSuscripcionRoutes(db){
+
+  function escaparHtmlStripe(valor){
+    return String(valor == null ? "" : valor)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function modoStripeActual(){
+    const key = String(process.env.STRIPE_SECRET_KEY || "").trim();
+
+    if (key.indexOf("sk_live_") === 0) return "live";
+    if (key.indexOf("sk_test_") === 0) return "test";
+
+    return "desconocido";
+  }
+
+  function validarStripeLiveSeguro(){
+    const modo = modoStripeActual();
+
+    if (modo !== "live") return "";
+
+    const baseUrl = String(process.env.APP_BASE_URL || "").trim();
+    const liveConfirmado = String(process.env.STRIPE_LIVE_CONFIRMADO || "").trim();
+
+    if (liveConfirmado !== "SI") {
+      return "Stripe LIVE está configurado, pero STRIPE_LIVE_CONFIRMADO no es SI.";
+    }
+
+    if (!baseUrl || baseUrl.indexOf("https://") !== 0) {
+      return "En Stripe LIVE, APP_BASE_URL debe ser una URL https:// real.";
+    }
+
+    if (baseUrl.indexOf("localhost") >= 0 || baseUrl.indexOf("127.0.0.1") >= 0) {
+      return "En Stripe LIVE, APP_BASE_URL no puede ser localhost.";
+    }
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      return "En Stripe LIVE, STRIPE_WEBHOOK_SECRET debe estar configurado.";
+    }
+
+    return "";
+  }
+
+  function renderStripeLiveBloqueado(motivo){
+    return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Stripe LIVE bloqueado - Restaurant Service POS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#f3f4f6;
+      color:#111827;
+      font-family:Arial, Helvetica, sans-serif;
+      padding:20px;
+    }
+    .card{
+      max-width:620px;
+      background:white;
+      border:1px solid #fecaca;
+      border-radius:22px;
+      padding:28px;
+      box-shadow:0 18px 45px rgba(15,23,42,.12);
+    }
+    h1{
+      margin:0 0 10px;
+      color:#991b1b;
+      font-size:27px;
+    }
+    p{
+      line-height:1.55;
+      color:#374151;
+    }
+    code{
+      display:block;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      padding:12px;
+      border-radius:12px;
+      margin:12px 0;
+      color:#111827;
+      white-space:pre-wrap;
+    }
+    a{
+      display:inline-block;
+      margin-top:12px;
+      background:#111827;
+      color:white;
+      text-decoration:none;
+      padding:12px 16px;
+      border-radius:12px;
+      font-weight:700;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Stripe LIVE bloqueado por seguridad</h1>
+    <p>El sistema ha detectado configuración de Stripe LIVE, pero falta una confirmación de seguridad.</p>
+    <code>${escaparHtmlStripe(motivo)}</code>
+    <p>Esto evita cobrar dinero real por error. Cuando vayas a activar pagos reales, configura correctamente HTTPS, webhook y confirmación LIVE.</p>
+    <a href="/configuracion-suscripcion">Volver a suscripción</a>
+  </div>
+</body>
+</html>`;
+  }
+
   const router = express.Router();
 
   function stripeDisponible(){
@@ -288,6 +403,12 @@ function stripeSuscripcionRoutes(db){
   }
 
   router.post("/stripe/crear-checkout-suscripcion", requiereLogin, async (req,res)=>{
+    const bloqueoStripeLive = validarStripeLiveSeguro();
+
+    if (bloqueoStripeLive) {
+      return res.status(400).send(renderStripeLiveBloqueado(bloqueoStripeLive));
+    }
+
     try{
       const stripe = stripeCliente();
 

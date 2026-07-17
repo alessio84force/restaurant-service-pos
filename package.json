@@ -10,6 +10,7 @@
     "probar-emails": "node scripts/probar-emails.js",
     "aviso-trial": "node scripts/enviar-aviso-trial.js",
     "check-produccion": "node scripts/check-produccion.js",
-    "preparar-cliente-asistente": "node scripts/preparar-cliente-asistente.js"
+    "preparar-cliente-asistente": "node scripts/preparar-cliente-asistente.js",
+    "check-stripe": "node scripts/check-stripe-modo.js"
   }
 }
