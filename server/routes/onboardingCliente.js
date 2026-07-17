@@ -1,4 +1,5 @@
 const express = require("express");
+const { restauranteIdFromReq } = require("../utils/restauranteContext");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -27,28 +28,34 @@ async function tableExists(db, name) {
   return !!row;
 }
 
-async function countTable(db, name, where) {
+async function countTable(db, name, where, params) {
   const exists = await tableExists(db, name);
   if (!exists) return 0;
 
   const row = await get(
     db,
     `SELECT COUNT(*) AS n FROM ${name} ${where || ""}`,
-    []
+    params || []
   );
 
   return row ? Number(row.n || 0) : 0;
 }
 
-async function cargarEstado(db) {
-  const config = await get(db, "SELECT * FROM configurazione WHERE id=1", []);
+async function cargarEstado(db, restauranteId) {
+  restauranteId = Number(restauranteId || 1);
 
-  const zonas = await countTable(db, "zonas", "WHERE COALESCE(activo,1)=1");
-  const mesas = await countTable(db, "mesas", "WHERE COALESCE(activo,1)=1");
-  const categorias = await countTable(db, "categorias", "");
-  const productos = await countTable(db, "productos", "WHERE COALESCE(activo,1)=1");
-  const destinos = await countTable(db, "destinos_comanda", "WHERE COALESCE(activo,1)=1");
-  const usuarios = await countTable(db, "usuarios", "WHERE COALESCE(activo,1)=1");
+  const config = await get(
+    db,
+    "SELECT * FROM configurazione WHERE COALESCE(restaurante_id,1)=? ORDER BY id DESC LIMIT 1",
+    [restauranteId]
+  );
+
+  const zonas = await countTable(db, "zonas", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
+  const mesas = await countTable(db, "mesas", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
+  const categorias = await countTable(db, "categorias", "WHERE COALESCE(restaurante_id,1)=?", [restauranteId]);
+  const productos = await countTable(db, "productos", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
+  const destinos = await countTable(db, "destinos_comanda", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
+  const usuarios = await countTable(db, "usuarios", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
 
   const nombreRestaurante =
     config && (config.nome_ristorante || config.nombre_restaurante || config.restaurante_nombre || "");
@@ -464,7 +471,8 @@ module.exports = function onboardingClienteRoutes(db) {
   const router = express.Router();
 
   router.get("/primeros-pasos", async function(req, res) {
-    const estado = await cargarEstado(db);
+    const restauranteId = restauranteIdFromReq(req);
+    const estado = await cargarEstado(db, restauranteId);
     res.send(page(estado));
   });
 

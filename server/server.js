@@ -11,6 +11,8 @@ const onboardingClienteRoutes = require("./routes/onboardingCliente");
 const backupsRestauranteRoutes = require("./routes/backupsRestaurante");
 const reportesRestauranteRoutes = require("./routes/reportesRestaurante");
 const registroLegalMiddleware = require("./middleware/registroLegal");
+const restauranteSesionMiddleware = require("./middleware/restauranteSesion");
+const registroSaasMiddleware = require("./middleware/registroSaas");
 const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
 const manualClienteLinkMiddleware = require("./middleware/manualClienteLink");
 const onboardingClienteLinkMiddleware = require("./middleware/onboardingClienteLink");
@@ -65,6 +67,10 @@ secret: "restaurant-service-secret",
 resave: false,
 saveUninitialized: false
 }));
+
+app.use(function(req, res, next) {
+  return restauranteSesionMiddleware(db)(req, res, next);
+});
 
 // Proteccion POS V2: sin login no se puede entrar al POS
 app.use('/app/v2', (req, res, next) => {
@@ -765,6 +771,10 @@ function enviarEmailsAutomaticosRegistro(estado, payload, callback) {
 
   siguiente();
 }
+
+app.use(function(req, res, next) {
+  return registroSaasMiddleware(db)(req, res, next);
+});
 
 app.get('/registro', (req, res) => {
   res.send(renderRegistroPropietario(null, {}));
