@@ -69,6 +69,73 @@ function limpiarTexto(valor) {
     .trim();
 }
 
+function slugDestinoComanda(texto) {
+  return String(texto || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+async function aliasesDestinoComanda(db, restauranteId, destinoRaw) {
+  const destino = String(destinoRaw || "").trim();
+  const aliases = [];
+
+  function add(v) {
+    const x = String(v || "").trim();
+    if (!x) return;
+    const lower = x.toLowerCase();
+    if (!aliases.map(a => a.toLowerCase()).includes(lower)) {
+      aliases.push(x);
+    }
+  }
+
+  add(destino);
+  add(slugDestinoComanda(destino));
+
+  const prefijoRestaurante = "r" + restauranteId + "_";
+  if (destino.toLowerCase().startsWith(prefijoRestaurante.toLowerCase())) {
+    const sinPrefijo = destino.slice(prefijoRestaurante.length);
+    add(sinPrefijo);
+    add(slugDestinoComanda(sinPrefijo));
+  }
+
+  const bases = {
+    bar: "Bar",
+    cocina: "Cocina",
+    pizzeria: "Pizzeria",
+    general: "General"
+  };
+
+  if (bases[destino.toLowerCase()]) {
+    add(bases[destino.toLowerCase()]);
+    add(slugDestinoComanda(bases[destino.toLowerCase()]));
+  }
+
+  const row = await get(
+    db,
+    `SELECT id, nombre
+     FROM destinos_comanda
+     WHERE COALESCE(restaurante_id,1)=?
+     AND (
+       LOWER(id)=LOWER(?)
+       OR LOWER(nombre)=LOWER(?)
+     )
+     LIMIT 1`,
+    [restauranteId, destino, destino]
+  );
+
+  if (row) {
+    add(row.id);
+    add(row.nombre);
+    add(slugDestinoComanda(row.nombre));
+  }
+
+  return aliases.map(a => a.toLowerCase());
+}
+
 async function buscarMesa(db, restauranteId, mesaParam) {
   const mesaTexto = String(mesaParam || "").trim();
 
@@ -360,8 +427,15 @@ function guardarPrint(nombreArchivo, contenido) {
   }
 }
 
+
 async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
   const destino = String(destinoRaw || "").trim().toLowerCase();
+  const aliasesDestino = await aliasesDestinoComanda(db, restauranteId, destino);
+
+  if (!aliasesDestino.length) aliasesDestino.push(destino || "cocina");
+
+  const placeholdersDestino = aliasesDestino.map(() => "?").join(",");
+
   const mesa = await buscarMesa(db, restauranteId, mesaParam);
 
   if (!mesa) {
@@ -375,63 +449,87 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
     };
   }
 
-  const lineas = await all(
-    db,
-    `SELECT
-      pl.id,
-      pl.id AS linea_id,
-      pl.pedido_id,
-      productos.nombre AS nombre,
-      productos.nombre AS producto,
-      pl.nota,
-      pl.cantidad AS cantidad_total,
-      COALESCE(cel.cantidad_enviada,0) AS cantidad_enviada,
-      pl.cantidad - COALESCE(cel.cantidad_enviada,0) AS cantidad
-    FROM pedido_lineas pl
-    JOIN pedidos
-      ON pedidos.id = pl.pedido_id
-      AND pedidos.estado!='cerrado'
-      AND COALESCE(pedidos.restaurante_id,1)=?
-    JOIN mesas
-      ON mesas.id = pedidos.mesa_id
-      AND COALESCE(mesas.restaurante_id,1)=?
-      AND (CAST(mesas.numero AS TEXT)=? OR CAST(mesas.id AS TEXT)=?)
-    JOIN productos
-      ON productos.id = pl.producto_id
-      AND COALESCE(productos.restaurante_id,1)=?
-    JOIN categorias
-      ON categorias.id = productos.categoria_id
-      AND COALESCE(categorias.restaurante_id,1)=?
-    LEFT JOIN comanda_envios_linea cel
-      ON cel.linea_id = pl.id
-      AND LOWER(cel.destino)=LOWER(?)
-      AND COALESCE(cel.restaurante_id,1)=?
-    WHERE COALESCE(pl.restaurante_id,1)=?
-    AND LOWER(COALESCE(categorias.destino,'cocina'))=LOWER(?)
-    AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0
-    ORDER BY pl.id`,
-    [
-      restauranteId,
-      restauranteId,
-      String(mesaParam),
-      String(mesaParam),
-      restauranteId,
-      restauranteId,
-      destino,
-      restauranteId,
-      restauranteId,
-      destino
-    ]
-  );
+  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
 
-  if (!lineas.length) {
+  if (!pedido) {
     return {
       ok: true,
       data: {
         ok: true,
         mensaje: "Nada para enviar",
         lineas: [],
-        destino: destino
+        destino: destino,
+        debug: "Sin pedido abierto para esta mesa"
+      }
+    };
+  }
+
+  const sql =
+    "SELECT " +
+    "pl.id, " +
+    "pl.id AS linea_id, " +
+    "pl.pedido_id, " +
+    "productos.nombre AS nombre, " +
+    "productos.nombre AS producto, " +
+    "pl.nota, " +
+    "pl.cantidad AS cantidad_total, " +
+    "COALESCE(cel.cantidad_enviada,0) AS cantidad_enviada, " +
+    "pl.cantidad - COALESCE(cel.cantidad_enviada,0) AS cantidad, " +
+    "categorias.destino AS destino_categoria " +
+    "FROM pedido_lineas pl " +
+    "JOIN productos " +
+    "ON productos.id = pl.producto_id " +
+    "AND COALESCE(productos.restaurante_id,1)=? " +
+    "JOIN categorias " +
+    "ON categorias.id = productos.categoria_id " +
+    "AND COALESCE(categorias.restaurante_id,1)=? " +
+    "LEFT JOIN comanda_envios_linea cel " +
+    "ON cel.linea_id = pl.id " +
+    "AND LOWER(cel.destino)=LOWER(?) " +
+    "AND COALESCE(cel.restaurante_id,1)=? " +
+    "WHERE pl.pedido_id=? " +
+    "AND COALESCE(pl.restaurante_id,1)=? " +
+    "AND LOWER(COALESCE(categorias.destino,'cocina')) IN (" + placeholdersDestino + ") " +
+    "AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0 " +
+    "ORDER BY pl.id";
+
+  const params = [
+    restauranteId,
+    restauranteId,
+    destino,
+    restauranteId,
+    pedido.id,
+    restauranteId
+  ].concat(aliasesDestino);
+
+  const lineas = await all(db, sql, params);
+
+  if (!lineas.length) {
+    const debugLineas = await all(
+      db,
+      "SELECT pl.id, pl.pedido_id, productos.nombre AS producto, categorias.destino, pl.cantidad, COALESCE(pl.restaurante_id,1) AS restaurante_id " +
+      "FROM pedido_lineas pl " +
+      "JOIN productos ON productos.id = pl.producto_id " +
+      "JOIN categorias ON categorias.id = productos.categoria_id " +
+      "WHERE pl.pedido_id=? " +
+      "ORDER BY pl.id",
+      [pedido.id]
+    );
+
+    return {
+      ok: true,
+      data: {
+        ok: true,
+        mensaje: "Nada para enviar",
+        lineas: [],
+        destino: destino,
+        debug: {
+          pedido_id: pedido.id,
+          mesa_id: mesa.id,
+          mesa: mesa.numero,
+          aliases: aliasesDestino,
+          lineas_pedido: debugLineas
+        }
       }
     };
   }
@@ -439,19 +537,13 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
   for (const linea of lineas) {
     await run(
       db,
-      `INSERT OR IGNORE INTO comanda_envios_linea
-       (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id)
-       VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)`,
+      "INSERT OR IGNORE INTO comanda_envios_linea (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id) VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)",
       [linea.id, destino, restauranteId]
     );
 
     await run(
       db,
-      `UPDATE comanda_envios_linea
-       SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP
-       WHERE linea_id=?
-       AND LOWER(destino)=LOWER(?)
-       AND COALESCE(restaurante_id,1)=?`,
+      "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?) AND COALESCE(restaurante_id,1)=?",
       [linea.cantidad_total, linea.id, destino, restauranteId]
     );
 
@@ -490,8 +582,197 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
         nombre: l.nombre,
         producto: l.producto,
         cantidad: l.cantidad,
-        nota: l.nota || ""
+        nota: l.nota || "",
+        destino_categoria: l.destino_categoria || ""
       }))
+    }
+  };
+}
+
+async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
+  const mesa = await buscarMesa(db, restauranteId, mesaParam);
+
+  if (!mesa) {
+    return {
+      ok: false,
+      status: 404,
+      data: {
+        ok: false,
+        error: "Mesa no encontrada para este restaurante"
+      }
+    };
+  }
+
+  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
+
+  if (!pedido) {
+    return {
+      ok: true,
+      data: {
+        ok: true,
+        mensaje: "Nada para enviar",
+        enviados: [],
+        lineas: [],
+        debug: "Sin pedido abierto"
+      }
+    };
+  }
+
+  const lineas = await all(
+    db,
+    "SELECT " +
+    "pl.id, " +
+    "pl.id AS linea_id, " +
+    "pl.pedido_id, " +
+    "productos.nombre AS nombre, " +
+    "productos.nombre AS producto, " +
+    "pl.nota, " +
+    "pl.cantidad AS cantidad_total, " +
+    "COALESCE(categorias.destino,'cocina') AS destino_categoria, " +
+    "COALESCE(cel.cantidad_enviada,0) AS cantidad_enviada, " +
+    "pl.cantidad - COALESCE(cel.cantidad_enviada,0) AS cantidad " +
+    "FROM pedido_lineas pl " +
+    "JOIN pedidos pe " +
+    "ON pe.id = pl.pedido_id " +
+    "AND pe.estado != 'cerrado' " +
+    "AND COALESCE(pe.restaurante_id,1)=? " +
+    "JOIN mesas m " +
+    "ON m.id = pe.mesa_id " +
+    "AND COALESCE(m.restaurante_id,1)=? " +
+    "JOIN productos " +
+    "ON productos.id = pl.producto_id " +
+    "AND COALESCE(productos.restaurante_id,1)=? " +
+    "JOIN categorias " +
+    "ON categorias.id = productos.categoria_id " +
+    "AND COALESCE(categorias.restaurante_id,1)=? " +
+    "LEFT JOIN comanda_envios_linea cel " +
+    "ON cel.linea_id = pl.id " +
+    "AND LOWER(cel.destino)=LOWER(COALESCE(categorias.destino,'cocina')) " +
+    "AND COALESCE(cel.restaurante_id,1)=? " +
+    "WHERE pe.id=? " +
+    "AND m.id=? " +
+    "AND COALESCE(pl.restaurante_id,1)=? " +
+    "AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0 " +
+    "ORDER BY COALESCE(categorias.destino,'cocina'), pl.id",
+    [
+      restauranteId,
+      restauranteId,
+      restauranteId,
+      restauranteId,
+      restauranteId,
+      pedido.id,
+      mesa.id,
+      restauranteId
+    ]
+  );
+
+  if (!lineas.length) {
+    const debugLineas = await all(
+      db,
+      "SELECT " +
+      "pl.id AS linea_id, " +
+      "pl.pedido_id, " +
+      "productos.nombre AS producto, " +
+      "categorias.nombre AS categoria, " +
+      "categorias.destino AS destino_categoria, " +
+      "pl.cantidad, " +
+      "COALESCE(pl.restaurante_id,1) AS restaurante_id " +
+      "FROM pedido_lineas pl " +
+      "JOIN productos ON productos.id = pl.producto_id " +
+      "JOIN categorias ON categorias.id = productos.categoria_id " +
+      "WHERE pl.pedido_id=? " +
+      "ORDER BY pl.id",
+      [pedido.id]
+    );
+
+    return {
+      ok: true,
+      data: {
+        ok: true,
+        mensaje: "Nada para enviar",
+        enviados: [],
+        lineas: [],
+        debug: {
+          pedido_id: pedido.id,
+          mesa_id: mesa.id,
+          mesa: mesa.numero,
+          lineas_pedido: debugLineas
+        }
+      }
+    };
+  }
+
+  const grupos = {};
+
+  lineas.forEach((linea) => {
+    const destino = String(linea.destino_categoria || "cocina").trim().toLowerCase() || "cocina";
+    if (!grupos[destino]) grupos[destino] = [];
+    grupos[destino].push(linea);
+  });
+
+  const enviados = [];
+
+  for (const destino of Object.keys(grupos)) {
+    const grupo = grupos[destino];
+
+    for (const linea of grupo) {
+      await run(
+        db,
+        "INSERT OR IGNORE INTO comanda_envios_linea (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id) VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)",
+        [linea.id, destino, restauranteId]
+      );
+
+      await run(
+        db,
+        "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?) AND COALESCE(restaurante_id,1)=?",
+        [linea.cantidad_total, linea.id, destino, restauranteId]
+      );
+
+      if (destino === "bar") {
+        await run(
+          db,
+          "UPDATE pedido_lineas SET cantidad_enviada_bar=cantidad, enviada_bar=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
+          [linea.id, restauranteId]
+        );
+      }
+
+      if (destino === "cocina") {
+        await run(
+          db,
+          "UPDATE pedido_lineas SET cantidad_enviada_cocina=cantidad, enviada_cocina=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
+          [linea.id, restauranteId]
+        );
+      }
+    }
+
+    const texto = formatearComanda(destino, mesa.numero, grupo);
+    const archivo = "comanda_" + destino.replace(/[^a-z0-9_-]/g, "_") + ".txt";
+    guardarPrint(archivo, texto);
+
+    enviados.push({
+      destino: destino,
+      archivo: "prints/" + archivo,
+      lineas: grupo.map((l) => ({
+        id: l.id,
+        linea_id: l.id,
+        pedido_id: l.pedido_id,
+        nombre: l.nombre,
+        producto: l.producto,
+        cantidad: l.cantidad,
+        nota: l.nota || "",
+        destino_categoria: l.destino_categoria || ""
+      }))
+    });
+  }
+
+  return {
+    ok: true,
+    data: {
+      ok: true,
+      mensaje: "Comandas generadas",
+      enviados: enviados.map((e) => e.destino),
+      grupos: enviados,
+      lineas: lineas
     }
   };
 }
@@ -929,6 +1210,29 @@ module.exports = function operativaSaasRoutes(db) {
   router.post("/cocina/enviar/:mesa", requiereLoginJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const resultado = await enviarComandaDestino(db, restauranteId, req.params.mesa, "cocina");
+
+    if (!resultado.ok) {
+      return res.status(resultado.status || 500).json(resultado.data);
+    }
+
+    res.json(resultado.data);
+  });
+
+
+  router.post("/saas/comandas/enviar-todas/:mesa", requiereLoginJson, async function(req, res) {
+    const restauranteId = restauranteIdFromReq(req);
+    const resultado = await enviarTodasComandasMesa(db, restauranteId, req.params.mesa);
+
+    if (!resultado.ok) {
+      return res.status(resultado.status || 500).json(resultado.data);
+    }
+
+    res.json(resultado.data);
+  });
+
+  router.post("/saas/comandas/enviar/:destino/:mesa", requiereLoginJson, async function(req, res) {
+    const restauranteId = restauranteIdFromReq(req);
+    const resultado = await enviarComandaDestino(db, restauranteId, req.params.mesa, req.params.destino);
 
     if (!resultado.ok) {
       return res.status(resultado.status || 500).json(resultado.data);

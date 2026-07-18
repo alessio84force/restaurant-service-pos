@@ -480,70 +480,37 @@ function bloquearAccionesPedidoV2(bloquear){
 }
 
 
+
 async function enviarTodasComandasV2(numeroMesa){
-
-    try{
-
-        bloquearAccionesPedidoV2(true);
-
-        mostrarToastPedidoV2("Enviando comandas...", "info");
-
-        const respuestaDestinos = await fetch("/api/destinos-comanda");
-        const dataDestinos = await respuestaDestinos.json();
-        const destinos = Array.isArray(dataDestinos.destinos) ? dataDestinos.destinos : [];
-
-        const enviados = [];
-
-        for(const destino of destinos){
-
-            const id = String(destino.id || "").trim().toLowerCase();
-
-            if(!id){
-                continue;
-            }
-
-            let endpoint = "";
-
-            if(id === "bar"){
-                endpoint = "/bar/enviar/" + numeroMesa;
-            }else if(id === "cocina"){
-                endpoint = "/cocina/enviar/" + numeroMesa;
-            }else{
-                endpoint = "/comandas/enviar/" + encodeURIComponent(id) + "/" + encodeURIComponent(numeroMesa);
-            }
-
-            const respuesta = await apiPost(endpoint, {});
-            const lineas = Array.isArray(respuesta.lineas) ? respuesta.lineas : [];
-
-            if(lineas.length > 0){
-                enviados.push(respuesta.destino_nombre || destino.nombre || id);
-            }
-
-        }
-
-        await cargarPedidoV2(numeroMesa);
-        await cargarMesasV2();
-
-        if(enviados.length > 0){
-            mostrarToastPedidoV2("Comandas enviadas: " + enviados.join(", ") + ".", "correcto");
-        }else{
-            mostrarToastPedidoV2("No hay productos nuevos para enviar.", "aviso");
-        }
-
-        bloquearAccionesPedidoV2(false);
-
-    }catch(error){
-
-        console.error("Error enviando comandas:", error);
-
-        bloquearAccionesPedidoV2(false);
-
-        mostrarToastPedidoV2("No se pudieron enviar las comandas.", "error");
-
+    if(!numeroMesa){
+        mostrarToastPedidoV2("No hay mesa seleccionada.", "error");
+        return;
     }
 
-}
+    try{
+        mostrarToastPedidoV2("Enviando comandas...", "info");
 
+        const respuesta = await apiPost("/saas/comandas/enviar-todas/" + encodeURIComponent(numeroMesa), {});
+
+        if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
+            mostrarToastPedidoV2("Comandas enviadas: " + respuesta.enviados.join(", ") + ".", "correcto");
+
+            if(typeof cargarPedidoV2 === "function"){
+                await cargarPedidoV2(numeroMesa);
+            }else if(typeof seleccionarMesaV2 === "function"){
+                await seleccionarMesaV2(numeroMesa);
+            }
+
+            return;
+        }
+
+        console.log("DEBUG enviarTodasComandasV2:", respuesta);
+        mostrarToastPedidoV2("No hay productos nuevos para enviar.", "aviso");
+    }catch(error){
+        console.error("Error enviando comandas:", error);
+        mostrarToastPedidoV2("No se pudieron enviar las comandas.", "error");
+    }
+}
 
 async function enviarBar(numeroMesa){
 
@@ -561,9 +528,7 @@ async function enviarComandaV2(numeroMesa, destino){
 
     const destinoTexto = destino === "bar" ? "bar" : "cocina";
     const destinoTitulo = destino === "bar" ? "Bar" : "Cocina";
-    const endpoint = destino === "bar"
-        ? "/bar/enviar/" + numeroMesa
-        : "/cocina/enviar/" + numeroMesa;
+    const endpoint = "/saas/comandas/enviar/" + encodeURIComponent(destino) + "/" + encodeURIComponent(numeroMesa);
 
     try{
 

@@ -71,7 +71,41 @@ function run(db, sql, params) {
   });
 }
 
-function renderPagina(categorias, productos, query) {
+function opcionesDestinosHtml(destinos, seleccionado) {
+  return (destinos || []).map((d) => {
+    const selected = String(d.id) === String(seleccionado || "cocina") ? "selected" : "";
+    return `<option value="${escapar(d.id)}" ${selected}>${escapar(d.nombre)} · ${escapar(d.id)}</option>`;
+  }).join("");
+}
+
+async function destinosProductoRestaurante(db, restauranteId) {
+  const base = [
+    { id: "bar", nombre: "Bar" },
+    { id: "cocina", nombre: "Cocina" },
+    { id: "pizzeria", nombre: "Pizzeria" },
+    { id: "general", nombre: "General" }
+  ];
+
+  const extras = await all(
+    db,
+    "SELECT id, nombre FROM destinos_comanda WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1 ORDER BY orden, id",
+    [restauranteId]
+  );
+
+  const vistos = {};
+  const salida = [];
+
+  base.concat(extras || []).forEach((d) => {
+    if (!vistos[d.id]) {
+      vistos[d.id] = true;
+      salida.push(d);
+    }
+  });
+
+  return salida;
+}
+
+function renderPagina(categorias, productos, destinos, query) {
   const ok = query.ok || "";
   const error = query.error || "";
 
@@ -85,10 +119,7 @@ function renderPagina(categorias, productos, query) {
         <form method="POST" action="/configuracion-productos/categorias/${cat.id}" class="categoria-form">
           <input name="nombre" value="${escapar(cat.nombre)}" required>
           <select name="destino" required>
-            <option value="cocina" ${cat.destino === "cocina" ? "selected" : ""}>Cocina</option>
-            <option value="bar" ${cat.destino === "bar" ? "selected" : ""}>Bar</option>
-            <option value="pizzeria" ${cat.destino === "pizzeria" ? "selected" : ""}>Pizzeria</option>
-            <option value="general" ${cat.destino === "general" ? "selected" : ""}>General</option>
+${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
           </select>
           <button type="submit">Guardar</button>
         </form>
@@ -199,10 +230,7 @@ function renderPagina(categorias, productos, query) {
             <div class="field">
               <label>Destino</label>
               <select name="destino" required>
-                <option value="cocina">Cocina</option>
-                <option value="bar">Bar</option>
-                <option value="pizzeria">Pizzeria</option>
-                <option value="general">General</option>
+${opcionesDestinosHtml(destinos, "cocina")}
               </select>
             </div>
             <button type="submit">Crear categoría</button>
@@ -264,6 +292,8 @@ module.exports = function productosSaasRoutes(db) {
   router.get("/configuracion-productos", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
 
+    const destinos = await destinosProductoRestaurante(db, restauranteId);
+
     const categorias = await all(
       db,
       "SELECT id, nombre, COALESCE(destino,'cocina') AS destino FROM categorias WHERE COALESCE(restaurante_id,1)=? ORDER BY nombre COLLATE NOCASE",
@@ -290,7 +320,7 @@ module.exports = function productosSaasRoutes(db) {
       [restauranteId, restauranteId]
     );
 
-    res.send(renderPagina(categorias, productos, req.query || {}));
+    res.send(renderPagina(categorias, productos, destinos, req.query || {}));
   });
 
   router.post("/configuracion-productos/categorias", requiereConfig, async function(req, res) {

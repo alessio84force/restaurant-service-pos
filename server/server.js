@@ -63,6 +63,7 @@ const zonasSaasRoutes = require("./routes/zonasSaas");
 const mesasOperativasSaasRoutes = require("./routes/mesasOperativasSaas");
 const productosSaasRoutes = require("./routes/productosSaas");
 const operativaSaasRoutes = require("./routes/operativaSaas");
+const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -117,7 +118,7 @@ app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
-
+// ===== RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 app.use(function(req, res, next) {
   return zonasSaasRoutes(db)(req, res, next);
 });
@@ -133,6 +134,12 @@ app.use(function(req, res, next) {
 app.use(function(req, res, next) {
   return operativaSaasRoutes(db)(req, res, next);
 });
+
+app.use(function(req, res, next) {
+  return destinosImpresionSaasRoutes(db)(req, res, next);
+});
+// ===== FIN RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
+
 app.use(function(req, res, next) {
   return registroLegalMiddleware(db)(req, res, next);
 });
