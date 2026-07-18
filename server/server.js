@@ -64,6 +64,7 @@ const mesasOperativasSaasRoutes = require("./routes/mesasOperativasSaas");
 const productosSaasRoutes = require("./routes/productosSaas");
 const operativaSaasRoutes = require("./routes/operativaSaas");
 const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
+const cajaReportesSaasRoutes = require("./routes/cajaReportesSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -137,6 +138,10 @@ app.use(function(req, res, next) {
 
 app.use(function(req, res, next) {
   return destinosImpresionSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return cajaReportesSaasRoutes(db)(req, res, next);
 });
 // ===== FIN RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 
