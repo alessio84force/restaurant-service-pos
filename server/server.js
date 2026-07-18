@@ -59,6 +59,8 @@ const menuRoutes = require("./routes/menu");
 const posRoutes = require("./routes/pos");
 const pagosMultiplesRoutes = require("./routes/pagos-multiples");
 const mesasRoutes = require("./routes/mesas");
+const zonasSaasRoutes = require("./routes/zonasSaas");
+const mesasOperativasSaasRoutes = require("./routes/mesasOperativasSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -113,6 +115,14 @@ app.use(express.json());
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true }));
+
+app.use(function(req, res, next) {
+  return zonasSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return mesasOperativasSaasRoutes(db)(req, res, next);
+});
 app.use(function(req, res, next) {
   return registroLegalMiddleware(db)(req, res, next);
 });
