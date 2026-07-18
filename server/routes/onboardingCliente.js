@@ -53,7 +53,7 @@ async function cargarEstado(db, restauranteId) {
   const zonas = await countTable(db, "zonas", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
   const mesas = await countTable(db, "mesas", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
   const categorias = await countTable(db, "categorias", "WHERE COALESCE(restaurante_id,1)=?", [restauranteId]);
-  const productos = await countTable(db, "productos", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
+  const productos = await countTable(db, "productos", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(disponible,1)=1", [restauranteId]);
   const destinos = await countTable(db, "destinos_comanda", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
   const usuarios = await countTable(db, "usuarios", "WHERE COALESCE(restaurante_id,1)=? AND COALESCE(activo,1)=1", [restauranteId]);
 
