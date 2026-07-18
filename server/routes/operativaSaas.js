@@ -849,6 +849,155 @@ async function renderTicketMesa(db, restauranteId, mesaParam) {
 </html>`;
 }
 
+async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
+  function e(valor) {
+    return String(valor == null ? "" : valor)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function money(valor) {
+    return Number(valor || 0).toFixed(2) + " €";
+  }
+
+  const mesa = await buscarMesa(db, restauranteId, mesaParam);
+
+  if (!mesa) {
+    return {
+      ok: false,
+      status: 404,
+      html: "<h1>Mesa no encontrada</h1>"
+    };
+  }
+
+  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
+
+  const config = await get(
+    db,
+    "SELECT * FROM configurazione WHERE COALESCE(restaurante_id,1)=? ORDER BY id DESC LIMIT 1",
+    [restauranteId]
+  ) || {};
+
+  const lineas = pedido ? await all(
+    db,
+    "SELECT " +
+    "pedido_lineas.id, " +
+    "pedido_lineas.cantidad, " +
+    "pedido_lineas.precio, " +
+    "pedido_lineas.nota, " +
+    "productos.nombre AS producto " +
+    "FROM pedido_lineas " +
+    "JOIN productos " +
+    "ON productos.id = pedido_lineas.producto_id " +
+    "AND COALESCE(productos.restaurante_id,1)=? " +
+    "WHERE pedido_lineas.pedido_id=? " +
+    "AND COALESCE(pedido_lineas.restaurante_id,1)=? " +
+    "ORDER BY pedido_lineas.id",
+    [restauranteId, pedido.id, restauranteId]
+  ) : [];
+
+  const totalCalculado = lineas.reduce((acc, l) => {
+    return acc + Number(l.cantidad || 0) * Number(l.precio || 0);
+  }, 0);
+
+  const totalFinal = pedido && Number(pedido.total || 0) > 0
+    ? Number(pedido.total || 0)
+    : totalCalculado;
+
+  const filas = lineas.map((l) => {
+    const cantidad = Number(l.cantidad || 0);
+    const precio = Number(l.precio || 0);
+    const subtotal = cantidad * precio;
+
+    return "<tr>" +
+      "<td>" + cantidad + " x " + e(l.producto || "Producto") + (l.nota ? "<br><small>" + e(l.nota) + "</small>" : "") + "</td>" +
+      "<td style='text-align:right;'>" + money(subtotal) + "</td>" +
+    "</tr>";
+  }).join("");
+
+  const logoHtml = config.logo
+    ? '<img class="logo" src="' + e(config.logo) + '">'
+    : "";
+
+  const html = `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Precuenta mesa ${e(mesa.numero || mesaParam)}</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;margin:0;padding:28px;color:#111827;}
+    .ticket{max-width:380px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;padding:18px;box-shadow:0 18px 42px rgba(15,23,42,.14);}
+    .center{text-align:center;}
+    .logo{max-width:170px;max-height:90px;object-fit:contain;margin-bottom:10px;}
+    h1{font-size:22px;margin:0 0 6px;}
+    .muted{color:#6b7280;font-size:13px;line-height:1.35;}
+    hr{border:0;border-top:1px dashed #9ca3af;margin:12px 0;}
+    table{width:100%;border-collapse:collapse;}
+    td{padding:6px 0;vertical-align:top;}
+    small{color:#6b7280;}
+    .total{font-size:22px;font-weight:900;text-align:right;margin-top:8px;}
+    .actions{text-align:center;margin:18px 0;}
+    button,a{display:inline-block;border:0;border-radius:12px;padding:10px 13px;background:#111827;color:white;text-decoration:none;font-weight:900;cursor:pointer;font-size:14px;}
+    a.sec{background:#e5e7eb;color:#111827;}
+    @media print{
+      body{background:white;padding:0;}
+      .ticket{box-shadow:none;border:0;border-radius:0;max-width:none;}
+      .actions{display:none;}
+    }
+  </style>
+</head>
+<body>
+  <div class="actions">
+    <button onclick="window.print()">Imprimir</button>
+    <button type="button" class="sec" onclick="window.close()">Cerrar ventana</button>
+  </div>
+
+  <div class="ticket">
+    <div class="center">
+      ${logoHtml}
+      <h1>${e(config.nome_ristorante || "Restaurant Service POS")}</h1>
+      <div class="muted">
+        ${config.partita_iva ? "<div>" + e(config.partita_iva) + "</div>" : ""}
+        ${config.indirizzo ? "<div>" + e(config.indirizzo) + "</div>" : ""}
+        ${config.telefono ? "<div>" + e(config.telefono) + "</div>" : ""}
+        ${config.email ? "<div>" + e(config.email) + "</div>" : ""}
+      </div>
+    </div>
+
+    <hr>
+
+    <div><strong>Mesa:</strong> ${e(mesa.numero || mesaParam)}</div>
+    <div><strong>Pedido:</strong> ${pedido ? e(pedido.id) : "-"}</div>
+    <div><strong>Fecha:</strong> ${new Date().toLocaleString("es-ES")}</div>
+
+    <hr>
+
+    <table>
+      <tbody>
+        ${filas || "<tr><td>No hay productos en esta mesa.</td><td></td></tr>"}
+      </tbody>
+    </table>
+
+    <hr>
+
+    <div class="total">Total: ${money(totalFinal)}</div>
+
+    <hr>
+
+    <div class="center muted">${e(config.mensaje_ticket || "Gracias por su visita")}</div>
+  </div>
+</body>
+</html>`;
+
+  return {
+    ok: true,
+    status: 200,
+    html: html
+  };
+}
+
 module.exports = function operativaSaasRoutes(db) {
   const router = express.Router();
 
@@ -1252,9 +1401,26 @@ module.exports = function operativaSaasRoutes(db) {
     res.json(resultado.data);
   });
 
+
+  router.get("/saas/ticket/:mesa", async function(req, res) {
+    if (!req.session || !req.session.usuario) {
+      return res.redirect("/login");
+    }
+
+    const restauranteId = restauranteIdFromReq(req);
+    const resultado = await renderTicketMesaSaasSeguro(db, restauranteId, req.params.mesa);
+
+    if (!resultado.ok) {
+      return res.status(resultado.status || 500).send(resultado.html || "<h1>Error generando ticket</h1>");
+    }
+
+    res.send(resultado.html || (resultado.data && resultado.data.html) || "<h1>Ticket vacío</h1>");
+  });
+
   router.get("/ticket/:mesa", requiereLoginJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const html = await renderTicketMesa(db, restauranteId, req.params.mesa);
+    const resultado = await renderTicketMesaSaasSeguro(db, restauranteId, req.params.mesa);
+    const html = resultado.html;
     res.send(html);
   });
 

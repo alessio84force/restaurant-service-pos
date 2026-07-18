@@ -65,6 +65,7 @@ const productosSaasRoutes = require("./routes/productosSaas");
 const operativaSaasRoutes = require("./routes/operativaSaas");
 const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
 const cajaReportesSaasRoutes = require("./routes/cajaReportesSaas");
+const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -115,10 +116,10 @@ app.use("/stripe/webhook", express.raw({ type: "application/json" }), function(r
   return stripeWebhookRoutes(db)(req, res, next);
 });
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // ===== RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 app.use(function(req, res, next) {
   return zonasSaasRoutes(db)(req, res, next);
@@ -142,6 +143,10 @@ app.use(function(req, res, next) {
 
 app.use(function(req, res, next) {
   return cajaReportesSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return usuariosConfigSaasRoutes(db)(req, res, next);
 });
 // ===== FIN RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 

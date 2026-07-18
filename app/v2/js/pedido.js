@@ -988,7 +988,7 @@ async function generarPrecuenta(numeroMesa){
 
         }
 
-        const respuestaTicket = await fetch(API + "/ticket/" + numeroMesa);
+        const respuestaTicket = await fetch(API + "/saas/ticket/" + numeroMesa);
 
         if(!respuestaTicket.ok){
 
@@ -1022,7 +1022,7 @@ async function generarPrecuenta(numeroMesa){
 
         }else{
 
-            window.open(API + "/ticket/" + numeroMesa, "_blank");
+            window.open(API + "/saas/ticket/" + numeroMesa, "_blank");
 
         }
 
