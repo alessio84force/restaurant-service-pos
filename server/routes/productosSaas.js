@@ -201,7 +201,125 @@ ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
     .check input{width:auto;}
     .empty{color:#6b7280;text-align:center;padding:18px;}
     @media(max-width:900px){.grid,.productos-grid{grid-template-columns:1fr;}.categoria-form,.producto-form{grid-template-columns:1fr;}}
-  </style>
+  
+    /* RS CHIC K2B1 PRODUCTOS */
+    body{
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(20,184,166,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%) !important;
+      color:#101827 !important;
+    }
+    .wrap,.container,.contenedor,main{
+      max-width:1180px !important;
+    }
+    .hero,.cabecera,.header,.top-panel{
+      position:relative !important;
+      overflow:hidden !important;
+      border-radius:30px !important;
+      padding:24px !important;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(21,94,117,.68)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.60), transparent 32%) !important;
+      box-shadow:0 24px 70px rgba(15,23,42,.28) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+      color:white !important;
+    }
+    .hero:after,.cabecera:after,.header:after,.top-panel:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      pointer-events:none;
+    }
+    .hero h1,.cabecera h1,.header h1,.top-panel h1{
+      color:white !important;
+      font-size:32px !important;
+      letter-spacing:-.045em !important;
+      line-height:1.02 !important;
+      margin-top:0 !important;
+    }
+    .hero p,.cabecera p,.header p,.top-panel p{
+      color:#cffafe !important;
+    }
+    .card,.panel,.box,.bloque,section.card{
+      border-radius:24px !important;
+      background:rgba(255,255,255,.94) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+      box-shadow:0 14px 36px rgba(15,23,42,.09) !important;
+      backdrop-filter:blur(12px);
+    }
+    .card h2,.panel h2,.box h2,.bloque h2{
+      margin-top:0 !important;
+      letter-spacing:-.035em !important;
+      color:#111827 !important;
+    }
+    a.btn,button,input[type="submit"]{
+      background:linear-gradient(135deg,#0891b2,#14b8a6) !important;
+      color:white !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      border-radius:13px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.14) !important;
+      transition:transform .16s ease, box-shadow .16s ease !important;
+      font-weight:900 !important;
+    }
+    a.btn:hover,button:hover,input[type="submit"]:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20) !important;
+    }
+    a.sec,button.sec,.btn.sec,.btn-secondary{
+      background:linear-gradient(135deg,#ffffff,#e0f2fe) !important;
+      color:#0f172a !important;
+      border:1px solid rgba(255,255,255,.72) !important;
+    }
+    label{
+      color:#374151 !important;
+      font-size:12px !important;
+      letter-spacing:.02em !important;
+      text-transform:uppercase !important;
+      font-weight:900 !important;
+    }
+    input,select,textarea{
+      border-radius:14px !important;
+      border:1px solid #d1d5db !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none !important;
+      border-color:#14b8a6 !important;
+      box-shadow:0 0 0 4px rgba(20,184,166,.14) !important;
+    }
+    table{
+      overflow:hidden !important;
+      border-radius:18px !important;
+      background:white !important;
+      box-shadow:0 12px 28px rgba(15,23,42,.06) !important;
+    }
+    th{
+      background:#f9fafb !important;
+      color:#6b7280 !important;
+      letter-spacing:.06em !important;
+      text-transform:uppercase !important;
+      font-size:12px !important;
+    }
+    td{
+      background:rgba(255,255,255,.92) !important;
+    }
+    .msg,.alert,.mensaje{
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    }
+    .producto,.categoria,.item,.fila,.mesa,.zona{
+      border-radius:18px !important;
+    }
+
+</style>
 </head>
 <body>
   <main class="wrap">
