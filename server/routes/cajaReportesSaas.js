@@ -438,7 +438,164 @@ function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
     th,td{padding:11px;border-bottom:1px solid #e5e7eb;text-align:left;}
     th{font-size:12px;text-transform:uppercase;color:#6b7280;}
     @media(max-width:850px){.grid{grid-template-columns:1fr 1fr;} table,thead,tbody,tr,td,th{display:block;} th{display:none;}}
-  </style>
+  
+    /* RS CHIC K2C CAJA REPORTES */
+    body{
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(16,185,129,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%) !important;
+      color:#101827 !important;
+    }
+    .wrap,.container,.contenedor,main{
+      max-width:1180px !important;
+    }
+    .hero,.cabecera,.header,.top-panel{
+      position:relative !important;
+      overflow:hidden !important;
+      border-radius:30px !important;
+      padding:24px !important;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(6,95,70,.68)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.60), transparent 32%) !important;
+      box-shadow:0 24px 70px rgba(15,23,42,.28) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+      color:white !important;
+    }
+    .hero:after,.cabecera:after,.header:after,.top-panel:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      pointer-events:none;
+    }
+    .hero h1,.cabecera h1,.header h1,.top-panel h1{
+      color:white !important;
+      font-size:32px !important;
+      letter-spacing:-.045em !important;
+      line-height:1.02 !important;
+      margin-top:0 !important;
+    }
+    .hero p,.cabecera p,.header p,.top-panel p{
+      color:#d1fae5 !important;
+    }
+    .card,.panel,.box,.bloque,section.card{
+      border-radius:24px !important;
+      background:rgba(255,255,255,.94) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+      box-shadow:0 14px 36px rgba(15,23,42,.09) !important;
+      backdrop-filter:blur(12px);
+    }
+    .card h2,.panel h2,.box h2,.bloque h2{
+      margin-top:0 !important;
+      letter-spacing:-.035em !important;
+      color:#111827 !important;
+    }
+    a.btn,button,input[type="submit"]{
+      background:linear-gradient(135deg,#059669,#14b8a6) !important;
+      color:white !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      border-radius:13px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.14) !important;
+      transition:transform .16s ease, box-shadow .16s ease !important;
+      font-weight:900 !important;
+    }
+    a.btn:hover,button:hover,input[type="submit"]:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20) !important;
+    }
+    a.sec,button.sec,.btn.sec,.btn-secondary{
+      background:linear-gradient(135deg,#ffffff,#d1fae5) !important;
+      color:#0f172a !important;
+      border:1px solid rgba(255,255,255,.72) !important;
+    }
+    label{
+      color:#374151 !important;
+      font-size:12px !important;
+      letter-spacing:.02em !important;
+      text-transform:uppercase !important;
+      font-weight:900 !important;
+    }
+    input,select,textarea{
+      border-radius:14px !important;
+      border:1px solid #d1d5db !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none !important;
+      border-color:#10b981 !important;
+      box-shadow:0 0 0 4px rgba(16,185,129,.14) !important;
+    }
+    table{
+      overflow:hidden !important;
+      border-radius:18px !important;
+      background:white !important;
+      box-shadow:0 12px 28px rgba(15,23,42,.06) !important;
+    }
+    th{
+      background:#f9fafb !important;
+      color:#6b7280 !important;
+      letter-spacing:.06em !important;
+      text-transform:uppercase !important;
+      font-size:12px !important;
+    }
+    td{
+      background:rgba(255,255,255,.92) !important;
+    }
+    .dato,.stat,.resumen,.total,.metrica{
+      border-radius:18px !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+    }
+    .dato strong,.stat strong,.resumen strong,.total strong,.metrica strong{
+      letter-spacing:-.04em !important;
+    }
+    .msg,.alert,.mensaje{
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    }
+    .ok{
+      background:linear-gradient(135deg,#ecfdf5,#f0fdfa) !important;
+      border-color:#99f6e4 !important;
+    }
+    .error{
+      background:linear-gradient(135deg,#fff7ed,#fef2f2) !important;
+      border-color:#fed7aa !important;
+    }
+    pre,code{
+      border-radius:16px !important;
+      background:linear-gradient(135deg,#0f172a,#111827) !important;
+      box-shadow:0 16px 36px rgba(15,23,42,.18) !important;
+    }
+    .reporte,.caja,.pago,.cierre,.exportacion,.csv,.fila{
+      border-radius:18px !important;
+    }
+    @media print{
+      body{
+        background:white !important;
+      }
+      .hero,.cabecera,.header,.top-panel{
+        background:white !important;
+        color:#111827 !important;
+        box-shadow:none !important;
+        border:1px solid #e5e7eb !important;
+      }
+      .hero h1,.cabecera h1,.header h1,.top-panel h1{
+        color:#111827 !important;
+      }
+      a.btn,button{
+        display:none !important;
+      }
+    }
+
+</style>
 </head>
 <body>
   <main class="wrap">
@@ -544,7 +701,164 @@ function renderReporteHtml(titulo, resumen, filasHtml) {
     th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;}
     th{font-size:12px;text-transform:uppercase;color:#6b7280;}
     @media print{button,a{display:none;}}
-  </style>
+  
+    /* RS CHIC K2C CAJA REPORTES */
+    body{
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(16,185,129,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%) !important;
+      color:#101827 !important;
+    }
+    .wrap,.container,.contenedor,main{
+      max-width:1180px !important;
+    }
+    .hero,.cabecera,.header,.top-panel{
+      position:relative !important;
+      overflow:hidden !important;
+      border-radius:30px !important;
+      padding:24px !important;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(6,95,70,.68)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.60), transparent 32%) !important;
+      box-shadow:0 24px 70px rgba(15,23,42,.28) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+      color:white !important;
+    }
+    .hero:after,.cabecera:after,.header:after,.top-panel:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      pointer-events:none;
+    }
+    .hero h1,.cabecera h1,.header h1,.top-panel h1{
+      color:white !important;
+      font-size:32px !important;
+      letter-spacing:-.045em !important;
+      line-height:1.02 !important;
+      margin-top:0 !important;
+    }
+    .hero p,.cabecera p,.header p,.top-panel p{
+      color:#d1fae5 !important;
+    }
+    .card,.panel,.box,.bloque,section.card{
+      border-radius:24px !important;
+      background:rgba(255,255,255,.94) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+      box-shadow:0 14px 36px rgba(15,23,42,.09) !important;
+      backdrop-filter:blur(12px);
+    }
+    .card h2,.panel h2,.box h2,.bloque h2{
+      margin-top:0 !important;
+      letter-spacing:-.035em !important;
+      color:#111827 !important;
+    }
+    a.btn,button,input[type="submit"]{
+      background:linear-gradient(135deg,#059669,#14b8a6) !important;
+      color:white !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      border-radius:13px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.14) !important;
+      transition:transform .16s ease, box-shadow .16s ease !important;
+      font-weight:900 !important;
+    }
+    a.btn:hover,button:hover,input[type="submit"]:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20) !important;
+    }
+    a.sec,button.sec,.btn.sec,.btn-secondary{
+      background:linear-gradient(135deg,#ffffff,#d1fae5) !important;
+      color:#0f172a !important;
+      border:1px solid rgba(255,255,255,.72) !important;
+    }
+    label{
+      color:#374151 !important;
+      font-size:12px !important;
+      letter-spacing:.02em !important;
+      text-transform:uppercase !important;
+      font-weight:900 !important;
+    }
+    input,select,textarea{
+      border-radius:14px !important;
+      border:1px solid #d1d5db !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none !important;
+      border-color:#10b981 !important;
+      box-shadow:0 0 0 4px rgba(16,185,129,.14) !important;
+    }
+    table{
+      overflow:hidden !important;
+      border-radius:18px !important;
+      background:white !important;
+      box-shadow:0 12px 28px rgba(15,23,42,.06) !important;
+    }
+    th{
+      background:#f9fafb !important;
+      color:#6b7280 !important;
+      letter-spacing:.06em !important;
+      text-transform:uppercase !important;
+      font-size:12px !important;
+    }
+    td{
+      background:rgba(255,255,255,.92) !important;
+    }
+    .dato,.stat,.resumen,.total,.metrica{
+      border-radius:18px !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+    }
+    .dato strong,.stat strong,.resumen strong,.total strong,.metrica strong{
+      letter-spacing:-.04em !important;
+    }
+    .msg,.alert,.mensaje{
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    }
+    .ok{
+      background:linear-gradient(135deg,#ecfdf5,#f0fdfa) !important;
+      border-color:#99f6e4 !important;
+    }
+    .error{
+      background:linear-gradient(135deg,#fff7ed,#fef2f2) !important;
+      border-color:#fed7aa !important;
+    }
+    pre,code{
+      border-radius:16px !important;
+      background:linear-gradient(135deg,#0f172a,#111827) !important;
+      box-shadow:0 16px 36px rgba(15,23,42,.18) !important;
+    }
+    .reporte,.caja,.pago,.cierre,.exportacion,.csv,.fila{
+      border-radius:18px !important;
+    }
+    @media print{
+      body{
+        background:white !important;
+      }
+      .hero,.cabecera,.header,.top-panel{
+        background:white !important;
+        color:#111827 !important;
+        box-shadow:none !important;
+        border:1px solid #e5e7eb !important;
+      }
+      .hero h1,.cabecera h1,.header h1,.top-panel h1{
+        color:#111827 !important;
+      }
+      a.btn,button{
+        display:none !important;
+      }
+    }
+
+</style>
 </head>
 <body>
   <button onclick="window.print()">Imprimir</button>
@@ -607,7 +921,164 @@ function renderReportes(desde, hasta, resumen) {
     input{border:1px solid #d1d5db;border-radius:12px;padding:10px;font-size:15px;background:white;}
     form{display:flex;flex-wrap:wrap;gap:10px;align-items:end;}
     @media(max-width:850px){.grid{grid-template-columns:1fr;}}
-  </style>
+  
+    /* RS CHIC K2C CAJA REPORTES */
+    body{
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(16,185,129,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%) !important;
+      color:#101827 !important;
+    }
+    .wrap,.container,.contenedor,main{
+      max-width:1180px !important;
+    }
+    .hero,.cabecera,.header,.top-panel{
+      position:relative !important;
+      overflow:hidden !important;
+      border-radius:30px !important;
+      padding:24px !important;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(6,95,70,.68)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.60), transparent 32%) !important;
+      box-shadow:0 24px 70px rgba(15,23,42,.28) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+      color:white !important;
+    }
+    .hero:after,.cabecera:after,.header:after,.top-panel:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      pointer-events:none;
+    }
+    .hero h1,.cabecera h1,.header h1,.top-panel h1{
+      color:white !important;
+      font-size:32px !important;
+      letter-spacing:-.045em !important;
+      line-height:1.02 !important;
+      margin-top:0 !important;
+    }
+    .hero p,.cabecera p,.header p,.top-panel p{
+      color:#d1fae5 !important;
+    }
+    .card,.panel,.box,.bloque,section.card{
+      border-radius:24px !important;
+      background:rgba(255,255,255,.94) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+      box-shadow:0 14px 36px rgba(15,23,42,.09) !important;
+      backdrop-filter:blur(12px);
+    }
+    .card h2,.panel h2,.box h2,.bloque h2{
+      margin-top:0 !important;
+      letter-spacing:-.035em !important;
+      color:#111827 !important;
+    }
+    a.btn,button,input[type="submit"]{
+      background:linear-gradient(135deg,#059669,#14b8a6) !important;
+      color:white !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      border-radius:13px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.14) !important;
+      transition:transform .16s ease, box-shadow .16s ease !important;
+      font-weight:900 !important;
+    }
+    a.btn:hover,button:hover,input[type="submit"]:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20) !important;
+    }
+    a.sec,button.sec,.btn.sec,.btn-secondary{
+      background:linear-gradient(135deg,#ffffff,#d1fae5) !important;
+      color:#0f172a !important;
+      border:1px solid rgba(255,255,255,.72) !important;
+    }
+    label{
+      color:#374151 !important;
+      font-size:12px !important;
+      letter-spacing:.02em !important;
+      text-transform:uppercase !important;
+      font-weight:900 !important;
+    }
+    input,select,textarea{
+      border-radius:14px !important;
+      border:1px solid #d1d5db !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none !important;
+      border-color:#10b981 !important;
+      box-shadow:0 0 0 4px rgba(16,185,129,.14) !important;
+    }
+    table{
+      overflow:hidden !important;
+      border-radius:18px !important;
+      background:white !important;
+      box-shadow:0 12px 28px rgba(15,23,42,.06) !important;
+    }
+    th{
+      background:#f9fafb !important;
+      color:#6b7280 !important;
+      letter-spacing:.06em !important;
+      text-transform:uppercase !important;
+      font-size:12px !important;
+    }
+    td{
+      background:rgba(255,255,255,.92) !important;
+    }
+    .dato,.stat,.resumen,.total,.metrica{
+      border-radius:18px !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+    }
+    .dato strong,.stat strong,.resumen strong,.total strong,.metrica strong{
+      letter-spacing:-.04em !important;
+    }
+    .msg,.alert,.mensaje{
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    }
+    .ok{
+      background:linear-gradient(135deg,#ecfdf5,#f0fdfa) !important;
+      border-color:#99f6e4 !important;
+    }
+    .error{
+      background:linear-gradient(135deg,#fff7ed,#fef2f2) !important;
+      border-color:#fed7aa !important;
+    }
+    pre,code{
+      border-radius:16px !important;
+      background:linear-gradient(135deg,#0f172a,#111827) !important;
+      box-shadow:0 16px 36px rgba(15,23,42,.18) !important;
+    }
+    .reporte,.caja,.pago,.cierre,.exportacion,.csv,.fila{
+      border-radius:18px !important;
+    }
+    @media print{
+      body{
+        background:white !important;
+      }
+      .hero,.cabecera,.header,.top-panel{
+        background:white !important;
+        color:#111827 !important;
+        box-shadow:none !important;
+        border:1px solid #e5e7eb !important;
+      }
+      .hero h1,.cabecera h1,.header h1,.top-panel h1{
+        color:#111827 !important;
+      }
+      a.btn,button{
+        display:none !important;
+      }
+    }
+
+</style>
 </head>
 <body>
   <main class="wrap">
