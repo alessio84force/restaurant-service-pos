@@ -62,6 +62,7 @@ const mesasRoutes = require("./routes/mesas");
 const zonasSaasRoutes = require("./routes/zonasSaas");
 const mesasOperativasSaasRoutes = require("./routes/mesasOperativasSaas");
 const productosSaasRoutes = require("./routes/productosSaas");
+const operativaSaasRoutes = require("./routes/operativaSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -127,6 +128,10 @@ app.use(function(req, res, next) {
 
 app.use(function(req, res, next) {
   return productosSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return operativaSaasRoutes(db)(req, res, next);
 });
 app.use(function(req, res, next) {
   return registroLegalMiddleware(db)(req, res, next);
