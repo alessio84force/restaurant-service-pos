@@ -147,7 +147,135 @@ function layout(titulo, contenido) {
     .ticket-preview{max-width:360px;border:1px dashed #9ca3af;border-radius:16px;padding:16px;background:#fff;}
     code{display:block;background:#111827;color:white;padding:12px;border-radius:12px;white-space:pre-wrap;}
     @media(max-width:850px){.grid,.grid3{grid-template-columns:1fr;}}
-  </style>
+  
+
+    /* RS CHIC K2 FISCAL */
+    body{
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(20,184,166,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%) !important;
+      color:#101827 !important;
+    }
+    .wrap{
+      max-width:1120px !important;
+      padding:24px 18px 48px !important;
+    }
+    .hero{
+      position:relative !important;
+      overflow:hidden !important;
+      border-radius:30px !important;
+      padding:24px !important;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(15,118,110,.64)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.55), transparent 32%) !important;
+      box-shadow:0 24px 70px rgba(15,23,42,.28) !important;
+      border:1px solid rgba(255,255,255,.14) !important;
+    }
+    .hero:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .hero h1{
+      font-size:32px !important;
+      letter-spacing:-.045em !important;
+      line-height:1.02 !important;
+    }
+    .hero p{
+      color:#d1fae5 !important;
+      max-width:760px !important;
+    }
+    .actions{
+      position:relative;
+      z-index:2;
+    }
+    a.btn,button{
+      background:linear-gradient(135deg,#0f766e,#14b8a6) !important;
+      color:white !important;
+      border:1px solid rgba(255,255,255,.22) !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.14) !important;
+      transition:transform .16s ease, box-shadow .16s ease !important;
+    }
+    a.btn:hover,button:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20) !important;
+    }
+    a.sec,button.sec{
+      background:linear-gradient(135deg,#ffffff,#e0f2fe) !important;
+      color:#0f172a !important;
+      border:1px solid rgba(255,255,255,.72) !important;
+    }
+    .card{
+      border-radius:24px !important;
+      background:rgba(255,255,255,.94) !important;
+      border:1px solid rgba(229,231,235,.92) !important;
+      box-shadow:0 14px 36px rgba(15,23,42,.09) !important;
+      backdrop-filter:blur(12px);
+    }
+    .card h2{
+      margin-top:0 !important;
+      letter-spacing:-.035em !important;
+      color:#111827 !important;
+    }
+    .grid,.grid3{
+      gap:12px !important;
+    }
+    label{
+      color:#374151 !important;
+      font-size:12px !important;
+      letter-spacing:.02em !important;
+      text-transform:uppercase !important;
+    }
+    input,select,textarea{
+      border-radius:14px !important;
+      border:1px solid #d1d5db !important;
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8) !important;
+    }
+    input:focus,select:focus,textarea:focus{
+      outline:none !important;
+      border-color:#14b8a6 !important;
+      box-shadow:0 0 0 4px rgba(20,184,166,.14) !important;
+    }
+    .msg{
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.06) !important;
+    }
+    .ok{
+      background:linear-gradient(135deg,#ecfdf5,#f0fdfa) !important;
+      border-color:#99f6e4 !important;
+    }
+    .error{
+      background:linear-gradient(135deg,#fff7ed,#fef2f2) !important;
+      border-color:#fed7aa !important;
+    }
+    .dato{
+      background:linear-gradient(180deg,#ffffff,#f9fafb) !important;
+      border-radius:18px !important;
+      box-shadow:0 10px 24px rgba(15,23,42,.05) !important;
+    }
+    .dato strong{
+      letter-spacing:-.04em !important;
+    }
+    .ticket-preview{
+      border-radius:20px !important;
+      box-shadow:0 16px 38px rgba(15,23,42,.10) !important;
+      border:1px solid rgba(229,231,235,.95) !important;
+    }
+    code{
+      border-radius:16px !important;
+      background:linear-gradient(135deg,#0f172a,#111827) !important;
+      box-shadow:0 16px 36px rgba(15,23,42,.18) !important;
+    }
+
+</style>
 </head>
 <body>
   <a href="/logout" style="position:fixed;right:16px;top:12px;z-index:9999;background:#111827;color:white;text-decoration:none;font-weight:900;border-radius:999px;padding:10px 13px;font-size:13px;">Cerrar sesión</a>
