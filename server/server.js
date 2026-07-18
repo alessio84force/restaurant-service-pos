@@ -69,6 +69,7 @@ const operativaSaasRoutes = require("./routes/operativaSaas");
 const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
 const cajaReportesSaasRoutes = require("./routes/cajaReportesSaas");
 const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
+const configuracionChicSaasRoutes = require("./routes/configuracionChicSaas");
 const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
 
@@ -151,6 +152,10 @@ app.use(function(req, res, next) {
 
 app.use(function(req, res, next) {
   return fiscalSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return configuracionChicSaasRoutes(db)(req, res, next);
 });
 
 app.use(function(req, res, next) {
