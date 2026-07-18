@@ -350,6 +350,7 @@ function renderPrincipal(config, req) {
     ["Impresión", "/configuracion-impresoras", "Ticket, bar, cocina y destinos personalizados."],
     ["Caja", "/configuracion-caja", "Pagos, cierre diario y cierre mensual."],
     ["Reportes", "/configuracion-reportes", "Exportaciones CSV del restaurante."],
+    ["Backups", "/configuracion-backups", "Copias de seguridad del restaurante actual."],
     ["Primeros pasos", "/primeros-pasos", "Guía rápida para dejar el restaurante listo."],
     ["Manual", "/manual", "Ayuda de uso para el cliente."]
   ];

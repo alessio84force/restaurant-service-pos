@@ -9,10 +9,12 @@ const legalProfesionalRoutes = require("./routes/legalProfesional");
 const manualClienteRoutes = require("./routes/manualCliente");
 const onboardingClienteRoutes = require("./routes/onboardingCliente");
 const backupsRestauranteRoutes = require("./routes/backupsRestaurante");
+const backupsSaasRoutes = require("./routes/backupsSaas");
 const reportesRestauranteRoutes = require("./routes/reportesRestaurante");
 const registroLegalMiddleware = require("./middleware/registroLegal");
 const restauranteSesionMiddleware = require("./middleware/restauranteSesion");
 const registroSaasMiddleware = require("./middleware/registroSaas");
+const registroFiscalPendienteSaas = require("./middleware/registroFiscalPendienteSaas");
 const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
 const manualClienteLinkMiddleware = require("./middleware/manualClienteLink");
 const onboardingClienteLinkMiddleware = require("./middleware/onboardingClienteLink");
@@ -20,6 +22,7 @@ const backupRestauranteLinkMiddleware = require("./middleware/backupRestauranteL
 const reportesRestauranteLinkMiddleware = require("./middleware/reportesRestauranteLink");
 const configuracionHerramientasClienteMiddleware = require("./middleware/configuracionHerramientasCliente");
 const stripeSuscripcionRoutes = require("./routes/stripeSuscripcion");
+const suscripcionTrialSaasRoutes = require("./routes/suscripcionTrialSaas");
 const stripeWebhookRoutes = require("./routes/stripeWebhook");
 const destinosRoutes = require("./routes/destinos");
 const passwordEyeMiddleware = require("./middleware/passwordEye");
@@ -66,6 +69,7 @@ const operativaSaasRoutes = require("./routes/operativaSaas");
 const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
 const cajaReportesSaasRoutes = require("./routes/cajaReportesSaas");
 const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
+const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
@@ -146,7 +150,19 @@ app.use(function(req, res, next) {
 });
 
 app.use(function(req, res, next) {
+  return fiscalSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
   return usuariosConfigSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return suscripcionTrialSaasRoutes(db)(req, res, next);
+});
+
+app.use(function(req, res, next) {
+  return backupsSaasRoutes(db)(req, res, next);
 });
 // ===== FIN RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 
@@ -607,6 +623,24 @@ function renderRegistroPropietario(error, valores) {
     '</div>',
     '</div>',
     '<div class="nota">La prueba gratuita se activará automáticamente al crear la cuenta.</div>',
+    '<h2>Datos fiscales para facturación</h2>',
+    '<p class="intro">Estos datos se usarán para emitir facturas cuando se active la suscripción.</p>',
+    '<label>Razón social / nombre fiscal</label>',
+    '<input name="razon_social" placeholder="Ej: Trattoria Piccolo Mio SL" required>',
+    '<label>NIF / CIF / VAT</label>',
+    '<input name="nif" placeholder="Ej: B12345678" required>',
+    '<label>Dirección fiscal</label>',
+    '<input name="direccion" placeholder="Calle, número, local" required>',
+    '<label>Código postal</label>',
+    '<input name="codigo_postal" placeholder="Ej: 28001" required>',
+    '<label>Ciudad</label>',
+    '<input name="ciudad" placeholder="Ej: Madrid" required>',
+    '<label>Provincia</label>',
+    '<input name="provincia" placeholder="Ej: Madrid" required>',
+    '<label>País</label>',
+    '<input name="pais" value="España" required>',
+    '<label>Email de facturación</label>',
+    '<input type="email" name="email_facturacion" placeholder="facturacion@restaurante.com" required>',
     '<button type="submit">Crear cuenta y activar prueba</button>',
     '</form>',
     '<a class="volver" href="/login">Volver al login</a>',
@@ -808,6 +842,10 @@ function enviarEmailsAutomaticosRegistro(estado, payload, callback) {
 
   siguiente();
 }
+
+app.use(function(req, res, next) {
+  return registroFiscalPendienteSaas(db)(req, res, next);
+});
 
 app.use(function(req, res, next) {
   return registroSaasMiddleware(db)(req, res, next);

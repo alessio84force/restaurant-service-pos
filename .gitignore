@@ -33,3 +33,5 @@ server/private/
 .env.*
 prints/emails/
 database/backups/
+/backups/
+/database/backups/
