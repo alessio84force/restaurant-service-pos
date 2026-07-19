@@ -520,6 +520,59 @@ function render(datos, usuario, restauranteId) {
       <span>Usuario: ${escapar(usuario.nombre || usuario.email || "")} · ${escapar(usuario.rol || "")}</span>
     </div>
   </main>
+
+<script>
+/* RS M1 PANEL CREADOR CHIC */
+(function(){
+  async function insertarPanelCreador(){
+    try{
+      const res = await fetch("/api/creador/soy-creador", { credentials:"same-origin" });
+      const data = await res.json();
+
+      if(!data || data.creador !== true){
+        return;
+      }
+
+      if(document.getElementById("rs-card-creador-chic")){
+        return;
+      }
+
+      const enlaces = document.querySelector(".grid")
+        || document.querySelector(".cards")
+        || document.querySelector(".acciones")
+        || document.querySelector("main")
+        || document.body;
+
+      const card = document.createElement("a");
+      card.id = "rs-card-creador-chic";
+      card.href = "/creador";
+      card.className = "card creador";
+      card.style.textDecoration = "none";
+      card.style.display = "block";
+      card.style.border = "1px solid rgba(245,158,11,.55)";
+      card.style.background = "linear-gradient(135deg,#111827,#7c2d12)";
+      card.style.color = "white";
+      card.style.boxShadow = "0 18px 42px rgba(15,23,42,.22)";
+
+      card.innerHTML =
+        '<div style="font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#fed7aa;margin-bottom:8px;">Solo creador</div>' +
+        '<h2 style="color:white;margin:0 0 8px;font-size:22px;">Panel Creador</h2>' +
+        '<p style="color:#ffedd5;margin:0;line-height:1.5;">Gestionar clientes SaaS, trial, suscripciones, datos fiscales, backups y acciones administrativas.</p>';
+
+      enlaces.appendChild(card);
+    }catch(e){
+      console.warn("No se pudo insertar Panel Creador:", e.message);
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", insertarPanelCreador);
+  }else{
+    insertarPanelCreador();
+  }
+})();
+</script>
+
 </body>
 </html>`;
 }
