@@ -35,3 +35,7 @@ prints/emails/
 database/backups/
 /backups/
 /database/backups/
+
+# Database SQLite locale
+database/*.sqlite
+database/*.sqlite-*
