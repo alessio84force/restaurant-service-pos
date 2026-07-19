@@ -13,6 +13,7 @@ const backupsSaasRoutes = require("./routes/backupsSaas");
 const reportesRestauranteRoutes = require("./routes/reportesRestaurante");
 const registroLegalMiddleware = require("./middleware/registroLegal");
 const restauranteSesionMiddleware = require("./middleware/restauranteSesion");
+const bloqueoRestauranteSaas = require("./middleware/bloqueoRestauranteSaas");
 const registroSaasMiddleware = require("./middleware/registroSaas");
 const registroFiscalPendienteSaas = require("./middleware/registroFiscalPendienteSaas");
 const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
@@ -83,6 +84,11 @@ saveUninitialized: false
 app.use(function(req, res, next) {
   return restauranteSesionMiddleware(db)(req, res, next);
 });
+
+app.use(function(req, res, next){
+  return bloqueoRestauranteSaas(db)(req, res, next);
+});
+
 
 // Proteccion POS V2: sin login no se puede entrar al POS
 app.use('/app/v2', (req, res, next) => {

@@ -45,31 +45,55 @@ function creadorRoutes(db) {
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
+  /* RS M3C PRIORIDAD SUSPENDIDO */
   function claseEstado(estado) {
     const e = String(estado || "").toLowerCase();
     if (e.includes("activo") || e.includes("pagado") || e.includes("gratis")) return "ok";
-    if (e.includes("expirado") || e.includes("bloqueado") || e.includes("eliminado")) return "danger";
+    if (e.includes("expirado") || e.includes("bloqueado") || e.includes("suspendido") || e.includes("eliminado")) return "danger";
     if (e.includes("pendiente")) return "warn";
     return "trial";
   }
 
   function estadoComercial(cliente) {
-    const estado = String(
-      cliente.suscripcion_estado ||
-      cliente.restaurante_estado ||
-      cliente.plan_tipo ||
-      ""
-    ).toLowerCase();
+    const restauranteEstado = String(cliente.restaurante_estado || "").toLowerCase();
+    const suscripcionEstado = String(cliente.suscripcion_estado || "").toLowerCase();
+    const plan = String(cliente.plan_tipo || cliente.restaurante_plan_tipo || "").toLowerCase();
+
+    if (["suspendido", "bloqueado", "eliminado"].includes(restauranteEstado)) {
+      return restauranteEstado;
+    }
+
+    if (["suspendido", "bloqueado", "eliminado"].includes(suscripcionEstado)) {
+      return suscripcionEstado;
+    }
 
     const trialFin = cliente.trial_fin || cliente.restaurante_trial_fin;
     const dias = diasRestantes(trialFin);
 
-    if (estado === "activo" || estado === "pagado") return "activo";
-    if (estado === "gratis_vida") return "gratis_vida";
-    if (estado === "stripe_pendiente") return "pendiente_pago";
+    if (suscripcionEstado === "activo" || suscripcionEstado === "pagado") return "activo";
+    if (restauranteEstado === "activo" || restauranteEstado === "pagado") return "activo";
+
+    if (suscripcionEstado === "gratis_vida" || restauranteEstado === "gratis_vida" || plan === "gratis_vida") {
+      return "gratis_vida";
+    }
+
+    if (suscripcionEstado === "stripe_pendiente" || restauranteEstado === "stripe_pendiente") {
+      return "pendiente_pago";
+    }
+
     if (dias !== null && dias < 0) return "trial_expirado";
-    if (estado === "trial" || estado === "prueba" || dias !== null) return "trial";
-    return estado || "sin_estado";
+
+    if (
+      suscripcionEstado === "trial" ||
+      suscripcionEstado === "prueba" ||
+      restauranteEstado === "trial" ||
+      restauranteEstado === "prueba" ||
+      dias !== null
+    ) {
+      return "trial";
+    }
+
+    return suscripcionEstado || restauranteEstado || plan || "sin_estado";
   }
 
   function fiscalCompleto(cliente) {
@@ -112,6 +136,15 @@ function creadorRoutes(db) {
     `);
   }
 
+  function run(sql, params) {
+    return new Promise((resolve, reject) => {
+      db.run(sql, params || [], function(err) {
+        if (err) return reject(err);
+        resolve(this);
+      });
+    });
+  }
+
   function all(sql, params) {
     return new Promise((resolve, reject) => {
       db.all(sql, params || [], (err, rows) => {
@@ -130,7 +163,25 @@ function creadorRoutes(db) {
     });
   }
 
+  async function asegurarColumna(tabla, nombre, definicion) {
+    const columnas = await all("PRAGMA table_info(" + tabla + ")", []);
+    const existe = columnas.some(c => c.name === nombre);
+    if (!existe) {
+      await run("ALTER TABLE " + tabla + " ADD COLUMN " + nombre + " " + definicion, []);
+    }
+  }
+
+  async function asegurarColumnasAdminCliente() {
+    await asegurarColumna("restaurantes", "estado_anterior_admin", "TEXT");
+    await asegurarColumna("restaurantes", "suspendido_en", "TEXT");
+    await asegurarColumna("restaurantes", "reactivado_en", "TEXT");
+    await asegurarColumna("restaurantes", "suspension_motivo", "TEXT");
+    await asegurarColumna("configurazione", "suscripcion_estado_anterior_admin", "TEXT");
+  }
+
   async function asegurarTablasComerciales() {
+    await asegurarColumnasAdminCliente();
+
     await new Promise((resolve, reject) => {
       db.serialize(() => {
         db.run(`
@@ -680,13 +731,7 @@ function creadorRoutes(db) {
         </table>
       </section>
 
-      <section class="card">
-        <h2>Acciones administrativas</h2>
-        <div class="grid">
-          <div class="mini"><strong>Próximo paso M3</strong><span>Añadiremos suspender y reactivar cliente.</span></div>
-          <div class="mini"><strong>Próximo paso M4</strong><span>Añadiremos eliminación segura con backup previo.</span></div>
-        </div>
-      </section>
+      <section class="card">\n        <h2>Acciones administrativas</h2>\n        <div class="grid">\n          <div class="mini">\n            <strong>Suspender cliente</strong>\n            <span>Bloquea el acceso del restaurante sin borrar datos. Es reversible.</span>\n            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/suspender" style="margin-top:12px;">\n              <textarea name="motivo" rows="3" placeholder="Motivo interno o mensaje para el cliente..."></textarea>\n              <button type="submit" style="margin-top:10px;background:linear-gradient(135deg,#dc2626,#7f1d1d);">Suspender cliente</button>\n            </form>\n          </div>\n          <div class="mini">\n            <strong>Reactivar cliente</strong>\n            <span>Restaura el acceso usando el estado anterior cuando sea posible.</span>\n            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/reactivar" style="margin-top:12px;">\n              <button type="submit" class="sec">Reactivar cliente</button>\n            </form>\n          </div>\n          <div class="mini"><strong>Seguridad</strong><span>Suspender no borra usuarios, mesas, productos, pedidos ni pagos.</span></div>\n          <div class="mini"><strong>Próximo paso M4</strong><span>Añadiremos eliminación segura con backup previo.</span></div>\n        </div>\n      </section>
     `);
   }
 
@@ -712,6 +757,106 @@ function creadorRoutes(db) {
     } catch (err) {
       console.error("Error Panel Creador SaaS:", err);
       res.status(500).send("Error cargando Panel Creador SaaS: " + escapar(err.message));
+    }
+  });
+
+
+  router.post("/creador/cliente/:id/suspender", requireCreador, async function(req, res) {
+    try {
+      await asegurarColumnasAdminCliente();
+
+      const id = Number(req.params.id || 0);
+      if (!id) return res.status(400).send("Cliente no válido");
+
+      const cliente = await get("SELECT id, estado FROM restaurantes WHERE id = ? LIMIT 1", [id]);
+      if (!cliente) return res.status(404).send("Cliente no encontrado");
+
+      const config = await get("SELECT id, suscripcion_estado FROM configurazione WHERE restaurante_id = ? LIMIT 1", [id]);
+      const motivo = normalizar(req.body && req.body.motivo || "Cuenta suspendida por administración");
+
+      await run(`
+        UPDATE restaurantes
+        SET
+          estado_anterior_admin = CASE
+            WHEN estado_anterior_admin IS NULL OR estado_anterior_admin = '' OR estado = 'suspendido'
+            THEN COALESCE(NULLIF(estado,''),'trial')
+            ELSE estado_anterior_admin
+          END,
+          estado = 'suspendido',
+          suspendido_en = CURRENT_TIMESTAMP,
+          suspension_motivo = ?,
+          actualizado_en = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [motivo, id]);
+
+      if (config) {
+        await run(`
+          UPDATE configurazione
+          SET
+            suscripcion_estado_anterior_admin = CASE
+              WHEN suscripcion_estado_anterior_admin IS NULL OR suscripcion_estado_anterior_admin = '' OR suscripcion_estado = 'suspendido'
+              THEN COALESCE(NULLIF(suscripcion_estado,''),'trial')
+              ELSE suscripcion_estado_anterior_admin
+            END,
+            suscripcion_estado = 'suspendido'
+          WHERE restaurante_id = ?
+        `, [id]);
+      }
+
+      res.redirect("/creador/cliente/" + encodeURIComponent(id));
+    } catch (err) {
+      console.error("Error suspendiendo cliente:", err);
+      res.status(500).send("Error suspendiendo cliente: " + escapar(err.message));
+    }
+  });
+
+  router.post("/creador/cliente/:id/reactivar", requireCreador, async function(req, res) {
+    try {
+      await asegurarColumnasAdminCliente();
+
+      const id = Number(req.params.id || 0);
+      if (!id) return res.status(400).send("Cliente no válido");
+
+      const cliente = await get("SELECT id, estado_anterior_admin FROM restaurantes WHERE id = ? LIMIT 1", [id]);
+      if (!cliente) return res.status(404).send("Cliente no encontrado");
+
+      const config = await get("SELECT id, suscripcion_estado_anterior_admin FROM configurazione WHERE restaurante_id = ? LIMIT 1", [id]);
+
+      const estadoAnterior = normalizar(cliente.estado_anterior_admin);
+      const nuevoEstado = estadoAnterior && !["suspendido","bloqueado","eliminado"].includes(estadoAnterior.toLowerCase())
+        ? estadoAnterior
+        : "trial";
+
+      await run(`
+        UPDATE restaurantes
+        SET
+          estado = ?,
+          estado_anterior_admin = NULL,
+          reactivado_en = CURRENT_TIMESTAMP,
+          suspension_motivo = '',
+          actualizado_en = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `, [nuevoEstado, id]);
+
+      if (config) {
+        const estadoConfigAnterior = normalizar(config.suscripcion_estado_anterior_admin);
+        const nuevoEstadoConfig = estadoConfigAnterior && !["suspendido","bloqueado","eliminado"].includes(estadoConfigAnterior.toLowerCase())
+          ? estadoConfigAnterior
+          : nuevoEstado;
+
+        await run(`
+          UPDATE configurazione
+          SET
+            suscripcion_estado = ?,
+            suscripcion_estado_anterior_admin = NULL
+          WHERE restaurante_id = ?
+        `, [nuevoEstadoConfig, id]);
+      }
+
+      res.redirect("/creador/cliente/" + encodeURIComponent(id));
+    } catch (err) {
+      console.error("Error reactivando cliente:", err);
+      res.status(500).send("Error reactivando cliente: " + escapar(err.message));
     }
   });
 
