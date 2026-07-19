@@ -25,8 +25,6 @@ function bloqueoRestauranteSaas(db) {
       "/cookies",
       "/terminos",
       "/pago-requerido",
-      "/configuracion-suscripcion",
-      "/stripe",
       "/creador",
       "/api/creador",
       "/app/assets",
@@ -104,7 +102,7 @@ function bloqueoRestauranteSaas(db) {
     <p>Si cree que es un error, contacte con soporte o con el administrador del sistema.</p>
     <div class="acciones">
       <!-- RS M3B PAGO SUSPENDIDO -->
-      <a href="/configuracion-suscripcion">Ir al pago</a>
+      ${estado === "eliminado" ? "" : '<a href="/configuracion-suscripcion">Ir al pago</a>'}
       <a class="sec" href="/logout">Cerrar sesión</a>
       <a class="sec" href="/login">Volver a login</a>
     </div>
@@ -167,7 +165,19 @@ function bloqueoRestauranteSaas(db) {
           return next();
         }
 
-        return paginaBloqueada(res, estadoRestaurante || estadoSuscripcion, row.suspension_motivo || "");
+        /* RS M4B ELIMINADO SIN PAGO */
+        const estadoFinal = estadoRestaurante || estadoSuscripcion;
+
+        if (estadoFinal !== "eliminado" && (
+          path === "/configuracion-suscripcion" ||
+          path.startsWith("/configuracion-suscripcion/") ||
+          path === "/stripe" ||
+          path.startsWith("/stripe/")
+        )) {
+          return next();
+        }
+
+        return paginaBloqueada(res, estadoFinal, row.suspension_motivo || "");
       });
     } catch (e) {
       return next();

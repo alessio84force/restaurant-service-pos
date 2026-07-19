@@ -1,4 +1,6 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
 function creadorRoutes(db) {
   const router = express.Router();
@@ -263,6 +265,89 @@ function creadorRoutes(db) {
       LEFT JOIN configurazione c ON c.restaurante_id = r.id
       ORDER BY r.id DESC
     `, []);
+  }
+
+
+  /* RS M4B ELIMINAR CLIENTE SEGURO */
+  async function asegurarColumnasEliminacionCliente() {
+    await asegurarColumna("restaurantes", "eliminado_en", "TEXT");
+    await asegurarColumna("restaurantes", "eliminacion_motivo", "TEXT");
+    await asegurarColumna("restaurantes", "backup_eliminacion_path", "TEXT");
+  }
+
+  async function tablaExiste(nombre) {
+    const row = await get("SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1", [nombre]);
+    return !!row;
+  }
+
+  async function leerTablaRestaurante(tabla, restauranteId) {
+    const existe = await tablaExiste(tabla);
+    if (!existe) return [];
+
+    const columnas = await all("PRAGMA table_info(" + tabla + ")", []);
+    const tieneRestauranteId = columnas.some(c => c.name === "restaurante_id");
+
+    if (tieneRestauranteId) {
+      return all("SELECT * FROM " + tabla + " WHERE restaurante_id = ?", [restauranteId]);
+    }
+
+    if (tabla === "restaurantes") {
+      return all("SELECT * FROM restaurantes WHERE id = ?", [restauranteId]);
+    }
+
+    return [];
+  }
+
+  async function crearBackupEliminacionCliente(restauranteId, motivo, usuarioCreador) {
+    const restaurante = await get("SELECT * FROM restaurantes WHERE id = ? LIMIT 1", [restauranteId]);
+    if (!restaurante) {
+      throw new Error("Restaurante no encontrado");
+    }
+
+    const tablasTenant = [
+      "restaurantes",
+      "configurazione",
+      "usuarios",
+      "zonas",
+      "mesas",
+      "categorias",
+      "productos",
+      "pedidos",
+      "pedido_lineas",
+      "pagos",
+      "cierres_caja",
+      "destinos_comanda",
+      "comanda_envios_linea",
+      "reservas",
+      "variantes",
+      "opciones_variante",
+      "modificadores",
+      "pedido_linea_modificadores",
+      "aceptaciones_legales"
+    ];
+
+    const datos = {
+      tipo: "backup_eliminacion_cliente_saas",
+      generado_en: new Date().toISOString(),
+      restaurante_id: restauranteId,
+      motivo: motivo || "",
+      generado_por: usuarioCreador || "",
+      restaurante: restaurante,
+      tablas: {}
+    };
+
+    for (const tabla of tablasTenant) {
+      datos.tablas[tabla] = await leerTablaRestaurante(tabla, restauranteId);
+    }
+
+    const dir = path.join(__dirname, "..", "..", "backups", "restaurante_" + restauranteId);
+    fs.mkdirSync(dir, { recursive: true });
+
+    const sello = new Date().toISOString().replace(/[:.]/g, "-");
+    const archivo = path.join(dir, "eliminacion_r" + restauranteId + "_" + sello + ".json");
+
+    fs.writeFileSync(archivo, JSON.stringify(datos, null, 2), "utf8");
+    return archivo;
   }
 
   async function cargarClienteDetalle(id) {
@@ -731,7 +816,42 @@ function creadorRoutes(db) {
         </table>
       </section>
 
-      <section class="card">\n        <h2>Acciones administrativas</h2>\n        <div class="grid">\n          <div class="mini">\n            <strong>Suspender cliente</strong>\n            <span>Bloquea el acceso del restaurante sin borrar datos. Es reversible.</span>\n            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/suspender" style="margin-top:12px;">\n              <textarea name="motivo" rows="3" placeholder="Motivo interno o mensaje para el cliente..."></textarea>\n              <button type="submit" style="margin-top:10px;background:linear-gradient(135deg,#dc2626,#7f1d1d);">Suspender cliente</button>\n            </form>\n          </div>\n          <div class="mini">\n            <strong>Reactivar cliente</strong>\n            <span>Restaura el acceso usando el estado anterior cuando sea posible.</span>\n            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/reactivar" style="margin-top:12px;">\n              <button type="submit" class="sec">Reactivar cliente</button>\n            </form>\n          </div>\n          <div class="mini"><strong>Seguridad</strong><span>Suspender no borra usuarios, mesas, productos, pedidos ni pagos.</span></div>\n          <div class="mini"><strong>Próximo paso M4</strong><span>Añadiremos eliminación segura con backup previo.</span></div>\n        </div>\n      </section>
+      <section class="card">
+        <h2>Acciones administrativas</h2>
+        <div class="grid">
+          <div class="mini">
+            <strong>Suspender cliente</strong>
+            <span>Bloquea el acceso del restaurante sin borrar datos. Es reversible.</span>
+            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/suspender" style="margin-top:12px;">
+              <textarea name="motivo" rows="3" placeholder="Motivo interno o mensaje para el cliente..."></textarea>
+              <button type="submit" style="margin-top:10px;background:linear-gradient(135deg,#dc2626,#7f1d1d);">Suspender cliente</button>
+            </form>
+          </div>
+
+          <div class="mini">
+            <strong>Reactivar cliente</strong>
+            <span>Restaura el acceso usando el estado anterior cuando sea posible.</span>
+            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/reactivar" style="margin-top:12px;">
+              <button type="submit" class="sec">Reactivar cliente</button>
+            </form>
+          </div>
+
+          <div class="mini">
+            <strong>Eliminar cliente</strong>
+            <span>Crea backup automático, desactiva usuarios y marca el restaurante como eliminado. No borra físicamente los datos.</span>
+            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/eliminar" style="margin-top:12px;" onsubmit="return confirm('¿Seguro que quieres eliminar este cliente? Se creará un backup y se bloqueará el acceso.');">
+              <textarea name="motivo" rows="3" placeholder="Motivo de eliminación o solicitud del cliente..."></textarea>
+              <input name="confirmacion" placeholder="Escribe ELIMINAR para confirmar" style="margin-top:10px;">
+              <button type="submit" style="margin-top:10px;background:linear-gradient(135deg,#991b1b,#450a0a);">Eliminar cliente</button>
+            </form>
+          </div>
+
+          <div class="mini">
+            <strong>Seguridad</strong>
+            <span>Suspender o eliminar no borra mesas, productos, pedidos ni pagos. La eliminación segura deja backup y bloquea usuarios.</span>
+          </div>
+        </div>
+      </section>
     `);
   }
 
@@ -857,6 +977,47 @@ function creadorRoutes(db) {
     } catch (err) {
       console.error("Error reactivando cliente:", err);
       res.status(500).send("Error reactivando cliente: " + escapar(err.message));
+    }
+  });
+
+
+  router.post("/creador/cliente/:id/eliminar", requireCreador, async function(req, res) {
+    try {
+      await asegurarColumnasAdminCliente();
+      await asegurarColumnasEliminacionCliente();
+
+      const id = Number(req.params.id || 0);
+      if (!id) return res.status(400).send("Cliente no válido");
+
+      const confirmacion = normalizar(req.body && req.body.confirmacion || "").toUpperCase();
+      if (confirmacion !== "ELIMINAR") {
+        return res.status(400).send("Para eliminar el cliente debes escribir ELIMINAR.");
+      }
+
+      const cliente = await get("SELECT id, estado FROM restaurantes WHERE id = ? LIMIT 1", [id]);
+      if (!cliente) return res.status(404).send("Cliente no encontrado");
+
+      const motivo = normalizar(req.body && req.body.motivo || "Eliminación solicitada o ejecutada por administración");
+      const usuarioCreador = req.session && req.session.usuario ? req.session.usuario.email : "";
+
+      const backupPath = await crearBackupEliminacionCliente(id, motivo, usuarioCreador);
+
+      await run(
+        "UPDATE restaurantes SET estado_anterior_admin = CASE WHEN estado_anterior_admin IS NULL OR estado_anterior_admin = '' OR estado = 'eliminado' THEN COALESCE(NULLIF(estado,''),'trial') ELSE estado_anterior_admin END, estado = 'eliminado', eliminado_en = CURRENT_TIMESTAMP, eliminacion_motivo = ?, backup_eliminacion_path = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?",
+        [motivo, backupPath, id]
+      );
+
+      await run(
+        "UPDATE configurazione SET suscripcion_estado_anterior_admin = CASE WHEN suscripcion_estado_anterior_admin IS NULL OR suscripcion_estado_anterior_admin = '' OR suscripcion_estado = 'eliminado' THEN COALESCE(NULLIF(suscripcion_estado,''),'trial') ELSE suscripcion_estado_anterior_admin END, suscripcion_estado = 'eliminado' WHERE restaurante_id = ?",
+        [id]
+      );
+
+      await run("UPDATE usuarios SET activo = 0 WHERE restaurante_id = ?", [id]);
+
+      res.redirect("/creador/cliente/" + encodeURIComponent(id));
+    } catch (err) {
+      console.error("Error eliminando cliente:", err);
+      res.status(500).send("Error eliminando cliente: " + escapar(err.message));
     }
   });
 
