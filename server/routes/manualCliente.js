@@ -46,58 +46,109 @@ function paginaManual() {
 
     *{box-sizing:border-box;}
 
+    html{scroll-behavior:smooth;}
+
     body{
       margin:0;
       font-family:Arial, Helvetica, sans-serif;
-      background:var(--bg);
+      background:
+        radial-gradient(circle at 10% 8%, rgba(245,158,11,.20), transparent 30%),
+        radial-gradient(circle at 86% 14%, rgba(59,130,246,.18), transparent 28%),
+        linear-gradient(135deg,#0f172a 0%,#111827 32%,#f8fafc 32%,#f3f4f6 100%);
       color:var(--text);
     }
 
     .wrap{
-      max-width:1100px;
+      max-width:1180px;
       margin:0 auto;
-      padding:28px 18px 60px;
+      padding:24px 18px 60px;
     }
 
     .hero{
-      background:linear-gradient(135deg,#0f172a,#1e3a8a);
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(135deg,rgba(17,24,39,.96),rgba(30,64,175,.68)),
+        radial-gradient(circle at 92% 18%, rgba(245,158,11,.60), transparent 32%);
       color:white;
-      border-radius:26px;
-      padding:30px;
-      box-shadow:0 20px 50px rgba(15,23,42,.18);
-      margin-bottom:20px;
+      border-radius:30px;
+      padding:28px;
+      box-shadow:0 24px 70px rgba(15,23,42,.28);
+      border:1px solid rgba(255,255,255,.14);
+      margin-bottom:18px;
+    }
+
+    .hero:after{
+      content:"";
+      position:absolute;
+      right:-88px;
+      top:-88px;
+      width:230px;
+      height:230px;
+      border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      pointer-events:none;
     }
 
     .hero h1{
+      position:relative;
+      z-index:1;
       margin:0 0 8px;
       font-size:34px;
-      line-height:1.12;
+      letter-spacing:-.045em;
+      line-height:1.02;
     }
 
     .hero p{
+      position:relative;
+      z-index:1;
       margin:0;
       color:#dbeafe;
       line-height:1.5;
       font-size:15px;
-      max-width:760px;
+      max-width:780px;
     }
 
     .hero-actions{
+      position:relative;
+      z-index:1;
       margin-top:18px;
       display:flex;
       flex-wrap:wrap;
       gap:10px;
     }
 
-    .hero-actions a{
+    .hero-actions a,
+    a.btn,
+    button{
+      display:inline-block;
       color:white;
       text-decoration:none;
-      border:1px solid rgba(255,255,255,.35);
-      border-radius:999px;
-      padding:9px 13px;
+      border:1px solid rgba(255,255,255,.22);
+      border-radius:13px;
+      padding:10px 14px;
       font-size:13px;
-      font-weight:800;
-      background:rgba(255,255,255,.08);
+      font-weight:900;
+      background:linear-gradient(135deg,#2563eb,#14b8a6);
+      box-shadow:0 10px 24px rgba(15,23,42,.14);
+      transition:transform .16s ease, box-shadow .16s ease;
+      cursor:pointer;
+    }
+
+    .hero-actions a:hover,
+    a.btn:hover,
+    button:hover{
+      transform:translateY(-2px);
+      box-shadow:0 16px 34px rgba(15,23,42,.20);
+    }
+
+    .hero-actions a.sec,
+    a.sec,
+    button.sec{
+      background:linear-gradient(135deg,#ffffff,#dbeafe);
+      color:#0f172a;
+      border:1px solid rgba(255,255,255,.72);
     }
 
     .layout{
@@ -110,26 +161,28 @@ function paginaManual() {
     .indice{
       position:sticky;
       top:14px;
-      background:white;
-      border:1px solid var(--line);
-      border-radius:20px;
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(229,231,235,.92);
+      border-radius:24px;
       padding:16px;
-      box-shadow:0 10px 26px rgba(15,23,42,.07);
+      box-shadow:0 14px 36px rgba(15,23,42,.09);
+      backdrop-filter:blur(12px);
     }
 
     .indice h2{
       margin:0 0 12px;
       font-size:18px;
+      letter-spacing:-.035em;
     }
 
     .indice a{
       display:block;
       text-decoration:none;
       color:#1f2937;
-      border-radius:10px;
+      border-radius:12px;
       padding:9px 10px;
       font-size:14px;
-      font-weight:700;
+      font-weight:800;
     }
 
     .indice a:hover{
@@ -138,23 +191,26 @@ function paginaManual() {
     }
 
     .card{
-      background:white;
-      border:1px solid var(--line);
-      border-radius:22px;
-      padding:24px;
-      box-shadow:0 10px 26px rgba(15,23,42,.07);
+      background:rgba(255,255,255,.94);
+      border:1px solid rgba(229,231,235,.92);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 14px 36px rgba(15,23,42,.09);
       margin-bottom:16px;
+      backdrop-filter:blur(12px);
     }
 
     h2{
       margin:0 0 12px;
       font-size:25px;
+      letter-spacing:-.04em;
       color:var(--dark);
     }
 
     h3{
       margin:20px 0 8px;
       font-size:18px;
+      letter-spacing:-.03em;
       color:var(--dark);
     }
 
@@ -178,13 +234,14 @@ function paginaManual() {
     .paso{
       counter-increment:paso;
       border:1px solid var(--line);
-      border-radius:15px;
+      border-radius:18px;
       padding:13px 14px 13px 48px;
-      background:#f9fafb;
+      background:linear-gradient(180deg,#ffffff,#f9fafb);
       position:relative;
       line-height:1.5;
       color:#374151;
       font-size:15px;
+      box-shadow:0 8px 20px rgba(15,23,42,.05);
     }
 
     .paso:before{
@@ -195,7 +252,7 @@ function paginaManual() {
       width:24px;
       height:24px;
       border-radius:50%;
-      background:#2563eb;
+      background:linear-gradient(135deg,#2563eb,#14b8a6);
       color:white;
       display:flex;
       align-items:center;
@@ -205,25 +262,27 @@ function paginaManual() {
     }
 
     .tip{
-      background:#ecfdf5;
-      border:1px solid #86efac;
+      background:linear-gradient(135deg,#ecfdf5,#f0fdfa);
+      border:1px solid #99f6e4;
       color:#14532d;
-      border-radius:16px;
+      border-radius:18px;
       padding:14px 16px;
       line-height:1.55;
       margin:14px 0;
       font-size:14px;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
     }
 
     .alerta{
-      background:#fffbeb;
-      border:1px solid #fbbf24;
+      background:linear-gradient(135deg,#fff7ed,#fef3c7);
+      border:1px solid #fed7aa;
       color:#78350f;
-      border-radius:16px;
+      border-radius:18px;
       padding:14px 16px;
       line-height:1.55;
       margin:14px 0;
       font-size:14px;
+      box-shadow:0 10px 24px rgba(15,23,42,.06);
     }
 
     .grid{
@@ -235,9 +294,10 @@ function paginaManual() {
 
     .mini{
       border:1px solid var(--line);
-      background:#f9fafb;
-      border-radius:16px;
+      background:linear-gradient(180deg,#ffffff,#f9fafb);
+      border-radius:18px;
       padding:15px;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
     }
 
     .mini strong{
@@ -259,254 +319,273 @@ function paginaManual() {
       border:1px solid #e2e8f0;
       border-radius:8px;
       padding:2px 6px;
-      font-size:13px;
-    }
-
-    .estado{
-      display:inline-block;
-      padding:4px 8px;
-      border-radius:999px;
-      font-size:12px;
+      color:#0f172a;
       font-weight:800;
     }
 
-    .verde{background:#dcfce7;color:#166534;}
-    .azul{background:#dbeafe;color:#1e40af;}
-    .amarillo{background:#fef3c7;color:#92400e;}
-    .rojo{background:#fee2e2;color:#991b1b;}
+    .badge{
+      display:inline-block;
+      border-radius:999px;
+      padding:5px 9px;
+      font-size:12px;
+      font-weight:900;
+      background:#eff6ff;
+      color:#1d4ed8;
+      margin:3px 4px 3px 0;
+    }
+
+    .checklist{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .check{
+      border:1px solid #e5e7eb;
+      border-radius:16px;
+      padding:11px 13px;
+      background:#f9fafb;
+      font-weight:800;
+      color:#374151;
+    }
+
+    .check:before{
+      content:"✓";
+      color:#16a34a;
+      font-weight:1000;
+      margin-right:8px;
+    }
 
     .footer{
-      text-align:center;
       color:#6b7280;
       font-size:13px;
-      margin-top:22px;
-      line-height:1.5;
+      margin-top:18px;
+      text-align:center;
     }
 
-    .footer a{
-      color:#2563eb;
-      text-decoration:none;
-      font-weight:800;
-    }
-
-    @media(max-width:860px){
-      .layout{
-        grid-template-columns:1fr;
-      }
-
-      .indice{
-        position:static;
-      }
-
-      .grid{
-        grid-template-columns:1fr;
-      }
-
-      .hero h1{
-        font-size:27px;
-      }
-
-      .card{
-        padding:19px;
-      }
+    @media(max-width:850px){
+      body{background:#f3f4f6;}
+      .layout{grid-template-columns:1fr;}
+      .indice{position:static;}
+      .grid{grid-template-columns:1fr;}
+      .hero h1{font-size:30px;}
     }
 
     @media print{
-      .indice,.hero-actions{display:none;}
       body{background:white;}
-      .card,.hero{box-shadow:none;}
+      .hero-actions,.indice{display:none;}
       .layout{display:block;}
+      .card,.hero{box-shadow:none;border:1px solid #e5e7eb;}
     }
   </style>
 </head>
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Manual de uso de ${escapar(d.nombre)}</h1>
-      <p>Guía rápida para aprender a configurar el restaurante, trabajar con mesas, enviar comandas, cobrar y cerrar caja sin depender de asistencia técnica.</p>
+      <h1>Manual de uso</h1>
+      <p>Guía práctica para usar ${escapar(d.nombre)} en modo self-service: crear cuenta, activar trial, configurar el restaurante, trabajar con el POS, controlar caja y gestionar la suscripción.</p>
       <div class="hero-actions">
-        <a href="/configuracion">Volver a configuración</a>
+        <a href="/configuracion" class="sec">Volver a configuración</a>
         <a href="/app/v2">Abrir POS</a>
-        <a href="/camarero">Vista camarero</a>
-        <a href="javascript:window.print()">Imprimir manual</a>
+        <a href="javascript:window.print()" class="sec">Imprimir manual</a>
       </div>
     </section>
 
     <div class="layout">
       <aside class="indice">
         <h2>Índice</h2>
-        <a href="#inicio">1. Primer acceso</a>
-        <a href="#configuracion">2. Configuración inicial</a>
-        <a href="#mesas">3. Salas y mesas</a>
-        <a href="#productos">4. Productos</a>
-        <a href="#impresion">5. Impresoras</a>
-        <a href="#servicio">6. Trabajo diario</a>
-        <a href="#comandas">7. Comandas</a>
-        <a href="#cobro">8. Cobro</a>
-        <a href="#caja">9. Caja</a>
-        <a href="#movil">10. Camarero móvil</a>
-        <a href="#usuarios">11. Usuarios</a>
-        <a href="#faq">12. Preguntas frecuentes</a>
+        <a href="#inicio">1. Flujo self-service</a>
+        <a href="#registro">2. Crear cuenta y trial</a>
+        <a href="#fiscales">3. Datos fiscales</a>
+        <a href="#configuracion">4. Configuración inicial</a>
+        <a href="#mesas">5. Salas y mesas</a>
+        <a href="#productos">6. Productos y destinos</a>
+        <a href="#impresion">7. Impresión</a>
+        <a href="#pos">8. Trabajo diario POS</a>
+        <a href="#cobro">9. Cuenta y cobro</a>
+        <a href="#caja">10. Caja y reportes</a>
+        <a href="#usuarios">11. Usuarios y roles</a>
+        <a href="#backups">12. Backups</a>
+        <a href="#suscripcion">13. Suscripción</a>
+        <a href="#ayuda">14. Ayuda</a>
       </aside>
 
       <section>
         <article id="inicio" class="card">
-          <h2>1. Primer acceso</h2>
-          <p>Al entrar por primera vez, el propietario o responsable del restaurante accede con el email y la contraseña facilitados en el alta.</p>
+          <h2>1. Flujo self-service</h2>
+          <p>Restaurant Service POS está pensado para que el propietario pueda empezar sin asistencia técnica obligatoria. El flujo normal es:</p>
           <div class="pasos">
-            <div class="paso">Abrir la página de login.</div>
-            <div class="paso">Escribir email y contraseña.</div>
-            <div class="paso">Entrar en <strong>Configuración</strong> para preparar el restaurante.</div>
-            <div class="paso">Después de configurar mesas, productos e impresoras, abrir el POS y empezar a trabajar.</div>
+            <div class="paso">Crear una cuenta nueva desde la página de registro.</div>
+            <div class="paso">Entrar en el periodo de prueba gratuito.</div>
+            <div class="paso">Completar datos fiscales y datos del restaurante.</div>
+            <div class="paso">Configurar salas, mesas, productos, destinos e impresión.</div>
+            <div class="paso">Usar el POS durante el servicio.</div>
+            <div class="paso">Cuando termine el trial, activar la suscripción mensual.</div>
           </div>
-          <div class="tip">Consejo: antes del primer servicio real, conviene hacer una prueba completa con una mesa ficticia.</div>
+          <div class="tip">Recomendación: antes del primer servicio real, crear al menos una sala, una mesa, una categoría, un producto y probar una cuenta.</div>
+        </article>
+
+        <article id="registro" class="card">
+          <h2>2. Crear cuenta y trial</h2>
+          <p>El propietario crea la cuenta del restaurante desde <code>/registro</code>. Al registrarse, el sistema crea un restaurante propio y separa sus datos del resto de clientes.</p>
+          <div class="grid">
+            <div class="mini"><strong>Cuenta del propietario</strong><span>Email, contraseña y datos de acceso del administrador principal.</span></div>
+            <div class="mini"><strong>Trial gratuito</strong><span>Periodo inicial para configurar y probar el sistema antes del pago.</span></div>
+          </div>
+          <div class="alerta">El propietario debe guardar bien su email y contraseña. Desde esa cuenta podrá crear usuarios camareros o gerentes.</div>
+        </article>
+
+        <article id="fiscales" class="card">
+          <h2>3. Datos fiscales obligatorios</h2>
+          <p>Antes de activar la suscripción de pago, el restaurante debe tener completos sus datos fiscales para facturación.</p>
+          <div class="checklist">
+            <div class="check">Nombre comercial</div>
+            <div class="check">Razón social o nombre fiscal</div>
+            <div class="check">NIF, CIF o VAT</div>
+            <div class="check">Dirección fiscal completa</div>
+            <div class="check">Código postal, ciudad, provincia y país</div>
+            <div class="check">Email de facturación</div>
+          </div>
+          <p>Estos datos se modifican en <strong>Configuración → Restaurante</strong>. Si faltan datos fiscales, el pago de la suscripción queda bloqueado hasta completarlos.</p>
         </article>
 
         <article id="configuracion" class="card">
-          <h2>2. Configuración inicial recomendada</h2>
-          <p>Antes de usar el POS durante un servicio, siga este orden:</p>
+          <h2>4. Configuración inicial</h2>
+          <p>Desde <strong>Configuración</strong> se accede a todas las áreas principales del sistema.</p>
           <div class="grid">
-            <div class="mini"><strong>1. Datos del restaurante</strong><span>Nombre, propietario, datos de contacto y configuración general.</span></div>
-            <div class="mini"><strong>2. Salas y mesas</strong><span>Crear las zonas reales del local y sus mesas.</span></div>
-            <div class="mini"><strong>3. Productos</strong><span>Crear categorías, productos, precios y destino de comanda.</span></div>
-            <div class="mini"><strong>4. Impresión</strong><span>Probar ticket, bar, cocina y otros destinos.</span></div>
+            <div class="mini"><strong>Restaurante</strong><span>Datos fiscales, logo, ticket y mensaje de cuenta.</span></div>
+            <div class="mini"><strong>Productos</strong><span>Categorías, precios y disponibilidad.</span></div>
+            <div class="mini"><strong>Mesas</strong><span>Salas, zonas y numeración del local.</span></div>
+            <div class="mini"><strong>Impresoras y destinos</strong><span>Ticket, bar, cocina y otros puntos de comanda.</span></div>
           </div>
-          <p>La configuración puede cambiarse más adelante, pero es mejor dejarla preparada antes de abrir el restaurante al público.</p>
         </article>
 
         <article id="mesas" class="card">
-          <h2>3. Salas, zonas y mesas</h2>
-          <p>El restaurante puede crear libremente sus zonas: sala principal, terraza, barra, comedor privado, planta inferior o cualquier distribución real.</p>
+          <h2>5. Salas, zonas y mesas</h2>
+          <p>El restaurante puede crear sus propias zonas según su organización real: sala principal, terraza, sala inferior, privado o cualquier otra.</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración de mesas</strong>.</div>
+            <div class="paso">Entrar en <strong>Configuración → Mesas</strong>.</div>
             <div class="paso">Crear una zona o sala.</div>
             <div class="paso">Crear las mesas con el número o nombre que usa el restaurante.</div>
             <div class="paso">Guardar y volver al POS.</div>
           </div>
-          <h3>Colores de las mesas</h3>
-          <p><span class="estado verde">Libre</span> mesa disponible. <span class="estado azul">Ocupada</span> mesa abierta con pedido. <span class="estado amarillo">Cuenta</span> mesa pendiente de cobro. <span class="estado rojo">Reservada</span> mesa reservada o bloqueada.</p>
+          <h3>Colores habituales de mesas</h3>
+          <span class="badge">Libre</span>
+          <span class="badge">Ocupada</span>
+          <span class="badge">Cuenta pedida</span>
+          <span class="badge">Reservada</span>
         </article>
 
         <article id="productos" class="card">
-          <h2>4. Productos, categorías y destinos</h2>
-          <p>Los productos se organizan por categorías. Cada categoría o producto debe tener un destino de comanda para saber dónde se imprime o se envía.</p>
+          <h2>6. Productos, categorías y destinos</h2>
+          <p>Los productos se organizan por categorías. Cada producto tendrá precio, disponibilidad y un destino de comanda.</p>
           <div class="grid">
-            <div class="mini"><strong>Bar</strong><span>Bebidas, cafés, refrescos, vinos, cervezas.</span></div>
-            <div class="mini"><strong>Cocina</strong><span>Platos, entrantes, carnes, pescados, postres.</span></div>
-            <div class="mini"><strong>Pizzeria</strong><span>Ejemplo de destino adicional para restaurantes con varias partidas.</span></div>
-            <div class="mini"><strong>Otros destinos</strong><span>Se pueden crear nuevos destinos según el funcionamiento del restaurante.</span></div>
+            <div class="mini"><strong>Bar</strong><span>Bebidas, cafés, copas o productos que no pasan por cocina.</span></div>
+            <div class="mini"><strong>Cocina</strong><span>Platos, raciones o productos que debe preparar cocina.</span></div>
+            <div class="mini"><strong>Otros destinos</strong><span>Pizzeria, parrilla, barra exterior o cualquier destino personalizado.</span></div>
+            <div class="mini"><strong>Disponibilidad</strong><span>Permite ocultar productos que no se venden ese día.</span></div>
           </div>
-          <div class="alerta">Importante: si un producto no tiene destino correcto, puede no salir en la comanda esperada.</div>
         </article>
 
         <article id="impresion" class="card">
-          <h2>5. Centro de impresión</h2>
-          <p>El centro de impresión permite configurar cada destino: caja/ticket, bar, cocina, pizzeria o cualquier otro destino creado.</p>
+          <h2>7. Impresión y destinos</h2>
+          <p>El sistema permite trabajar con impresión sencilla por ventana o con configuración de impresoras cuando el restaurante lo necesite.</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración de impresoras</strong>.</div>
-            <div class="paso">Elegir el destino que se quiere configurar.</div>
-            <div class="paso">Mantener en modo <strong>preview</strong> mientras se hacen pruebas.</div>
-            <div class="paso">Generar prueba de impresión.</div>
-            <div class="paso">Cuando el técnico conecte impresoras reales, cambiar el modo correspondiente.</div>
+            <div class="paso">Entrar en <strong>Configuración → Destinos</strong> para revisar bar, cocina y destinos personalizados.</div>
+            <div class="paso">Entrar en <strong>Configuración → Impresoras</strong>.</div>
+            <div class="paso">Probar ticket, bar y cocina.</div>
+            <div class="paso">Ajustar el modo de impresión según el equipo del restaurante.</div>
           </div>
-          <div class="tip">Para empezar, el modo preview es suficiente: permite verificar que cada comanda se genera correctamente.</div>
+          <div class="tip">Para empezar, puede usarse la vista previa de ticket y comanda. La conexión con impresoras reales se puede preparar después.</div>
         </article>
 
-        <article id="servicio" class="card">
-          <h2>6. Trabajo diario en el POS</h2>
-          <p>El flujo normal de un servicio es sencillo:</p>
+        <article id="pos" class="card">
+          <h2>8. Trabajo diario en el POS</h2>
+          <p>Durante el servicio, el camarero trabaja desde el POS de sala.</p>
           <div class="pasos">
-            <div class="paso">Abrir el POS.</div>
+            <div class="paso">Abrir el POS desde <strong>Abrir POS</strong>.</div>
             <div class="paso">Seleccionar una mesa libre.</div>
-            <div class="paso">Añadir bebidas o productos iniciales.</div>
-            <div class="paso">Enviar comandas.</div>
-            <div class="paso">Añadir más productos durante el servicio si el cliente lo pide.</div>
-            <div class="paso">Pedir cuenta o precuenta.</div>
-            <div class="paso">Cobrar y cerrar la mesa.</div>
+            <div class="paso">Añadir bebidas, platos o productos.</div>
+            <div class="paso">Enviar comandas a bar, cocina u otros destinos.</div>
+            <div class="paso">Añadir más productos si el cliente pide algo nuevo.</div>
+            <div class="paso">Pedir cuenta, cobrar y cerrar la mesa.</div>
           </div>
-        </article>
-
-        <article id="comandas" class="card">
-          <h2>7. Enviar comandas</h2>
-          <p>El botón <strong>Enviar comandas</strong> envía cada producto al destino correspondiente: bar, cocina, pizzeria u otros destinos configurados.</p>
-          <h3>Comandas incrementales</h3>
-          <p>Si una mesa ya envió 2 cervezas y luego se añade 1 cerveza más, el sistema solo envía la nueva unidad pendiente. Así se evitan duplicados.</p>
-          <div class="alerta">Antes de cada servicio real, conviene hacer una prueba: una bebida al bar, un plato a cocina y un producto a otro destino si existe.</div>
         </article>
 
         <article id="cobro" class="card">
-          <h2>8. Cobro y cierre de mesa</h2>
-          <p>Al terminar el consumo, el camarero puede generar cuenta, cobrar y cerrar la mesa.</p>
-          <div class="pasos">
-            <div class="paso">Seleccionar la mesa.</div>
-            <div class="paso">Revisar el pedido.</div>
-            <div class="paso">Pulsar <strong>Cuenta</strong> o <strong>Cobrar</strong>.</div>
-            <div class="paso">Registrar el pago: efectivo, tarjeta u otro método disponible.</div>
-            <div class="paso">Cerrar mesa para dejarla libre de nuevo.</div>
+          <h2>9. Cuenta, precuenta y cobro</h2>
+          <p>Al terminar el consumo, el sistema permite generar cuenta, imprimir vista previa y cobrar.</p>
+          <div class="grid">
+            <div class="mini"><strong>Cuenta</strong><span>Genera el ticket con los datos fiscales, logo y mensaje del restaurante.</span></div>
+            <div class="mini"><strong>Pago</strong><span>Permite registrar efectivo, tarjeta u otros métodos disponibles.</span></div>
+            <div class="mini"><strong>Cierre de mesa</strong><span>Cuando el pedido queda pagado, la mesa vuelve a estar libre.</span></div>
+            <div class="mini"><strong>Pagos separados</strong><span>El restaurante puede registrar diferentes pagos para una misma mesa.</span></div>
           </div>
-          <p>El sistema permite controlar pagos y dejar la mesa disponible para el siguiente cliente.</p>
         </article>
 
         <article id="caja" class="card">
-          <h2>9. Caja diaria y cierre</h2>
-          <p>La caja permite revisar ventas, métodos de pago y cierre diario.</p>
+          <h2>10. Caja y reportes</h2>
+          <p>La caja ayuda a revisar ventas, métodos de pago y cierres diarios o mensuales.</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Caja</strong> desde configuración o panel correspondiente.</div>
-            <div class="paso">Revisar ventas del día.</div>
-            <div class="paso">Comprobar efectivo, tarjeta y otros métodos.</div>
-            <div class="paso">Generar cierre diario.</div>
-            <div class="paso">Guardar o imprimir el resumen si es necesario.</div>
+            <div class="paso">Entrar en <strong>Configuración → Caja</strong>.</div>
+            <div class="paso">Revisar ventas del día y pagos registrados.</div>
+            <div class="paso">Guardar cierre diario cuando termine el servicio.</div>
+            <div class="paso">Usar <strong>Reportes</strong> para exportar CSV de pagos, productos o pedidos.</div>
           </div>
-        </article>
-
-        <article id="movil" class="card">
-          <h2>10. Vista móvil del camarero</h2>
-          <p>El camarero puede usar un móvil o tablet dentro de la misma red del restaurante para abrir mesas, añadir productos y enviar comandas.</p>
-          <div class="pasos">
-            <div class="paso">El propietario crea un usuario camarero.</div>
-            <div class="paso">El camarero entra desde el móvil.</div>
-            <div class="paso">Selecciona mesa, añade productos y envía comandas.</div>
-            <div class="paso">El POS del ordenador se actualiza automáticamente.</div>
-          </div>
-          <div class="tip">Recomendación: usar móviles o tablets del restaurante, no dispositivos personales si se quiere más control.</div>
         </article>
 
         <article id="usuarios" class="card">
-          <h2>11. Usuarios y permisos</h2>
-          <p>El sistema diferencia entre propietario/administrador y camarero.</p>
+          <h2>11. Usuarios y roles</h2>
+          <p>El propietario puede crear usuarios para el equipo. Cada rol tiene permisos diferentes.</p>
           <div class="grid">
-            <div class="mini"><strong>Propietario / administrador</strong><span>Puede acceder a configuración, productos, mesas, caja, suscripción y gestión general.</span></div>
-            <div class="mini"><strong>Camarero</strong><span>Puede trabajar con mesas, pedidos y comandas, pero no debe modificar la configuración general.</span></div>
+            <div class="mini"><strong>Administrador</strong><span>Control completo: configuración, usuarios, suscripción, caja y datos fiscales.</span></div>
+            <div class="mini"><strong>Gerente</strong><span>Puede gestionar gran parte de la configuración operativa del restaurante.</span></div>
+            <div class="mini"><strong>Camarero</strong><span>Debe usar el POS para mesas, pedidos y comandas, sin modificar la configuración general.</span></div>
+            <div class="mini"><strong>Usuarios inactivos</strong><span>Se pueden desactivar usuarios cuando un trabajador deja el restaurante.</span></div>
           </div>
-          <p>Cuando un trabajador deja el restaurante, se recomienda desactivar su usuario.</p>
         </article>
 
-        <article id="faq" class="card">
-          <h2>12. Preguntas frecuentes</h2>
-
-          <h3>No aparece una mesa</h3>
-          <p>Revise que la mesa exista, esté activa y pertenezca a una zona activa.</p>
-
-          <h3>Un producto no sale en cocina o bar</h3>
-          <p>Revise el destino del producto o de su categoría.</p>
-
-          <h3>La impresora no imprime</h3>
-          <p>Primero pruebe en modo preview. Si en preview se genera la comanda, el problema está en la conexión o configuración de la impresora.</p>
-
-          <h3>El camarero no puede entrar</h3>
-          <p>Revise que el usuario esté activo, que la contraseña sea correcta y que tenga rol camarero.</p>
-
-          <h3>La mesa sigue ocupada después de cobrar</h3>
-          <p>Revise que se haya completado el cierre de mesa. Una mesa cerrada debe quedar libre para volver a usarla.</p>
-
-          <h3>Necesito ayuda</h3>
-          <p>Puede escribir a <strong>${escapar(d.soporte)}</strong>. Incluya nombre del restaurante, problema, mesa afectada y una captura si es posible.</p>
+        <article id="backups" class="card">
+          <h2>12. Backups</h2>
+          <p>Los backups permiten descargar una copia de seguridad del restaurante actual.</p>
+          <div class="pasos">
+            <div class="paso">Entrar en <strong>Configuración → Backups</strong>.</div>
+            <div class="paso">Crear un backup.</div>
+            <div class="paso">Descargar el archivo generado.</div>
+            <div class="paso">Guardar la copia en un lugar seguro.</div>
+          </div>
+          <div class="tip">Cada backup está separado por restaurante. No mezcla datos de otros clientes.</div>
         </article>
+
+        <article id="suscripcion" class="card">
+          <h2>13. Suscripción</h2>
+          <p>Desde <strong>Configuración → Suscripción</strong> se revisa el estado del trial y el pago mensual.</p>
+          <div class="grid">
+            <div class="mini"><strong>Trial</strong><span>Periodo de prueba para configurar y comprobar el sistema.</span></div>
+            <div class="mini"><strong>Datos fiscales</strong><span>Si faltan datos fiscales, el pago queda bloqueado.</span></div>
+            <div class="mini"><strong>Pago Stripe</strong><span>Cuando Stripe esté configurado, el cliente podrá pagar desde esta pantalla.</span></div>
+            <div class="mini"><strong>Estado</strong><span>Permite ver si la suscripción está activa, pendiente o en trial.</span></div>
+          </div>
+        </article>
+
+        <article id="ayuda" class="card">
+          <h2>14. Ayuda y soporte</h2>
+          <p>Si algo no funciona, seguir este orden:</p>
+          <div class="pasos">
+            <div class="paso">Comprobar que el usuario ha iniciado sesión.</div>
+            <div class="paso">Revisar si los datos fiscales están completos.</div>
+            <div class="paso">Probar primero con una mesa y un producto de ejemplo.</div>
+            <div class="paso">Hacer un backup antes de cambios importantes.</div>
+            <div class="paso">Contactar con soporte si el error continúa.</div>
+          </div>
+          <p><strong>Soporte:</strong> ${escapar(d.soporte)}</p>
+          <p><strong>Email:</strong> ${escapar(d.email)}</p>
+        </article>
+
+        <div class="footer">
+          Manual actualizado para Restaurant Service POS Self-Service SaaS.
+        </div>
       </section>
-    </div>
-
-    <div class="footer">
-      ${escapar(d.nombre)} · Soporte: <a href="mailto:${escapar(d.soporte)}">${escapar(d.soporte)}</a> · Contacto: <a href="mailto:${escapar(d.email)}">${escapar(d.email)}</a>
     </div>
   </main>
 </body>
