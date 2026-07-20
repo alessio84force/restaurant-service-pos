@@ -637,7 +637,7 @@ function renderRegistroPropietario(error, valores) {
     '<h2>Datos fiscales para facturación</h2>',
     '<p class="intro">Estos datos se usarán para emitir facturas cuando se active la suscripción.</p>',
     '<label>Razón social / nombre fiscal</label>',
-    '<input name="razon_social" placeholder="Ej: Trattoria Piccolo Mio SL" required>',
+    '<input name="razon_social" placeholder="Ej: Restaurante La Alameda SL" required>',
     '<label>NIF / CIF / VAT</label>',
     '<input name="nif" placeholder="Ej: B12345678" required>',
     '<label>Dirección fiscal</label>',

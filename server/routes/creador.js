@@ -569,11 +569,20 @@ function creadorRoutes(db) {
 </html>`;
   }
 
-  function renderPanel(clientes, filtro) {
+  /* RS M5 OCULTAR ELIMINADOS PANEL */
+  function renderPanel(clientes, filtro, mostrarEliminados) {
     const q = normalizar(filtro).toLowerCase();
+    const incluirEliminados = mostrarEliminados === true;
+
+    const totalEliminados = clientes.filter(c => estadoComercial(c) === "eliminado").length;
+    const totalVisibles = clientes.length - totalEliminados;
+
+    const baseClientes = incluirEliminados
+      ? clientes.filter(c => estadoComercial(c) === "eliminado")
+      : clientes.filter(c => estadoComercial(c) !== "eliminado");
 
     const filtrados = q
-      ? clientes.filter(c => [
+      ? baseClientes.filter(c => [
           c.restaurante_id,
           c.restaurante_nombre,
           c.nome_ristorante,
@@ -586,7 +595,7 @@ function creadorRoutes(db) {
           c.razon_social,
           c.email_facturacion
         ].some(v => String(v || "").toLowerCase().includes(q)))
-      : clientes;
+      : baseClientes;
 
     const total = filtrados.length;
     const activos = filtrados.filter(c => ["activo","gratis_vida"].includes(estadoComercial(c))).length;
@@ -650,7 +659,9 @@ function creadorRoutes(db) {
         <p>Control interno de clientes Restaurant Service POS: datos fiscales, trial, suscripción, usuarios, mesas, productos, pedidos y actividad básica por restaurante.</p>
         <div class="actions">
           <a class="btn sec" href="/configuracion">Volver a configuración</a>
-          <a class="btn" href="/creador">Actualizar</a>
+          <a class="btn sec" href="/creador">Clientes activos</a>
+          <a class="btn sec" href="/creador?eliminados=1">Ver eliminados (${totalEliminados})</a>
+          <a class="btn" href="${incluirEliminados ? "/creador?eliminados=1" : "/creador"}">Actualizar</a>
         </div>
       </section>
 
@@ -664,12 +675,13 @@ function creadorRoutes(db) {
 
       <section class="card">
         <div class="toolbar">
-          <h2>Clientes SaaS</h2>
+          <h2>${incluirEliminados ? "Clientes eliminados" : "Clientes SaaS activos"}</h2>
           <form method="GET" action="/creador" class="search">
+            ${incluirEliminados ? '<input type="hidden" name="eliminados" value="1">' : ''}
             <input name="q" value="${escapar(filtro || "")}" placeholder="Buscar por restaurante, email, NIF, razón social...">
           </form>
         </div>
-        <div class="muted" style="margin-bottom:12px;">Ventas POS registradas en restaurantes filtrados: <strong>${euro(ventas)}</strong></div>
+        <div class="muted" style="margin-bottom:12px;">Restaurantes visibles: <strong>${totalVisibles}</strong> · Eliminados ocultos: <strong>${totalEliminados}</strong> · Ventas POS registradas en restaurantes filtrados: <strong>${euro(ventas)}</strong></div>
         <table>
           <thead>
             <tr>
@@ -847,8 +859,16 @@ function creadorRoutes(db) {
           </div>
 
           <div class="mini">
+            <strong>Restaurar cliente eliminado</strong>
+            <span>Si el cliente vuelve, restaura el acceso. Reactiva admin/gerente y mantiene camareros inactivos por seguridad.</span>
+            <form method="POST" action="/creador/cliente/${encodeURIComponent(c.restaurante_id)}/restaurar" style="margin-top:12px;" onsubmit="return confirm('¿Restaurar este cliente eliminado?');">
+              <button type="submit" class="sec">Restaurar cliente eliminado</button>
+            </form>
+          </div>
+
+          <div class="mini">
             <strong>Seguridad</strong>
-            <span>Suspender o eliminar no borra mesas, productos, pedidos ni pagos. La eliminación segura deja backup y bloquea usuarios.</span>
+            <span>Suspender, eliminar o restaurar no borra mesas, productos, pedidos ni pagos. El backup de eliminación se conserva.</span>
           </div>
         </div>
       </section>
@@ -873,7 +893,8 @@ function creadorRoutes(db) {
   router.get("/creador", requireCreador, async function(req, res) {
     try {
       const clientes = await cargarClientes();
-      res.send(renderPanel(clientes, req.query.q || ""));
+      const mostrarEliminados = String(req.query.eliminados || "") === "1";
+      res.send(renderPanel(clientes, req.query.q || "", mostrarEliminados));
     } catch (err) {
       console.error("Error Panel Creador SaaS:", err);
       res.status(500).send("Error cargando Panel Creador SaaS: " + escapar(err.message));
@@ -1018,6 +1039,79 @@ function creadorRoutes(db) {
     } catch (err) {
       console.error("Error eliminando cliente:", err);
       res.status(500).send("Error eliminando cliente: " + escapar(err.message));
+    }
+  });
+
+
+  /* RS M6 RESTAURAR CLIENTE ELIMINADO */
+  router.post("/creador/cliente/:id/restaurar", requireCreador, async function(req, res) {
+    try {
+      await asegurarColumnasAdminCliente();
+      if (typeof asegurarColumnasEliminacionCliente === "function") {
+        await asegurarColumnasEliminacionCliente();
+      }
+
+      const id = Number(req.params.id || 0);
+      if (!id) return res.status(400).send("Cliente no válido");
+
+      const cliente = await get("SELECT id, estado, estado_anterior_admin FROM restaurantes WHERE id = ? LIMIT 1", [id]);
+      if (!cliente) return res.status(404).send("Cliente no encontrado");
+
+      const config = await get("SELECT id, suscripcion_estado, suscripcion_estado_anterior_admin FROM configurazione WHERE restaurante_id = ? LIMIT 1", [id]);
+
+      const estadoActual = normalizar(cliente.estado).toLowerCase();
+      if (estadoActual !== "eliminado") {
+        return res.redirect("/creador/cliente/" + encodeURIComponent(id));
+      }
+
+      const estadoAnterior = normalizar(cliente.estado_anterior_admin);
+      const nuevoEstado = estadoAnterior && !["suspendido","bloqueado","eliminado"].includes(estadoAnterior.toLowerCase())
+        ? estadoAnterior
+        : "trial";
+
+      await run(
+        "UPDATE restaurantes SET estado = ?, estado_anterior_admin = NULL, reactivado_en = CURRENT_TIMESTAMP, suspension_motivo = '', actualizado_en = CURRENT_TIMESTAMP WHERE id = ?",
+        [nuevoEstado, id]
+      );
+
+      if (config) {
+        const estadoConfigAnterior = normalizar(config.suscripcion_estado_anterior_admin);
+        const nuevoEstadoConfig = estadoConfigAnterior && !["suspendido","bloqueado","eliminado"].includes(estadoConfigAnterior.toLowerCase())
+          ? estadoConfigAnterior
+          : nuevoEstado;
+
+        await run(
+          "UPDATE configurazione SET suscripcion_estado = ?, suscripcion_estado_anterior_admin = NULL WHERE restaurante_id = ?",
+          [nuevoEstadoConfig, id]
+        );
+      }
+
+      /*
+        Seguridad:
+        - Reactivamos admin/gerente para que el propietario pueda volver a entrar.
+        - Dejamos camareros inactivos, porque después de una eliminación puede haber cambiado el personal.
+      */
+      await run(
+        "UPDATE usuarios SET activo = 1 WHERE restaurante_id = ? AND LOWER(rol) IN ('admin','gerente')",
+        [id]
+      );
+
+      const activos = await get(
+        "SELECT COUNT(*) AS total FROM usuarios WHERE restaurante_id = ? AND activo = 1",
+        [id]
+      );
+
+      if (!activos || Number(activos.total || 0) === 0) {
+        await run(
+          "UPDATE usuarios SET activo = 1 WHERE id = (SELECT id FROM usuarios WHERE restaurante_id = ? ORDER BY id ASC LIMIT 1)",
+          [id]
+        );
+      }
+
+      res.redirect("/creador/cliente/" + encodeURIComponent(id));
+    } catch (err) {
+      console.error("Error restaurando cliente eliminado:", err);
+      res.status(500).send("Error restaurando cliente eliminado: " + escapar(err.message));
     }
   });
 
