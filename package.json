@@ -12,6 +12,8 @@
     "check-produccion": "node scripts/check-produccion.js",
     "preparar-cliente-asistente": "node scripts/preparar-cliente-asistente.js",
     "check-stripe": "node scripts/check-stripe-modo.js",
-    "migrar-multi-restaurante-base": "node scripts/migrar-multi-restaurante-base.js"
+    "migrar-multi-restaurante-base": "node scripts/migrar-multi-restaurante-base.js",
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
   }
 }
