@@ -144,8 +144,8 @@ function page(estado) {
     ),
     estadoPaso(
       true,
-      "El manual está disponible para el cliente.",
-      "Manual disponible."
+      "El manual queda disponible dentro de Configuración.",
+      "Manual opcional."
     )
   ];
 
@@ -510,7 +510,7 @@ function page(estado) {
 
       <div class="hero-actions">
         <a href="/configuracion">Configuración</a>
-        <a href="/manual">Manual</a>
+        
         <a href="/app/v2">Abrir POS</a>
       </div>
     </section>
@@ -565,16 +565,66 @@ function page(estado) {
 
     ${cardPaso(
       7,
-      "Leer el manual y resolver dudas",
+      "Manual disponible en Configuración",
       pasos[6],
       "El manual explica el uso diario del POS, comandas, cobro, caja, móvil del camarero y preguntas frecuentes.",
-      '<a href="/manual">Abrir manual</a><a class="sec" href="mailto:soporte@restaurantservicepos.com">Contactar soporte</a>'
+      ''
     )}
 
     <div class="final">
       <strong>Recomendación:</strong> antes del primer servicio real, haz una prueba con una mesa ficticia y comprueba que cada producto sale en el destino correcto.
     </div>
   </main>
+
+<script>
+/* RS PRIMEROS PASOS SIN MANUAL AUTO COMPLETADO */
+(function(){
+  function limpiarPasoManual(){
+    try{
+      var textosClave = [
+        "leer el manual y resolver dudas",
+        "el* RS PRIMEROS PASOS SIN MANUAL AUTO COMPLETADO */
+(function(){
+  function limpiarPasoManual(){
+    try{
+      var textosClave = [
+        "leer el manual y resolver dudas",
+        "el manual explica el uso diario",
+        "manual disponible"
+      ];
+
+      document.querySelectorAll("article, .card, .paso, .step, li, tr, section, div").forEach(function(el){
+        var txt = String(el.textContent || "").toLowerCase();
+
+        var esPasoManual =
+          txt.indexOf("leer el manual y resolver dudas") >= 0 ||
+          (
+            txt.indexOf("manual disponible") >= 0 &&
+            txt.indexOf("manual") >= 0 &&
+            txt.indexOf("complet") >= 0
+          );
+
+        if(esPasoManual){
+          var contenedor = el.closest("article, .card, .paso, .step, li, tr") || el;
+          if(contenedor && contenedor.parentNode){
+            contenedor.parentNode.removeChild(contenedor);
+          }
+        }
+      });
+    }catch(e){}
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", limpiarPasoManual);
+  }else{
+    limpiarPasoManual();
+  }
+
+  setTimeout(limpiarPasoManual, 300);
+  setTimeout(limpiarPasoManual, 1000);
+})();
+</script>
+
 </body>
 </html>`;
 }

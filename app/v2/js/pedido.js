@@ -169,7 +169,7 @@ async function cargarPedidoV2(numeroMesa){
 
         <div class="acciones">
 
-            <button onclick="enviarTodasComandasV2(${numeroMesa})">
+            <button onclick="enviarTodasComandasV2(${mesaArgV2(numeroMesa)})">
 
                 📤 ENVIAR COMANDAS
 
