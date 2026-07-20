@@ -700,15 +700,7 @@ function creadorRoutes(db) {
         </table>
       </section>
 
-      <section class="card">
-        <h2>Próximas acciones</h2>
-        <div class="grid">
-          <div class="mini"><strong>M3 — Suspender / Reactivar</strong><span>Bloquear el acceso de un cliente sin borrar sus datos.</span></div>
-          <div class="mini"><strong>M4 — Eliminar cliente</strong><span>Crear backup, desactivar usuarios y marcar cliente como eliminado.</span></div>
-          <div class="mini"><strong>M5 — Extender trial</strong><span>Modificar manualmente la fecha de prueba de un restaurante.</span></div>
-          <div class="mini"><strong>M6 — Historial administrativo</strong><span>Registrar acciones hechas desde el panel creador.</span></div>
-        </div>
-      </section>
+      
     `);
   }
 

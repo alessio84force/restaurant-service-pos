@@ -13,6 +13,27 @@ function rutaExcluida(path) {
 }
 
 function rutaConAyuda(path) {
+  /* RS NO MANUAL LOGIN REGISTRO */
+  const ruta = String(path || "").split("?")[0];
+
+  /* RS NO MANUAL DENTRO MANUAL */
+  const rutasPublicasSinManual = [
+    "/",
+    "/login",
+    "/registro",
+    "/ayuda",
+    "/manual",
+    "/aviso-legal",
+    "/privacidad",
+    "/cookies",
+    "/terminos",
+    "/pago-requerido",
+    "/activar-suscripcion"
+  ];
+
+  if (rutasPublicasSinManual.includes(ruta)) {
+    return false;
+  }
   path = String(path || "");
 
   if (
