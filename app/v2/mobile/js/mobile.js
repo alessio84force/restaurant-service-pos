@@ -634,79 +634,96 @@ async function anadirProductoMobile(producto, nota, punto){
 }
 
 async function enviarComandaMobile(destino){
-  if(!estadoMobile.mesa || !estadoMobile.pedido){
-    toastMobile("No hay pedido abierto", "error");
+  if(!estadoMobile.mesa){
+    toastMobile("Selecciona una mesa", "error");
     return;
   }
 
   try{
-    await apiMobile("/" + destino + "/enviar/" + encodeURIComponent(estadoMobile.mesa), {
-      method:"POST",
-      body:{}
+    toastMobile("Enviando comandas...", "info");
+
+    const respuestaFetch = await fetch(
+      API_MOBILE + "/saas/comandas/enviar-todas/" + encodeURIComponent(estadoMobile.mesa),
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    const respuesta = await respuestaFetch.json().catch(function(){
+      return { ok:false, error:"Respuesta no válida del servidor" };
     });
 
-    await cargarPedidoMobile(estadoMobile.mesa);
-    await cargarMesasMobile();
-    renderMobile();
+    if(!respuestaFetch.ok || respuesta.ok === false){
+      throw new Error(respuesta.error || "Error enviando comandas");
+    }
 
-    toastMobile("Comanda enviada a " + destino, "ok");
+    if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
+      toastMobile("Comandas enviadas: " + respuesta.enviados.join(", "), "ok");
+
+      if(typeof cargarPedidoMobile === "function"){
+        await cargarPedidoMobile();
+      }
+
+      return;
+    }
+
+    console.log("DEBUG enviarComandaMobile:", respuesta);
+    toastMobile("No hay productos nuevos para enviar", "aviso");
   }catch(error){
+    console.error("Error enviando comandas mobile:", error);
     toastMobile("No se pudo enviar la comanda", "error");
   }
 }
 
 
 async function enviarTodasComandasMobile(){
-  if(!estadoMobile.mesa || !estadoMobile.pedido){
-    toastMobile("No hay pedido abierto", "error");
+  if(!estadoMobile.mesa){
+    toastMobile("Selecciona una mesa", "error");
     return;
   }
 
   try{
-    const respuestaDestinos = await fetch("/api/destinos-comanda");
-    const dataDestinos = await respuestaDestinos.json();
-    const destinos = Array.isArray(dataDestinos.destinos) ? dataDestinos.destinos : [];
+    toastMobile("Enviando comandas...", "info");
 
-    const enviados = [];
-
-    for(const destino of destinos){
-      const id = String(destino.id || "").trim().toLowerCase();
-
-      if(!id){
-        continue;
+    const respuestaFetch = await fetch(
+      API_MOBILE + "/saas/comandas/enviar-todas/" + encodeURIComponent(estadoMobile.mesa),
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({})
       }
+    );
 
-      let endpoint = "";
+    const respuesta = await respuestaFetch.json().catch(function(){
+      return { ok:false, error:"Respuesta no válida del servidor" };
+    });
 
-      if(id === "bar"){
-        endpoint = "/bar/enviar/" + encodeURIComponent(estadoMobile.mesa);
-      }else if(id === "cocina"){
-        endpoint = "/cocina/enviar/" + encodeURIComponent(estadoMobile.mesa);
-      }else{
-        endpoint = "/comandas/enviar/" + encodeURIComponent(id) + "/" + encodeURIComponent(estadoMobile.mesa);
-      }
-
-      const data = await apiMobile(endpoint, {
-        method:"POST",
-        body:{}
-      });
-
-      if(data && data.ok && data.lineas && data.lineas.length > 0){
-        enviados.push(data.destino_nombre || destino.nombre || id);
-      }
+    if(!respuestaFetch.ok || respuesta.ok === false){
+      throw new Error(respuesta.error || "Error enviando comandas");
     }
 
-    await cargarPedidoMobile(estadoMobile.mesa);
-    await cargarMesasMobile();
-    renderMobile();
+    if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
+      toastMobile("Comandas enviadas: " + respuesta.enviados.join(", "), "ok");
 
-    if(enviados.length > 0){
-      toastMobile("Comandas enviadas: " + enviados.join(", "), "ok");
-    }else{
-      toastMobile("No hay productos nuevos para enviar", "info");
+      if(typeof cargarPedidoMobile === "function"){
+        await cargarPedidoMobile();
+      }
+
+      return;
     }
+
+    console.log("DEBUG enviarTodasComandasMobile:", respuesta);
+    toastMobile("No hay productos nuevos para enviar", "aviso");
   }catch(error){
-    console.error(error);
+    console.error("Error enviando comandas mobile:", error);
     toastMobile("No se pudieron enviar las comandas", "error");
   }
 }
