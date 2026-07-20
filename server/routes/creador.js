@@ -867,6 +867,135 @@ function creadorRoutes(db) {
     `);
   }
 
+
+
+  /* RS V2.8.0Q INGRESOS SAAS CREADOR */
+  function precioMensualSaasCreador() {
+    const valor = Number(process.env.PRECIO_MENSUAL_SAAS || process.env.PRECIO_SAAS_MENSUAL || "7.50");
+    if (!Number.isFinite(valor) || valor <= 0) return 7.50;
+    return valor;
+  }
+
+  function resumenIngresosSaasCreador(clientes) {
+    const precio = precioMensualSaasCreador();
+
+    const visibles = (clientes || []).filter(function(c) {
+      return estadoComercial(c) !== "eliminado";
+    });
+
+    const clientesPagando = visibles.filter(function(c) {
+      const estado = estadoComercial(c);
+      const plan = String(c.plan_tipo || c.restaurante_plan_tipo || "").toLowerCase();
+      const suscripcion = String(c.suscripcion_estado || "").toLowerCase();
+      const restauranteEstado = String(c.restaurante_estado || "").toLowerCase();
+
+      if (estado === "gratis_vida" || plan === "gratis_vida" || suscripcion === "gratis_vida" || restauranteEstado === "gratis_vida") {
+        return false;
+      }
+
+      return estado === "activo" || estado === "pagado";
+    });
+
+    const clientesTrial = visibles.filter(function(c) {
+      const estado = estadoComercial(c);
+      return estado === "trial" || estado === "trial_expirado";
+    });
+
+    const ventasPos = visibles.reduce(function(total, c) {
+      return total + Number(c.total_ventas || 0);
+    }, 0);
+
+    return {
+      precio_mensual: precio,
+      clientes_pagando: clientesPagando.length,
+      clientes_trial: clientesTrial.length,
+      ingreso_mensual_real: clientesPagando.length * precio,
+      ingreso_mensual_potencial: (clientesPagando.length + clientesTrial.length) * precio,
+      ventas_pos_total: ventasPos
+    };
+  }
+
+  router.get("/api/creador/ingresos", requireCreador, async function(req, res) {
+    try {
+      const clientes = await cargarClientes();
+      const resumen = resumenIngresosSaasCreador(clientes);
+      res.json(Object.assign({ ok: true }, resumen));
+    } catch (err) {
+      console.error("Error ingresos SaaS creador:", err);
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  router.use(function(req, res, next) {
+    const ruta = String(req.path || "").split("?")[0];
+
+    if (ruta !== "/creador") {
+      return next();
+    }
+
+    const originalSend = res.send.bind(res);
+
+    res.send = function(body) {
+      try {
+        if (typeof body === "string" && body.includes("Panel Creador SaaS") && !body.includes("rs-creador-ingresos-saas")) {
+          const bloqueIngresos = [
+            '<style id="rs-creador-ingresos-saas-style">',
+            '/* RS V2.8.0Q1 COLOR INGRESOS SAAS */',
+            '#rs-creador-ingresos-saas{background:#ffffff!important;color:#0f172a!important;border:1px solid rgba(15,23,42,.10)!important;}',
+            '#rs-creador-ingresos-saas h2{color:#0f172a!important;}',
+            '#rs-creador-ingresos-saas p{color:#334155!important;}',
+            '#rs-creador-ingresos-saas .muted{color:#475569!important;}',
+            '#rs-creador-ingresos-saas strong{color:#0f172a!important;}',
+            '#rs-creador-ingresos-saas .stats{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important;gap:12px!important;margin:16px 0!important;}',
+            '#rs-creador-ingresos-saas .stat{background:#f8fafc!important;border:1px solid #e2e8f0!important;border-radius:18px!important;padding:16px!important;box-shadow:none!important;}',
+            '#rs-creador-ingresos-saas .stat strong{display:block!important;color:#111827!important;font-size:24px!important;line-height:1.15!important;}',
+            '#rs-creador-ingresos-saas .stat span{display:block!important;color:#475569!important;font-size:13px!important;font-weight:800!important;margin-top:6px!important;}',
+            '</style>',
+            '<section id="rs-creador-ingresos-saas" class="card" style="margin:18px 0 22px 0;">',
+            '  <h2 style="margin-top:0;">Ingresos SaaS del creador</h2>',
+            '  <div class="muted">Calculando ingresos mensuales...</div>',
+            '</section>',
+            '<script>',
+            '(function(){',
+            '  function euro(v){ return Number(v || 0).toFixed(2) + " €"; }',
+            '  fetch("/api/creador/ingresos", { credentials: "same-origin" })',
+            '    .then(function(r){ return r.json(); })',
+            '    .then(function(data){',
+            '      var el = document.getElementById("rs-creador-ingresos-saas");',
+            '      if(!el || !data || !data.ok) return;',
+            '      el.innerHTML = ',
+            '        "<h2 style=\\"margin-top:0;\\">Ingresos SaaS del creador</h2>" +',
+            '        "<p class=\\"muted\\" style=\\"margin-top:-4px;\\">Resumen mensual de lo que gana Restaurant Service POS por suscripciones.</p>" +',
+            '        "<div class=\\"stats\\">" +',
+            '          "<div class=\\"stat\\"><strong>" + euro(data.ingreso_mensual_real) + "</strong><span>Tu ingreso SaaS / mes</span></div>" +',
+            '          "<div class=\\"stat\\"><strong>" + Number(data.clientes_pagando || 0) + "</strong><span>Clientes pagando</span></div>" +',
+            '          "<div class=\\"stat\\"><strong>" + Number(data.clientes_trial || 0) + "</strong><span>Clientes en trial</span></div>" +',
+            '          "<div class=\\"stat\\"><strong>" + euro(data.ingreso_mensual_potencial) + "</strong><span>Ingreso potencial / mes</span></div>" +',
+            '          "<div class=\\"stat\\"><strong>" + euro(data.ventas_pos_total) + "</strong><span>Ventas POS restaurantes</span></div>" +',
+            '        "</div>" +',
+            '        "<p class=\\"muted\\">Precio SaaS usado: <strong>" + euro(data.precio_mensual) + " / mes</strong>. Los clientes en trial cuentan como potencial, no como ingreso real.</p>";',
+            '    })',
+            '    .catch(function(){',
+            '      var el = document.getElementById("rs-creador-ingresos-saas");',
+            '      if(el) el.innerHTML = "<h2>Ingresos SaaS del creador</h2><p class=\\"muted\\">No se pudieron cargar los ingresos.</p>";',
+            '    });',
+            '})();',
+            '</script>'
+          ].join("\n");
+
+          body = body.replace(/<h1>\s*Panel Creador SaaS\s*<\/h1>/, function(match) {
+            return match + bloqueIngresos;
+          });
+        }
+      } catch (e) {}
+
+      return originalSend(body);
+    };
+
+    return next();
+  });
+
+
   router.get("/api/creador/soy-creador", function(req, res) {
     if (!req.session || !req.session.usuario) {
       return res.json({ creador: false });
