@@ -39,3 +39,9 @@ database/backups/
 # Database SQLite locale
 database/*.sqlite
 database/*.sqlite-*
+
+# Restaurant Service POS deploy
+# Estos archivos de código deben subirse aunque su nombre contenga "backup".
+!server/routes/backupsSaas.js
+!server/routes/backupsRestaurante.js
+!server/middleware/backupRestauranteLink.js
