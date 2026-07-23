@@ -34,6 +34,7 @@ const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
+const marketingPublicoRoutes = require("./routes/marketingPublico");
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
@@ -75,6 +76,8 @@ const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
+app.use(marketingPublicoRoutes());
+
 app.use(session({
 secret: "restaurant-service-secret",
 resave: false,
