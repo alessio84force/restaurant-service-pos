@@ -76,8 +76,8 @@ const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
 
 const app = express();
-app.use(marketingPublicoRoutes());
 
+app.use(marketingPublicoRoutes());
 app.use(session({
 secret: "restaurant-service-secret",
 resave: false,
