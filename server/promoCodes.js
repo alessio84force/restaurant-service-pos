@@ -1,44 +1,63 @@
-const fs = require("fs");
-const path = require("path");
+"use strict";
 
-const archivoCodigos = path.join(__dirname, "private", "promo-codes.local.json");
+const CODIGOS_PROMOCIONALES = Object.freeze({
+  "BOADILLA COMERCIO": Object.freeze({
+    codigo: "BOADILLA COMERCIO",
+    tipo: "trial_extra",
+    dias_extra: 7,
+    descripcion: "Prueba gratuita ampliada: 14 días en total"
+  }),
 
-function normalizarCodigo(codigo) {
+  "CODICE ALESSIO": Object.freeze({
+    codigo: "CODICE ALESSIO",
+    tipo: "gratis_vida",
+    dias_extra: 0,
+    descripcion: "Acceso gratis de por vida"
+  })
+});
+
+function normalizarCodigoPromocional(codigo) {
   return String(codigo || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[-_]+/g, " ")
     .trim()
-    .toUpperCase()
-    .replace(/\s+/g, " ");
-}
-
-function cargarCodigos() {
-  try {
-    const raw = fs.readFileSync(archivoCodigos, "utf8");
-    const data = JSON.parse(raw);
-    const codigos = {};
-
-    Object.keys(data).forEach((codigo) => {
-      codigos[normalizarCodigo(codigo)] = data[codigo];
-    });
-
-    return codigos;
-  } catch (error) {
-    return {};
-  }
+    .replace(/\s+/g, " ")
+    .toUpperCase();
 }
 
 function validarCodigoPromocional(codigo) {
-  const codigoNormalizado = normalizarCodigo(codigo);
+  const codigoNormalizado = normalizarCodigoPromocional(codigo);
 
   if (!codigoNormalizado) {
     return null;
   }
 
-  const codigos = cargarCodigos();
+  const promo = CODIGOS_PROMOCIONALES[codigoNormalizado];
 
-  return codigos[codigoNormalizado] || null;
+  if (!promo) {
+    return null;
+  }
+
+  return {
+    codigo: promo.codigo,
+    tipo: promo.tipo,
+    dias_extra: promo.dias_extra,
+    descripcion: promo.descripcion
+  };
+}
+
+function listarCodigosPromocionales() {
+  return Object.values(CODIGOS_PROMOCIONALES).map((promo) => ({
+    codigo: promo.codigo,
+    tipo: promo.tipo,
+    dias_extra: promo.dias_extra,
+    descripcion: promo.descripcion
+  }));
 }
 
 module.exports = {
+  normalizarCodigoPromocional,
   validarCodigoPromocional,
-  normalizarCodigo
+  listarCodigosPromocionales
 };
