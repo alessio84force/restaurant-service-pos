@@ -450,6 +450,7 @@ function stripeSuscripcionRoutes(db){
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        locale: "es",
         line_items: [
           {
             price: process.env.STRIPE_PRICE_ID,
