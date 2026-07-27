@@ -563,6 +563,14 @@ function renderSuscripcion(config, restauranteId, query) {
         <div class="dato"><span>Plan</span><strong>${escapar(config.plan_tipo || "trial")}</strong></div>
         <div class="dato"><span>Días trial</span><strong>${dias}</strong></div>
         <div class="dato"><span>Fin trial</span><strong>${escapar(config.trial_fin || "-")}</strong></div>
+
+        <div class="dato rs-promo-aplicada-visible">
+          <span>Promoción aplicada</span>
+          <strong style="display:inline-flex;align-items:center;gap:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:999px;padding:8px 12px;font-weight:900;">
+            ${escapar(config.promocion_aplicada || "No aplicada")}
+          </strong>
+        </div>
+
         <div class="dato"><span>Restaurante ID</span><strong>${restauranteId}</strong></div>
         <div class="dato"><span>Datos fiscales</span><strong>${okFiscal ? "Completos" : "Incompletos"}</strong></div>
       </div>
