@@ -316,6 +316,9 @@ function stripeSuscripcionRoutes(db){
                 if(errCliente) return callback(errCliente);
 
                 function guardarPago(clienteId){
+                  console.log("[STRIPE SUCCESS] suscripcion actualizada sin registrar pago local duplicado:", checkoutSessionId);
+                  return callback();
+
                   db.run(`
                     INSERT INTO creador_pagos (
                       cliente_id,

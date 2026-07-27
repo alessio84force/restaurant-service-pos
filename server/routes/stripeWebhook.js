@@ -146,11 +146,16 @@ function stripeWebhookRoutes(db){
     const fecha = ahoraISO();
     const email = String(datos.email || "").toLowerCase();
     const customerId = String(datos.customerId || "");
-    const subscriptionId = String(datos.subscriptionId || "");
+    const subscriptionIdOriginal = String(datos.subscriptionId || "");
+    const subscriptionId = subscriptionIdOriginal.indexOf("sub_") === 0 ? subscriptionIdOriginal : "";
     const invoiceId = String(datos.invoiceId || "");
     const paymentId = String(datos.paymentId || "");
     const importe = Number(datos.importe || precioMensual());
     const moneda = String(datos.moneda || "EUR").toUpperCase();
+    const restauranteIdSeguro = Number(datos.restauranteId || 0);
+    const invoiceIdPago = invoiceId.indexOf("in_") === 0 ? invoiceId : (paymentId.indexOf("in_") === 0 ? paymentId : invoiceId);
+    const paymentIdPago = paymentId || invoiceIdPago;
+    const esPagoReal = invoiceIdPago.indexOf("in_") === 0 || paymentId.indexOf("pi_") === 0 || paymentId.indexOf("ch_") === 0;
 
     asegurarTablas((err)=>{
       if(err) return callback(err);
@@ -180,11 +185,91 @@ function stripeWebhookRoutes(db){
             (errConfig)=>{
               if(errConfig) return callback(errConfig);
 
-              buscarClientePorStripe(customerId, subscriptionId, email, (errBuscar, cliente)=>{
+              db.run(
+                `
+                UPDATE restaurantes
+                SET estado='activo',
+                    plan_tipo='stripe_mensual',
+                    trial_fin=NULL,
+                    stripe_customer_id=COALESCE(NULLIF(?,''), stripe_customer_id),
+                    stripe_subscription_id=COALESCE(NULLIF(?,''), stripe_subscription_id),
+                    actualizado_en=CURRENT_TIMESTAMP
+                WHERE id=COALESCE(
+                  NULLIF(?, 0),
+                  (SELECT restaurante_id FROM configurazione WHERE stripe_subscription_id=? OR stripe_customer_id=? ORDER BY id DESC LIMIT 1),
+                  (SELECT restaurante_id FROM usuarios WHERE LOWER(email)=LOWER(?) ORDER BY id DESC LIMIT 1),
+                  1
+                )
+                `,
+                [customerId, subscriptionId, restauranteIdSeguro, subscriptionId, customerId, email],
+                (errRestauranteWebhook)=>{
+                  if(errRestauranteWebhook){
+                    console.error("[STRIPE WEBHOOK] error actualizando restaurantes:", errRestauranteWebhook.message);
+                  }
+                }
+              );
+
+              buscarClientePorStripe(customerId, subscriptionId || subscriptionIdOriginal, email, (errBuscar, cliente)=>{
                 if(errBuscar) return callback(errBuscar);
 
+                function notificarSuscripcionActivada(clienteId, callbackEmail){
+                  if(!esPagoReal){
+                    return callbackEmail();
+                  }
+
+                  db.get(
+                    "SELECT nombre_restaurante, propietario_email FROM creador_clientes WHERE id=?",
+                    [clienteId || 0],
+                    (errDatosEmail, datosEmail)=>{
+                      if(errDatosEmail){
+                        console.error("[EMAIL WEBHOOK SUSCRIPCION ACTIVADA] error leyendo cliente:", errDatosEmail.message);
+                      }
+
+                      const destino = String((datosEmail && datosEmail.propietario_email) || email || "").toLowerCase();
+
+                      if(!destino){
+                        console.log("[EMAIL WEBHOOK SUSCRIPCION ACTIVADA] sin email destinatario");
+                        return callbackEmail();
+                      }
+
+                      enviarEmailEvento(db, "suscripcion_activada", {
+                        to: destino,
+                        propietario_email: destino,
+                        restaurante: (datosEmail && datosEmail.nombre_restaurante) || "Restaurant Service POS",
+                        precio: importe.toFixed(2).replace(".", ",") + " €/mes",
+                        stripe_customer_id: customerId,
+                        stripe_subscription_id: subscriptionId || subscriptionIdOriginal
+                      }, (errEmail, resultadoEmail)=>{
+                        if(errEmail){
+                          console.error("[EMAIL WEBHOOK SUSCRIPCION ACTIVADA]", errEmail.message);
+                        }else{
+                          console.log("[EMAIL WEBHOOK SUSCRIPCION ACTIVADA]", resultadoEmail && resultadoEmail.modo ? resultadoEmail.modo : "ok");
+                        }
+
+                        callbackEmail();
+                      });
+                    }
+                  );
+                }
+
                 function guardarPago(clienteId){
-                  db.run(
+                  if(!esPagoReal){
+                    console.log("[STRIPE WEBHOOK] evento sin factura real, no registro pago duplicado:", paymentIdPago || "sin_id");
+                    return callback();
+                  }
+
+                  db.get(
+                    "SELECT id FROM creador_pagos WHERE stripe_invoice_id=? OR stripe_payment_id=? LIMIT 1",
+                    [invoiceIdPago, paymentIdPago],
+                    (errPagoExistente, pagoExistente)=>{
+                      if(errPagoExistente) return callback(errPagoExistente);
+
+                      if(pagoExistente && pagoExistente.id){
+                        console.log("[STRIPE WEBHOOK] pago ya registrado, no duplico:", invoiceIdPago || paymentIdPago);
+                        return callback();
+                      }
+
+                      db.run(
                     `
                     INSERT INTO creador_pagos (
                       cliente_id,
@@ -209,7 +294,14 @@ function stripeWebhookRoutes(db){
                       invoiceId,
                       fecha
                     ],
-                    callback
+                    (errInsertPago)=>{
+                      if(errInsertPago) return callback(errInsertPago);
+                      notificarSuscripcionActivada(clienteId, callback);
+                    }
+                  );
+
+                      return;
+                    }
                   );
                 }
 
