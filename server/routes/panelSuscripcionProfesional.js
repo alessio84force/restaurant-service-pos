@@ -103,11 +103,23 @@ function estadoVisual(config) {
   };
 }
 
+function restauranteIdFromReq(req) {
+  const session = req.session || {};
+  const usuario = session.usuario || {};
+  const id = Number(session.restaurante_id || usuario.restaurante_id || 1);
+  return Number.isFinite(id) && id > 0 ? id : 1;
+}
+
 module.exports = function panelSuscripcionProfesionalRoutes(db) {
   const router = express.Router();
 
   router.get("/configuracion-suscripcion", function (req, res) {
-    db.get("SELECT * FROM configurazione WHERE id = 1", [], function (err, config) {
+    const restauranteId = restauranteIdFromReq(req);
+
+    db.get(
+      "SELECT * FROM configurazione WHERE COALESCE(restaurante_id,1)=? ORDER BY id DESC LIMIT 1",
+      [restauranteId],
+      function (err, config) {
       if (err) {
         res.status(500).send("Error cargando suscripción: " + escapar(err.message));
         return;

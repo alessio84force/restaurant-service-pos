@@ -169,9 +169,14 @@ function stripeWebhookRoutes(db){
                 stripe_customer_id=COALESCE(NULLIF(?,''), stripe_customer_id),
                 stripe_subscription_id=COALESCE(NULLIF(?,''), stripe_subscription_id),
                 ultimo_pago_stripe_en=?
-            WHERE id=1
+            WHERE COALESCE(restaurante_id,1)=COALESCE(
+              NULLIF(?, 0),
+              (SELECT restaurante_id FROM configurazione WHERE stripe_subscription_id=? OR stripe_customer_id=? ORDER BY id DESC LIMIT 1),
+              (SELECT restaurante_id FROM usuarios WHERE LOWER(email)=LOWER(?) ORDER BY id DESC LIMIT 1),
+              1
+            )
             `,
-            [fecha, customerId, subscriptionId, fecha],
+            [fecha, customerId, subscriptionId, fecha, Number(datos.restauranteId || 0), subscriptionId, customerId, email],
             (errConfig)=>{
               if(errConfig) return callback(errConfig);
 
@@ -355,9 +360,14 @@ function stripeWebhookRoutes(db){
             SET suscripcion_estado=?,
                 stripe_customer_id=COALESCE(NULLIF(?,''), stripe_customer_id),
                 stripe_subscription_id=COALESCE(NULLIF(?,''), stripe_subscription_id)
-            WHERE id=1
+            WHERE COALESCE(restaurante_id,1)=COALESCE(
+              NULLIF(?, 0),
+              (SELECT restaurante_id FROM configurazione WHERE stripe_subscription_id=? OR stripe_customer_id=? ORDER BY id DESC LIMIT 1),
+              (SELECT restaurante_id FROM usuarios WHERE LOWER(email)=LOWER(?) ORDER BY id DESC LIMIT 1),
+              1
+            )
             `,
-            [estado, customerId, subscriptionId],
+            [estado, customerId, subscriptionId, Number(datos.restauranteId || 0), subscriptionId, customerId, email],
             (errConfig)=>{
               if(errConfig) return callback(errConfig);
 

@@ -3,6 +3,18 @@ const { enviarEmailEvento } = require("../services/emailService");
 
 function stripeSuscripcionRoutes(db){
 
+  function restauranteIdFromReq(req){
+    const session = req.session || {};
+    const usuario = session.usuario || {};
+    const id = Number(session.restaurante_id || usuario.restaurante_id || 1);
+    return Number.isFinite(id) && id > 0 ? id : 1;
+  }
+
+  function restauranteIdFromSessionStripe(req, session){
+    const id = Number(session && session.metadata && session.metadata.restaurante_id);
+    return Number.isFinite(id) && id > 0 ? id : restauranteIdFromReq(req);
+  }
+
   function escaparHtmlStripe(valor){
     return String(valor == null ? "" : valor)
       .replace(/&/g, "&amp;")
@@ -254,6 +266,7 @@ function stripeSuscripcionRoutes(db){
     const customerId = String(session.customer || "");
     const subscriptionId = String(session.subscription || "");
     const checkoutSessionId = String(session.id || "");
+    const restauranteId = restauranteIdFromSessionStripe(req, session);
 
     db.serialize(()=>{
       asegurarTablaClientes((errTabla)=>{
@@ -262,7 +275,10 @@ function stripeSuscripcionRoutes(db){
         asegurarColumnasConfiguracion((errCols)=>{
           if(errCols) return callback(errCols);
 
-          db.get("SELECT * FROM configurazione WHERE id=1", [], (errConfig, config)=>{
+          db.get(
+            "SELECT * FROM configurazione WHERE COALESCE(restaurante_id,1)=? ORDER BY id DESC LIMIT 1",
+            [restauranteId],
+            (errConfig, config)=>{
             if(errConfig) return callback(errConfig);
 
             const restaurante = (config && config.nome_ristorante) || "Restaurant Service POS";
@@ -279,17 +295,24 @@ function stripeSuscripcionRoutes(db){
                   stripe_subscription_id=?,
                   stripe_checkout_session_id=?,
                   ultimo_pago_stripe_en=?
-              WHERE id=1
+              WHERE COALESCE(restaurante_id,1)=?
             `, [
               ahora,
               customerId,
               subscriptionId,
               checkoutSessionId,
-              ahora
+              ahora,
+              restauranteId
             ], (errUpdateConfig)=>{
               if(errUpdateConfig) return callback(errUpdateConfig);
 
-              db.get("SELECT id FROM creador_clientes WHERE LOWER(propietario_email)=LOWER(?)", [email], (errCliente, cliente)=>{
+              db.run(
+                "UPDATE restaurantes SET estado='activo', plan_tipo='stripe_mensual', trial_fin=NULL, stripe_customer_id=COALESCE(NULLIF(?,''), stripe_customer_id), stripe_subscription_id=COALESCE(NULLIF(?,''), stripe_subscription_id), actualizado_en=CURRENT_TIMESTAMP WHERE id=?",
+                [customerId, subscriptionId, restauranteId],
+                (errRestauranteStripe)=>{
+                  if(errRestauranteStripe) return callback(errRestauranteStripe);
+
+                  db.get("SELECT id FROM creador_clientes WHERE LOWER(propietario_email)=LOWER(?)", [email], (errCliente, cliente)=>{
                 if(errCliente) return callback(errCliente);
 
                 function guardarPago(clienteId){
@@ -394,7 +417,9 @@ function stripeSuscripcionRoutes(db){
                     guardarPago(this.lastID);
                   });
                 }
-              });
+                  });
+                }
+              );
             });
           });
         });
@@ -418,6 +443,7 @@ function stripeSuscripcionRoutes(db){
 
       const baseUrl = String(process.env.APP_BASE_URL || "http://localhost:3000").replace(/\/+$/,"");
       const email = emailUsuario(req);
+      const restauranteId = restauranteIdFromReq(req);
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -431,8 +457,16 @@ function stripeSuscripcionRoutes(db){
         success_url: baseUrl + "/stripe/success?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: baseUrl + "/configuracion-suscripcion?stripe=cancelado",
         metadata: {
-          usuario_email: email,
+          usuario_email: email || "",
+          restaurante_id: String(restauranteId),
           origen: "restaurant_service_pos"
+        },
+        subscription_data: {
+          metadata: {
+            usuario_email: email || "",
+            restaurante_id: String(restauranteId),
+            origen: "restaurant_service_pos"
+          }
         }
       });
 
@@ -481,7 +515,8 @@ function stripeSuscripcionRoutes(db){
     res.json({
       ok: stripeDisponible(),
       price_id: process.env.STRIPE_PRICE_ID || null,
-      base_url: process.env.APP_BASE_URL || "http://localhost:3000"
+      base_url: process.env.APP_BASE_URL || "http://localhost:3000",
+      restaurante_id: restauranteIdFromReq(req)
     });
   });
 
