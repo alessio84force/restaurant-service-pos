@@ -1,3 +1,4 @@
+const { validarCodigoPromocional } = require("../promoCodes");
 const bcrypt = require("bcryptjs");
 
 function escapar(valor) {
@@ -126,11 +127,11 @@ function crearConfigRestaurante(db, datos, callback) {
       datos.telefono,
       datos.email,
       datos.telefono,
-      "trial",
+      datos.suscripcionEstado || "trial",
       datos.trialInicio,
       datos.trialFin,
-      "trial",
-      datos.promo
+      datos.planTipo || "trial",
+      datos.promocionAplicada || "ninguna"
     ];
 
     if (tieneRestauranteId) {
@@ -171,16 +172,18 @@ function crearCreadorCliente(db, datos, usuarioId, callback) {
       origen,
       precio_mensual,
       moneda
-    ) VALUES (?, ?, ?, ?, ?, 'trial', ?, ?, 'trial', ?, 'registro_saas', 7.50, 'EUR')`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'registro_saas', 7.50, 'EUR')`,
     [
       datos.restaurante,
       datos.propietario,
       datos.email,
       datos.telefono,
       usuarioId,
+      datos.suscripcionEstado || "trial",
       datos.trialInicio,
       datos.trialFin,
-      datos.promo
+      datos.planTipo || "trial",
+      datos.promocionAplicada || "ninguna"
     ],
     function(err) {
       if (err) {
@@ -237,11 +240,40 @@ module.exports = function registroSaasMiddleware(db) {
           ));
         }
 
+        const promo = datos.promo ? validarCodigoPromocional(datos.promo) : null;
+
+        if (datos.promo && !promo) {
+          return res.status(400).send(renderError(
+            "Código promocional no válido",
+            "Revisa el código promocional o deja el campo vacío."
+          ));
+        }
+
+        let diasPrueba = 7;
+        let suscripcionEstado = "trial";
+        let planTipo = "trial";
+        let promocionAplicada = promo ? promo.codigo : "ninguna";
+
+        if (promo && promo.tipo === "trial_extra") {
+          diasPrueba += Number(promo.dias_extra || 0);
+        }
+
+        if (promo && promo.tipo === "gratis_vida") {
+          suscripcionEstado = "gratis_vida";
+          planTipo = "gratis_vida";
+        }
+
         const ahora = new Date();
-        const trialFin = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        const trialFin = suscripcionEstado === "gratis_vida"
+          ? null
+          : new Date(ahora.getTime() + diasPrueba * 24 * 60 * 60 * 1000);
 
         datos.trialInicio = ahora.toISOString();
-        datos.trialFin = trialFin.toISOString();
+        datos.trialFin = trialFin ? trialFin.toISOString() : null;
+        datos.suscripcionEstado = suscripcionEstado;
+        datos.planTipo = planTipo;
+        datos.promocionAplicada = promocionAplicada;
+        datos.diasPrueba = diasPrueba;
 
         db.run(
           `INSERT INTO restaurantes (
@@ -254,15 +286,17 @@ module.exports = function registroSaasMiddleware(db) {
             trial_fin,
             plan_tipo,
             promocion_aplicada
-          ) VALUES (?, ?, ?, ?, 'trial', ?, ?, 'trial', ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             datos.restaurante,
             datos.propietario,
             datos.email,
             datos.telefono,
+            datos.suscripcionEstado || "trial",
             datos.trialInicio,
             datos.trialFin,
-            datos.promo
+            datos.planTipo || "trial",
+            datos.promocionAplicada || "ninguna"
           ],
           function(errRestaurante) {
             if (errRestaurante) {
