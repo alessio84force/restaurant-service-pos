@@ -837,6 +837,7 @@ module.exports = function fiscalSaasRoutes(db) {
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
+        locale: "es",
         customer_email: config.email_facturacion || config.email || config.propietario_email || req.session.usuario.email,
         line_items: [
           {
