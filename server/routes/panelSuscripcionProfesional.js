@@ -345,8 +345,8 @@ module.exports = function panelSuscripcionProfesionalRoutes(db) {
         </div>
 
         <div class="dato">
-          <strong>Promoción</strong>
-          <span>${escapar(config.promocion_aplicada || "No aplicada")}</span>
+          <strong>Promoción aplicada</strong>
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:999px;padding:8px 12px;font-weight:900;">${escapar(config.promocion_aplicada || "No aplicada")}</span>
         </div>
       </div>
 

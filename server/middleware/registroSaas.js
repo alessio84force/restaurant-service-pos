@@ -1,4 +1,5 @@
 const { validarCodigoPromocional } = require("../promoCodes");
+const { enviarEmail } = require("../services/emailService");
 const bcrypt = require("bcryptjs");
 
 function escapar(valor) {
@@ -195,6 +196,133 @@ function crearCreadorCliente(db, datos, usuarioId, callback) {
   );
 }
 
+
+function escaparEmailRegistroSaas(valor) {
+  return String(valor || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function fechaEmailRegistroSaas(valor) {
+  if (!valor) return "-";
+  const fecha = new Date(valor);
+  if (Number.isNaN(fecha.getTime())) return String(valor);
+  return fecha.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+}
+
+function baseUrlRegistroSaas() {
+  return String(process.env.APP_BASE_URL || "https://restaurantservicepos.com").replace(/\/+$/, "");
+}
+
+function enviarEmailsRegistroSaas(datos) {
+  const baseUrl = baseUrlRegistroSaas();
+  const loginUrl = baseUrl + "/login";
+  const suscripcionUrl = baseUrl + "/configuracion-suscripcion";
+  const promocion = datos.promocionAplicada && datos.promocionAplicada !== "ninguna"
+    ? datos.promocionAplicada
+    : "No aplicada";
+
+  const diasTexto = datos.suscripcionEstado === "gratis_vida"
+    ? "Acceso gratis de por vida"
+    : String(Number(datos.diasPrueba || 7)) + " días de prueba gratuita";
+
+  const fechaFin = datos.suscripcionEstado === "gratis_vida"
+    ? "Sin fecha de caducidad"
+    : fechaEmailRegistroSaas(datos.trialFin);
+
+  const htmlCliente = [
+    '<div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">',
+    '<div style="max-width:620px;margin:auto;background:white;border-radius:18px;padding:26px;border:1px solid #e5e7eb;">',
+    '<h1 style="margin:0 0 12px;font-size:26px;">Tu prueba de Restaurant Service POS está activa</h1>',
+    '<p style="font-size:16px;line-height:1.5;">Hola ' + escaparEmailRegistroSaas(datos.propietario) + ', tu restaurante <strong>' + escaparEmailRegistroSaas(datos.restaurante) + '</strong> ya está creado.</p>',
+    '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin:18px 0;">',
+    '<p style="margin:0 0 8px;"><strong>Estado:</strong> ' + escaparEmailRegistroSaas(diasTexto) + '</p>',
+    '<p style="margin:0 0 8px;"><strong>Fin de prueba:</strong> ' + escaparEmailRegistroSaas(fechaFin) + '</p>',
+    '<p style="margin:0;"><strong>Promoción aplicada:</strong> ' + escaparEmailRegistroSaas(promocion) + '</p>',
+    '</div>',
+    '<p style="font-size:16px;line-height:1.5;">Puedes entrar al POS desde este enlace:</p>',
+    '<p><a href="' + escaparEmailRegistroSaas(loginUrl) + '" style="display:inline-block;background:#f97316;color:#111827;text-decoration:none;font-weight:900;padding:12px 18px;border-radius:999px;">Entrar al POS</a></p>',
+    '<p style="font-size:13px;color:#64748b;margin-top:22px;">Si no has creado esta cuenta, responde a este email para revisarlo.</p>',
+    '</div>',
+    '</div>'
+  ].join("");
+
+  const textCliente = [
+    "Tu prueba de Restaurant Service POS está activa.",
+    "",
+    "Restaurante: " + datos.restaurante,
+    "Estado: " + diasTexto,
+    "Fin de prueba: " + fechaFin,
+    "Promoción aplicada: " + promocion,
+    "",
+    "Entrar: " + loginUrl,
+    "Suscripción: " + suscripcionUrl
+  ].join("\n");
+
+  enviarEmail({
+    to: datos.email,
+    subject: "Prueba gratuita iniciada - Restaurant Service POS",
+    html: htmlCliente,
+    text: textCliente,
+    tipo: "registro_saas_cliente"
+  }, function(err, resultado) {
+    if (err) {
+      console.error("[EMAIL REGISTRO CLIENTE]", err.message);
+      return;
+    }
+    console.log("[EMAIL REGISTRO CLIENTE]", resultado && resultado.modo ? resultado.modo : "ok");
+  });
+
+  const adminTo = process.env.LEGAL_EMAIL || process.env.EMAIL_REPLY_TO || "info@restaurantservicepos.com";
+
+  const htmlAdmin = [
+    '<div style="font-family:Arial,Helvetica,sans-serif;background:#f8fafc;padding:24px;color:#111827;">',
+    '<div style="max-width:620px;margin:auto;background:white;border-radius:18px;padding:26px;border:1px solid #e5e7eb;">',
+    '<h1 style="margin:0 0 12px;font-size:24px;">Nuevo restaurante registrado</h1>',
+    '<p><strong>Restaurante:</strong> ' + escaparEmailRegistroSaas(datos.restaurante) + '</p>',
+    '<p><strong>Propietario:</strong> ' + escaparEmailRegistroSaas(datos.propietario) + '</p>',
+    '<p><strong>Email:</strong> ' + escaparEmailRegistroSaas(datos.email) + '</p>',
+    '<p><strong>Estado:</strong> ' + escaparEmailRegistroSaas(datos.suscripcionEstado || "trial") + '</p>',
+    '<p><strong>Promoción:</strong> ' + escaparEmailRegistroSaas(promocion) + '</p>',
+    '<p><strong>Días prueba:</strong> ' + escaparEmailRegistroSaas(diasTexto) + '</p>',
+    '<p><strong>Fin prueba:</strong> ' + escaparEmailRegistroSaas(fechaFin) + '</p>',
+    '</div>',
+    '</div>'
+  ].join("");
+
+  const textAdmin = [
+    "Nuevo restaurante registrado",
+    "",
+    "Restaurante: " + datos.restaurante,
+    "Propietario: " + datos.propietario,
+    "Email: " + datos.email,
+    "Estado: " + (datos.suscripcionEstado || "trial"),
+    "Promoción: " + promocion,
+    "Días prueba: " + diasTexto,
+    "Fin prueba: " + fechaFin
+  ].join("\n");
+
+  enviarEmail({
+    to: adminTo,
+    subject: "Nuevo restaurante registrado - " + datos.restaurante,
+    html: htmlAdmin,
+    text: textAdmin,
+    tipo: "registro_saas_admin"
+  }, function(err, resultado) {
+    if (err) {
+      console.error("[EMAIL REGISTRO ADMIN]", err.message);
+      return;
+    }
+    console.log("[EMAIL REGISTRO ADMIN]", resultado && resultado.modo ? resultado.modo : "ok");
+  });
+}
+
 module.exports = function registroSaasMiddleware(db) {
   return function(req, res, next) {
     if (req.method !== "POST" || req.path !== "/registro") {
@@ -325,6 +453,8 @@ module.exports = function registroSaasMiddleware(db) {
                   };
 
                   req.session.restaurante_id = datos.restauranteId;
+
+                  enviarEmailsRegistroSaas(datos);
 
                   return res.redirect("/primeros-pasos");
                 });
