@@ -34,6 +34,7 @@ const activacionSuscripcionRoutes = require("./routes/activacionSuscripcion");
 const { middlewareSuscripcion, renderPagoRequerido, renderPagoOnlinePendiente } = require("./suscripcion");
 const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
+const seoLocalesRoutes = require("./routes/seoLocales");
 const marketingPublicoRoutes = require("./routes/marketingPublico");
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
@@ -77,6 +78,7 @@ const ticketRoutes = require("./routes/ticket");
 
 const app = express();
 
+app.use(seoLocalesRoutes());
 app.use(marketingPublicoRoutes());
 app.use(session({
 secret: "restaurant-service-secret",
