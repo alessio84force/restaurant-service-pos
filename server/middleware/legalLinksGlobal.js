@@ -1,3 +1,5 @@
+const { normalizarIdioma } = require("../utils/i18n");
+
 function esRutaExcluida(path) {
   path = String(path || "");
 
@@ -57,7 +59,67 @@ function yaTieneLegalCompleto(html) {
   );
 }
 
-function footerLegal() {
+function idiomaDesdeRequest(req) {
+  const queryIdioma =
+    req &&
+    req.query &&
+    req.query.idioma;
+
+  const sessionIdioma =
+    req &&
+    req.session &&
+    (
+      req.session.idioma ||
+      (
+        req.session.usuario &&
+        req.session.usuario.idioma
+      )
+    );
+
+  return normalizarIdioma(queryIdioma || sessionIdioma);
+}
+
+function hrefIdioma(path, idioma) {
+  return path + "?idioma=" + encodeURIComponent(idioma);
+}
+
+function footerLegal(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      info: "Información legal del servicio.",
+      aviso: "Aviso legal",
+      privacidad: "Privacidad",
+      cookies: "Cookies",
+      terminos: "Términos",
+      suscripcion: "Condiciones de suscripción",
+      tratamiento: "Encargo del tratamiento"
+    },
+
+    it: {
+      info: "Informazioni legali sul servizio.",
+      aviso: "Note legali",
+      privacidad: "Privacy",
+      cookies: "Cookie",
+      terminos: "Termini",
+      suscripcion: "Condizioni di abbonamento",
+      tratamiento: "Accordo sul trattamento dei dati"
+    },
+
+    en: {
+      info: "Legal information about the service.",
+      aviso: "Legal notice",
+      privacidad: "Privacy",
+      cookies: "Cookies",
+      terminos: "Terms",
+      suscripcion: "Subscription terms",
+      tratamiento: "Data Processing Agreement"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
   return `
 <style>
 .rs-legal-footer-global{
@@ -91,25 +153,25 @@ function footerLegal() {
 }
 </style>
 <div class="rs-legal-footer-global">
-  <div>© 2026 Restaurant Service POS. Información legal del servicio.</div>
+  <div>© 2026 Restaurant Service POS. ${t.info}</div>
   <div>
-    <a href="/aviso-legal">Aviso legal</a> ·
-    <a href="/privacidad">Privacidad</a> ·
-    <a href="/cookies">Cookies</a> ·
-    <a href="/terminos">Términos</a> ·
-    <a href="/condiciones-suscripcion">Condiciones de suscripción</a> ·
-    <a href="/encargo-tratamiento">Encargo del tratamiento</a>
+    <a href="${hrefIdioma("/aviso-legal", idioma)}">${t.aviso}</a> ·
+    <a href="${hrefIdioma("/privacidad", idioma)}">${t.privacidad}</a> ·
+    <a href="${hrefIdioma("/cookies", idioma)}">${t.cookies}</a> ·
+    <a href="${hrefIdioma("/terminos", idioma)}">${t.terminos}</a> ·
+    <a href="${hrefIdioma("/condiciones-suscripcion", idioma)}">${t.suscripcion}</a> ·
+    <a href="${hrefIdioma("/encargo-tratamiento", idioma)}">${t.tratamiento}</a>
   </div>
 </div>`;
 }
 
-function insertarFooter(html) {
+function insertarFooter(html, idioma) {
   if (!html || typeof html !== "string") return html;
   if (!html.toLowerCase().includes("<html")) return html;
   if (html.includes("rs-legal-footer-global")) return html;
   if (yaTieneLegalCompleto(html)) return html;
 
-  const bloque = footerLegal();
+  const bloque = footerLegal(idioma);
 
   if (/<\/body>/i.test(html)) {
     return html.replace(/<\/body>/i, bloque + "\n</body>");
@@ -126,6 +188,8 @@ module.exports = function legalLinksGlobalMiddleware() {
     if (esRutaExcluida(path)) return next();
     if (!esRutaImportante(path)) return next();
 
+    const idioma = idiomaDesdeRequest(req);
+
     const originalSend = res.send.bind(res);
 
     res.send = function(body) {
@@ -135,7 +199,7 @@ module.exports = function legalLinksGlobalMiddleware() {
         return originalSend(body);
       }
 
-      return originalSend(insertarFooter(body));
+      return originalSend(insertarFooter(body, idioma));
     };
 
     return next();

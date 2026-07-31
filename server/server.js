@@ -275,295 +275,181 @@ app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
+function renderLoginPagina(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      htmlLang: "es",
+      title: "Restaurant Service POS - Acceso",
+      acceso: "Acceso",
+      subtitulo: "Entra con tu usuario para continuar.",
+      email: "Email",
+      emailPlaceholder: "tu@email.com",
+      password: "Contraseña",
+      passwordPlaceholder: "Contraseña",
+      entrar: "Entrar al POS",
+      crear: "Crear cuenta nueva",
+      gestion: "Gestiona tu restaurante",
+      descripcion: "Un POS pensado para restaurantes reales: mesas, comandas, tickets, pagos y caja desde una sola herramienta.",
+      mesas: "Mesas y salas",
+      comandas: "Comandas",
+      tickets: "Tickets",
+      caja: "Caja diaria",
+      prueba: "Prueba gratuita durante 7 días. Si tienes un código promocional, podrás introducirlo durante el registro.",
+      legal: "Todos los derechos reservados.",
+      aviso: "Aviso legal",
+      privacidad: "Privacidad",
+      cookies: "Cookies",
+      terminos: "Términos"
+    },
+
+    it: {
+      htmlLang: "it",
+      title: "Restaurant Service POS - Accesso",
+      acceso: "Accesso",
+      subtitulo: "Accedi con il tuo account per continuare.",
+      email: "Email",
+      emailPlaceholder: "tua@email.it",
+      password: "Password",
+      passwordPlaceholder: "Password",
+      entrar: "Accedi al POS",
+      crear: "Crea un nuovo account",
+      gestion: "Gestisci il tuo ristorante",
+      descripcion: "Un POS pensato per ristoranti reali: tavoli, comande, ricevute, pagamenti e cassa in un unico strumento.",
+      mesas: "Tavoli e sale",
+      comandas: "Comande",
+      tickets: "Ricevute",
+      caja: "Cassa giornaliera",
+      prueba: "Prova gratuita per 7 giorni. Se hai un codice promozionale, potrai inserirlo durante la registrazione.",
+      legal: "Tutti i diritti riservati.",
+      aviso: "Note legali",
+      privacidad: "Privacy",
+      cookies: "Cookie",
+      terminos: "Termini"
+    },
+
+    en: {
+      htmlLang: "en",
+      title: "Restaurant Service POS - Login",
+      acceso: "Login",
+      subtitulo: "Sign in with your account to continue.",
+      email: "Email",
+      emailPlaceholder: "you@email.com",
+      password: "Password",
+      passwordPlaceholder: "Password",
+      entrar: "Sign in to POS",
+      crear: "Create a new account",
+      gestion: "Manage your restaurant",
+      descripcion: "A POS built for real restaurants: tables, orders, receipts, payments and daily cash management in one tool.",
+      mesas: "Tables and areas",
+      comandas: "Orders",
+      tickets: "Receipts",
+      caja: "Daily cash",
+      prueba: "Free trial for 7 days. If you have a promotional code, you can enter it during registration.",
+      legal: "All rights reserved.",
+      aviso: "Legal notice",
+      privacidad: "Privacy",
+      cookies: "Cookies",
+      terminos: "Terms"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="' + t.htmlLang + '">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>' + t.title + '</title>',
+    '<style>',
+    '*{box-sizing:border-box;}',
+    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:white;}',
+    '.pagina{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 460px;}',
+    '.zona-foto{min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden;}',
+    '.zona-foto img{width:108%;height:108%;max-height:none;object-fit:contain;object-position:center center;display:block;}',
+    '.panel-derecho{min-height:100vh;background:#0f172a;padding:32px;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:-18px 0 45px rgba(0,0,0,.25);}',
+    '.login-card,.publicidad-card{background:rgba(255,255,255,.96);color:#111827;border-radius:24px;padding:24px;box-shadow:0 20px 55px rgba(0,0,0,.28);}',
+    '.top-login{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}',
+    '.logo-mini{display:inline-flex;align-items:center;gap:8px;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;}',
+    '.lang{display:flex;gap:6px;}',
+    '.lang a{border:1px solid #cbd5e1;border-radius:999px;padding:6px 9px;color:#475569;text-decoration:none;font-size:12px;font-weight:900;}',
+    '.lang a.active{background:#f97316;color:#111827;border-color:#f97316;}',
+    '.login-card h2,.publicidad-card h2{margin:0;font-size:28px;letter-spacing:-.5px;}',
+    '.login-card .subtitulo,.publicidad-card p{margin:8px 0 18px 0;color:#64748b;font-weight:700;line-height:1.42;}',
+    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
+    'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:13px;font-size:15px;background:white;margin-bottom:13px;}',
+    'button{width:100%;border:none;border-radius:15px;padding:14px;font-weight:900;font-size:15px;cursor:pointer;background:#16a34a;color:white;box-shadow:0 10px 22px rgba(22,163,74,.25);}',
+    'button:hover{background:#15803d;}',
+    '.crear{display:block;text-align:center;margin-top:12px;padding:13px;border-radius:15px;background:#111827;color:white;text-decoration:none;font-weight:900;}',
+    '.crear:hover{background:#000;}',
+    '.lista{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}',
+    '.item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;font-weight:900;font-size:14px;color:#111827;}',
+    '.prueba{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:13px;color:#166534;font-weight:900;font-size:14px;line-height:1.4;margin-top:16px;}',
+    '.footer-mini{font-size:12px;font-weight:800;color:#94a3b8;text-align:center;margin-top:4px;line-height:1.55;}',
+    '.footer-mini a{color:#cbd5e1;text-decoration:none;}',
+    '.footer-mini a:hover{color:white;text-decoration:underline;}',
+    '@media(max-width:950px){.pagina{grid-template-columns:1fr;}.zona-foto{display:none;}.panel-derecho{padding:20px;}.login-card,.publicidad-card{border-radius:20px;}.lista{grid-template-columns:1fr;}}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="pagina">',
+    '<div class="zona-foto">',
+    '<img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS">',
+    '</div>',
+    '<div class="panel-derecho">',
+    '<section class="login-card">',
+    '<div class="top-login">',
+    '<div class="logo-mini">🍽️ Restaurant Service POS</div>',
+    '<div class="lang">',
+    '<a href="/login?idioma=es" class="' + (idioma === "es" ? "active" : "") + '">ES</a>',
+    '<a href="/login?idioma=it" class="' + (idioma === "it" ? "active" : "") + '">IT</a>',
+    '<a href="/login?idioma=en" class="' + (idioma === "en" ? "active" : "") + '">EN</a>',
+    '</div>',
+    '</div>',
+    '<h2>' + t.acceso + '</h2>',
+    '<p class="subtitulo">' + t.subtitulo + '</p>',
+    '<form method="POST" action="/login">',
+    '<input type="hidden" name="idioma" value="' + idioma + '">',
+    '<label>' + t.email + '</label>',
+    '<input name="email" type="email" placeholder="' + t.emailPlaceholder + '" required>',
+    '<label>' + t.password + '</label>',
+    '<input name="password" type="password" placeholder="' + t.passwordPlaceholder + '" required>',
+    '<button type="submit">' + t.entrar + '</button>',
+    '</form>',
+    '<a class="crear" href="/registro?idioma=' + idioma + '">' + t.crear + '</a>',
+    '</section>',
+    '<section class="publicidad-card">',
+    '<h2>' + t.gestion + '</h2>',
+    '<p>' + t.descripcion + '</p>',
+    '<div class="lista">',
+    '<div class="item">✅ ' + t.mesas + '</div>',
+    '<div class="item">✅ ' + t.comandas + '</div>',
+    '<div class="item">✅ ' + t.tickets + '</div>',
+    '<div class="item">✅ ' + t.caja + '</div>',
+    '</div>',
+    '<div class="prueba">' + t.prueba + '</div>',
+    '</section>',
+    '<div class="footer-mini">',
+    '© 2026 Restaurant Service POS™. ' + t.legal,
+    '<br>',
+    '<a href="/aviso-legal">' + t.aviso + '</a> · ',
+    '<a href="/privacidad">' + t.privacidad + '</a> · ',
+    '<a href="/cookies">' + t.cookies + '</a> · ',
+    '<a href="/terminos">' + t.terminos + '</a>',
+    '</div>',
+    '</div>',
+    '</div>',
+    '</body>',
+    '</html>'
+  ].join("\n");
+}
+
 app.get('/login', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Restaurant Service POS - Acceso</title>
-<style>
-*{
-box-sizing:border-box;
-}
-
-body{
-margin:0;
-min-height:100vh;
-font-family:Arial,sans-serif;
-background:#0f172a;
-color:white;
-}
-
-.pagina{
-min-height:100vh;
-display:grid;
-grid-template-columns:minmax(0,1fr) 460px;
-}
-
-.zona-foto{
-min-height:100vh;
-background:#0f172a;
-display:flex;
-align-items:center;
-justify-content:center;
-padding:6px;
-overflow:hidden;
-}
-
-.zona-foto img{
-width:108%;
-height:108%;
-max-height:none;
-object-fit:contain;
-object-position:center center;
-display:block;
-}
-
-.panel-derecho{
-min-height:100vh;
-background:#0f172a;
-padding:32px;
-display:flex;
-flex-direction:column;
-justify-content:center;
-gap:18px;
-box-shadow:-18px 0 45px rgba(0,0,0,.25);
-}
-
-.login-card,
-.publicidad-card{
-background:rgba(255,255,255,.96);
-color:#111827;
-border-radius:24px;
-padding:24px;
-box-shadow:0 20px 55px rgba(0,0,0,.28);
-}
-
-.logo-mini{
-display:inline-flex;
-align-items:center;
-gap:8px;
-background:#eff6ff;
-color:#1d4ed8;
-border-radius:999px;
-padding:8px 12px;
-font-weight:900;
-font-size:13px;
-margin-bottom:14px;
-}
-
-.login-card h2,
-.publicidad-card h2{
-margin:0;
-font-size:28px;
-letter-spacing:-.5px;
-}
-
-.login-card .subtitulo,
-.publicidad-card p{
-margin:8px 0 18px 0;
-color:#64748b;
-font-weight:700;
-line-height:1.42;
-}
-
-label{
-display:block;
-font-size:13px;
-font-weight:900;
-color:#475569;
-margin-bottom:7px;
-}
-
-input{
-width:100%;
-border:1px solid #cbd5e1;
-border-radius:14px;
-padding:13px;
-font-size:15px;
-background:white;
-margin-bottom:13px;
-}
-
-button{
-width:100%;
-border:none;
-border-radius:15px;
-padding:14px;
-font-weight:900;
-font-size:15px;
-cursor:pointer;
-background:#16a34a;
-color:white;
-box-shadow:0 10px 22px rgba(22,163,74,.25);
-}
-
-button:hover{
-background:#15803d;
-}
-
-.crear{
-display:block;
-text-align:center;
-margin-top:12px;
-padding:13px;
-border-radius:15px;
-background:#111827;
-color:white;
-text-decoration:none;
-font-weight:900;
-}
-
-.crear:hover{
-background:#000;
-}
-
-.lista{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-margin-top:16px;
-}
-
-.item{
-background:#f8fafc;
-border:1px solid #e2e8f0;
-border-radius:14px;
-padding:12px;
-font-weight:900;
-font-size:14px;
-color:#111827;
-}
-
-.prueba{
-background:#ecfdf5;
-border:1px solid #bbf7d0;
-border-radius:16px;
-padding:13px;
-color:#166534;
-font-weight:900;
-font-size:14px;
-line-height:1.4;
-margin-top:16px;
-}
-
-.footer-mini{
-font-size:12px;
-font-weight:800;
-color:#94a3b8;
-text-align:center;
-margin-top:4px;
-line-height:1.55;
-}
-
-.footer-mini a{
-color:#cbd5e1;
-text-decoration:none;
-}
-
-.footer-mini a:hover{
-color:white;
-text-decoration:underline;
-}
-
-@media(max-width:950px){
-.pagina{
-grid-template-columns:1fr;
-}
-
-.zona-foto{
-display:none;
-}
-
-.panel-derecho{
-padding:20px;
-}
-
-.login-card,
-.publicidad-card{
-border-radius:20px;
-}
-
-.lista{
-grid-template-columns:1fr;
-}
-}
-</style>
-</head>
-
-<body>
-
-<div class="pagina">
-
-<div class="zona-foto">
-<img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS">
-</div>
-
-<div class="panel-derecho">
-
-<section class="login-card">
-
-<div class="logo-mini">🍽️ Restaurant Service POS</div>
-
-<h2>Acceso</h2>
-<p class="subtitulo">
-Entra con tu usuario para continuar.
-</p>
-
-<form method="POST" action="/login">
-
-<label>Email</label>
-<input name="email" type="email" placeholder="tu@email.com" required>
-
-<label>Contraseña</label>
-<input name="password" type="password" placeholder="Contraseña" required>
-
-<button type="submit">Entrar al POS</button>
-
-</form>
-
-<a class="crear" href="/registro">Crear cuenta nueva</a>
-
-</section>
-
-<section class="publicidad-card">
-
-<h2>Gestiona tu restaurante</h2>
-
-<p>
-Un POS pensado para restaurantes reales: mesas, comandas, tickets, pagos y caja desde una sola herramienta.
-</p>
-
-<div class="lista">
-<div class="item">✅ Mesas y salas</div>
-<div class="item">✅ Comandas</div>
-<div class="item">✅ Tickets</div>
-<div class="item">✅ Caja diaria</div>
-</div>
-
-<div class="prueba">
-Prueba gratuita durante 7 días. Si tienes un código promocional, podrás introducirlo durante el registro.
-</div>
-
-</section>
-
-<div class="footer-mini">
-© 2026 Restaurant Service POS™. Todos los derechos reservados.
-<br>
-<a href="/aviso-legal">Aviso legal</a> ·
-<a href="/privacidad">Privacidad</a> ·
-<a href="/cookies">Cookies</a> ·
-<a href="/terminos">Términos</a>
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
-  `);
+  const idioma = normalizarIdioma(req.query.idioma);
+  res.send(renderLoginPagina(idioma));
 });
 
 

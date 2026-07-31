@@ -88,7 +88,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
       <a href="/precios">Precios</a>
       <a href="/software-pos-restaurantes">POS restaurantes</a>
       <a href="/contacto">Contacto</a>
-      <a href="/login">Entrar</a>
+      <a href="/login?idioma=es">Entrar</a>
       <a class="btn primary" href="/registro?idioma=es">Probar gratis</a>
 
       <div class="lang">
@@ -100,7 +100,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
   </div>
 </header>
 <main>${body}</main>
-<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/registro?idioma=es">Prueba gratis</a> · <a href="/login">Entrar</a></footer>
+<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/registro?idioma=es">Prueba gratis</a> · <a href="/login?idioma=es">Entrar</a></footer>
 </body>
 </html>`;
 }
@@ -118,7 +118,7 @@ function home(req, res) {
     <p class="lead">Restaurant Service POS es un sistema TPV sencillo para abrir mesas, enviar comandas, cobrar, controlar caja y trabajar con camareros desde cualquier navegador.</p>
     <div class="actions">
       <a class="btn primary" href="/registro?idioma=es">Probar gratis 7 días</a>
-      <a class="btn secondary" href="/login">Entrar al POS</a>
+      <a class="btn secondary" href="/login?idioma=es">Entrar al POS</a>
     </div>
   </div>
   <div class="image-card">
@@ -163,7 +163,7 @@ function simple(pathUrl, title, description, h1, text) {
     <p class="lead">${esc(text)}</p>
     <div class="actions">
       <a class="btn primary" href="/registro?idioma=es">Probar gratis 7 días</a>
-      <a class="btn secondary" href="/login">Entrar</a>
+      <a class="btn secondary" href="/login?idioma=es">Entrar</a>
     </div>
   </div>
 </section>

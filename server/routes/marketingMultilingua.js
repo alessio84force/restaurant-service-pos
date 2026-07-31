@@ -461,7 +461,7 @@ footer{
       <a href="${links.pricing}">${esc(t.nav.pricing)}</a>
       <a href="${links.contact}">${esc(t.nav.contact)}</a>
 
-      <a href="/login">${esc(t.nav.login)}</a>
+      <a href="/login?idioma=${idioma}">${esc(t.nav.login)}</a>
 
       <a class="btn primary" href="/registro?idioma=${idioma}">
         ${esc(t.nav.trial)}
@@ -484,7 +484,7 @@ ${body}
 <footer>
   Restaurant Service POS · ${esc(t.footer.text)}
   · <a href="/registro?idioma=${idioma}">${esc(t.footer.trial)}</a>
-  · <a href="/login">${esc(t.footer.login)}</a>
+  · <a href="/login?idioma=${idioma}">${esc(t.footer.login)}</a>
 </footer>
 
 </body>
@@ -519,7 +519,7 @@ function renderHome(idioma) {
 
     <div class="actions">
       <a class="btn primary" href="/registro?idioma=${idioma}">${esc(p.primary)}</a>
-      <a class="btn secondary" href="/login">${esc(p.secondary)}</a>
+      <a class="btn secondary" href="/login?idioma=${idioma}">${esc(p.secondary)}</a>
     </div>
   </div>
 
@@ -598,7 +598,7 @@ function renderSimple(idioma, pageKey) {
         ${esc(t.nav.trial)}
       </a>
 
-      <a class="btn secondary" href="/login">
+      <a class="btn secondary" href="/login?idioma=${idioma}">
         ${esc(t.nav.login)}
       </a>
     </div>
