@@ -112,8 +112,14 @@ module.exports = function mesasOperativasSaasRoutes(db) {
        WHERE COALESCE(restaurante_id,1)=?
        AND COALESCE(activo,1)=1
        AND (CAST(numero AS TEXT)=? OR CAST(id AS TEXT)=?)
+       ORDER BY
+         CASE
+           WHEN CAST(numero AS TEXT)=? THEN 0
+           ELSE 1
+         END,
+         id
        LIMIT 1`,
-      [restauranteId, mesaParam, mesaParam]
+      [restauranteId, mesaParam, mesaParam, mesaParam]
     );
 
     if (!mesa) {
