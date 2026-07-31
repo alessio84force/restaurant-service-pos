@@ -825,28 +825,87 @@ module.exports = function legalProfesionalRoutes() {
     const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(idioma,
-      "Condiciones de suscripción",
-      "Información sobre prueba gratuita, precio, pagos y cancelación.",
-      `
-        <h2>1. Prueba gratuita</h2>
-        <p>Restaurant Service POS puede ofrecer una prueba gratuita inicial para que el restaurante valore el funcionamiento del sistema antes de activar la suscripción.</p>
+    const textos = {
+      es: {
+        titulo: "Condiciones de suscripción",
+        subtitulo: "Información sobre prueba gratuita, precio, pagos y cancelación.",
+        contenido: `
+          <h2>1. Prueba gratuita</h2>
+          <p>Restaurant Service POS puede ofrecer una prueba gratuita inicial para que el restaurante valore el funcionamiento del sistema antes de activar la suscripción.</p>
 
-        <h2>2. Precio mensual</h2>
-        <p>El precio base previsto es de ${escapar(d.precio)} € al mes, salvo promoción, acuerdo especial o cambio comunicado antes de contratar.</p>
+          <h2>2. Precio mensual</h2>
+          <p>El precio base previsto es de ${escapar(d.precio)} € al mes, salvo promoción, acuerdo especial o cambio comunicado antes de contratar.</p>
 
-        <h2>3. Medio de pago</h2>
-        <p>Los pagos y la gestión de suscripciones se realizan mediante ${escapar(d.pagos)}. Restaurant Service POS no almacena los datos completos de la tarjeta bancaria.</p>
+          <h2>3. Medio de pago</h2>
+          <p>Los pagos y la gestión de suscripciones se realizan mediante ${escapar(d.pagos)}. Restaurant Service POS no almacena los datos completos de la tarjeta bancaria.</p>
 
-        <h2>4. Renovación</h2>
-        <p>La suscripción se renueva mensualmente mientras permanezca activa. En caso de impago, fallo de tarjeta o cancelación, el acceso podrá quedar limitado hasta regularizar la situación.</p>
+          <h2>4. Renovación</h2>
+          <p>La suscripción se renueva mensualmente mientras permanezca activa. En caso de impago, fallo de tarjeta o cancelación, el acceso podrá quedar limitado hasta regularizar la situación.</p>
 
-        <h2>5. Cancelación</h2>
-        <p>La cancelación puede solicitarse escribiendo a ${escapar(d.soporte)}. Cuando exista un panel de gestión automatizada, también podrá realizarse desde dicho panel.</p>
+          <h2>5. Cancelación</h2>
+          <p>La cancelación puede solicitarse escribiendo a ${escapar(d.soporte)}. Cuando exista un panel de gestión automatizada, también podrá realizarse desde dicho panel.</p>
 
-        <h2>6. Promociones</h2>
-        <p>Las promociones, códigos de prueba ampliada o accesos especiales se aplican según las condiciones comunicadas en cada caso.</p>
-      `
+          <h2>6. Promociones</h2>
+          <p>Las promociones, códigos de prueba ampliada o accesos especiales se aplican según las condiciones comunicadas en cada caso.</p>
+        `
+      },
+
+      it: {
+        titulo: "Condizioni di abbonamento",
+        subtitulo: "Informazioni su prova gratuita, prezzo, pagamenti e cancellazione.",
+        contenido: `
+          <h2>1. Prova gratuita</h2>
+          <p>Restaurant Service POS può offrire un periodo di prova gratuito iniziale affinché il ristorante possa valutare il funzionamento del sistema prima di attivare l'abbonamento.</p>
+
+          <h2>2. Prezzo mensile</h2>
+          <p>Il prezzo base previsto è di ${escapar(d.precio)} € al mese, salvo promozioni, accordi speciali o modifiche comunicate prima della sottoscrizione.</p>
+
+          <h2>3. Metodo di pagamento</h2>
+          <p>I pagamenti e la gestione degli abbonamenti vengono effettuati tramite ${escapar(d.pagos)}. Restaurant Service POS non memorizza i dati completi della carta bancaria.</p>
+
+          <h2>4. Rinnovo</h2>
+          <p>L'abbonamento si rinnova mensilmente finché rimane attivo. In caso di mancato pagamento, problemi con la carta o cancellazione, l'accesso può essere limitato fino alla regolarizzazione della situazione.</p>
+
+          <h2>5. Cancellazione</h2>
+          <p>La cancellazione può essere richiesta scrivendo a ${escapar(d.soporte)}. Quando sarà disponibile un pannello di gestione automatizzata, potrà essere effettuata anche da tale pannello.</p>
+
+          <h2>6. Promozioni</h2>
+          <p>Promozioni, codici per periodi di prova estesi o accessi speciali si applicano secondo le condizioni comunicate in ciascun caso.</p>
+        `
+      },
+
+      en: {
+        titulo: "Subscription Terms",
+        subtitulo: "Information about the free trial, pricing, payments and cancellation.",
+        contenido: `
+          <h2>1. Free trial</h2>
+          <p>Restaurant Service POS may offer an initial free trial so that the restaurant can evaluate how the system works before activating a subscription.</p>
+
+          <h2>2. Monthly price</h2>
+          <p>The expected base price is ${escapar(d.precio)} € per month, except where a promotion, special agreement or change communicated before subscription applies.</p>
+
+          <h2>3. Payment method</h2>
+          <p>Payments and subscription management are handled through ${escapar(d.pagos)}. Restaurant Service POS does not store full bank card details.</p>
+
+          <h2>4. Renewal</h2>
+          <p>The subscription renews monthly while it remains active. In the event of non-payment, card failure or cancellation, access may be restricted until the situation is resolved.</p>
+
+          <h2>5. Cancellation</h2>
+          <p>Cancellation may be requested by writing to ${escapar(d.soporte)}. When an automated management panel is available, cancellation may also be completed through that panel.</p>
+
+          <h2>6. Promotions</h2>
+          <p>Promotions, extended trial codes or special access arrangements apply according to the conditions communicated in each case.</p>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
+    res.send(pagina(
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
