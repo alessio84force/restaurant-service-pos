@@ -1029,13 +1029,133 @@ app.get('/pago-online-pendiente', (req, res) => {
   res.send(renderPagoOnlinePendiente());
 });
 
+function renderLoginError(idiomaValor, tipo) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      lang: "es",
+      title: "Login incorrecto",
+      usuarioTitulo: "Login incorrecto",
+      usuarioTexto: "Email o contraseña incorrectos, o usuario desactivado.",
+      passwordTitulo: "Contraseña incorrecta",
+      passwordTexto: "Revisa el email y la contraseña.",
+      volver: "Volver a iniciar sesión"
+    },
+
+    it: {
+      lang: "it",
+      title: "Accesso non riuscito",
+      usuarioTitulo: "Accesso non riuscito",
+      usuarioTexto: "Email o password non corretti, oppure utente disattivato.",
+      passwordTitulo: "Password non corretta",
+      passwordTexto: "Controlla l'email e la password.",
+      volver: "Torna al login"
+    },
+
+    en: {
+      lang: "en",
+      title: "Login failed",
+      usuarioTitulo: "Login failed",
+      usuarioTexto: "Incorrect email or password, or the user has been disabled.",
+      passwordTitulo: "Incorrect password",
+      passwordTexto: "Check your email and password.",
+      volver: "Back to login"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
+  const titulo =
+    tipo === "password"
+      ? t.passwordTitulo
+      : t.usuarioTitulo;
+
+  const mensaje =
+    tipo === "password"
+      ? t.passwordTexto
+      : t.usuarioTexto;
+
+  return `<!DOCTYPE html>
+<html lang="${t.lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${t.title}</title>
+
+  <style>
+    body{
+      font-family:Arial,sans-serif;
+      background:#eef2f7;
+      margin:0;
+      padding:40px;
+      color:#111827;
+    }
+
+    .card{
+      max-width:420px;
+      margin:60px auto;
+      background:white;
+      border-radius:18px;
+      padding:26px;
+      box-shadow:0 12px 28px rgba(15,23,42,.12);
+      text-align:center;
+    }
+
+    h1{
+      margin-top:0;
+    }
+
+    p{
+      color:#475569;
+      line-height:1.5;
+    }
+
+    a{
+      display:inline-flex;
+      margin-top:12px;
+      background:#2563eb;
+      color:white;
+      padding:12px 16px;
+      border-radius:12px;
+      text-decoration:none;
+      font-weight:900;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>${titulo}</h1>
+    <p>${mensaje}</p>
+    <a href="/login?idioma=${idioma}">${t.volver}</a>
+  </div>
+</body>
+</html>`;
+}
+
+
 app.post('/login', (req, res) => {
 
   const email = req.body.email;
   const password = req.body.password;
+  const idiomaFormulario = normalizarIdioma(req.body && req.body.idioma);
 
   db.get(
-    'SELECT id, nombre, email, password, rol FROM usuarios WHERE email=? AND activo=1',
+    `
+      SELECT
+        u.id,
+        u.nombre,
+        u.email,
+        u.password,
+        u.rol,
+        COALESCE(u.restaurante_id, 1) AS restaurante_id,
+        COALESCE(r.idioma, 'es') AS idioma
+      FROM usuarios u
+      LEFT JOIN restaurantes r
+        ON r.id = COALESCE(u.restaurante_id, 1)
+      WHERE u.email=? AND u.activo=1
+    `,
     [email],
     (err, usuario) => {
 
@@ -1044,88 +1164,40 @@ app.post('/login', (req, res) => {
       }
 
       if (!usuario) {
-        return res.status(401).send(`
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-            <meta charset="UTF-8">
-            <title>Login incorrecto</title>
-            <style>
-              body{
-                font-family:Arial,sans-serif;
-                background:#eef2f7;
-                padding:40px;
-                color:#111827;
-              }
-
-              .card{
-                max-width:420px;
-                margin:60px auto;
-                background:white;
-                border-radius:18px;
-                padding:26px;
-                box-shadow:0 12px 28px rgba(15,23,42,.12);
-              }
-
-              h1{
-                margin-top:0;
-              }
-
-              a{
-                display:inline-flex;
-                margin-top:12px;
-                background:#2563eb;
-                color:white;
-                padding:12px 16px;
-                border-radius:12px;
-                text-decoration:none;
-                font-weight:900;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <h1>Login incorrecto</h1>
-              <p>Email o contraseña incorrectos, o usuario desactivado.</p>
-              <a href="/login">Volver a iniciar sesión</a>
-            </div>
-          </body>
-          </html>
-        `);
+        return res
+          .status(401)
+          .send(renderLoginError(idiomaFormulario, "usuario"));
       }
 
-      
-      if(!passwords.verificarPassword(password, usuario.password)){
-        return res.send(`
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <title>Login incorrecto</title>
-              <style>
-                body{font-family:Arial;background:#f3f4f6;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
-                .box{background:#fff;padding:30px;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.12);max-width:420px;text-align:center;}
-                a{display:inline-block;margin-top:18px;background:#111827;color:white;text-decoration:none;padding:12px 18px;border-radius:12px;}
-              </style>
-            </head>
-            <body>
-              <div class="box">
-                <h2>Contraseña incorrecta</h2>
-                <p>Revisa el email y la contraseña.</p>
-                <a href="/login">Volver al login</a>
-              </div>
-            </body>
-          </html>
-        `);
+      if (!passwords.verificarPassword(password, usuario.password)) {
+        return res
+          .status(401)
+          .send(renderLoginError(idiomaFormulario, "password"));
       }
 
-      if(passwords.necesitaRehash(usuario.password)){
+      if (passwords.necesitaRehash(usuario.password)) {
         const nuevoHash = passwords.hashPassword(password);
-        db.run("UPDATE usuarios SET password=? WHERE id=?", [nuevoHash, usuario.id]);
+
+        db.run(
+          "UPDATE usuarios SET password=? WHERE id=?",
+          [nuevoHash, usuario.id]
+        );
       }
+
+      const idiomaRestaurante = normalizarIdioma(
+        usuario.idioma || idiomaFormulario
+      );
 
       delete usuario.password;
 
+      usuario.restaurante_id =
+        Number(usuario.restaurante_id || 1);
+
+      usuario.idioma = idiomaRestaurante;
+
       req.session.usuario = usuario;
+      req.session.restaurante_id = usuario.restaurante_id;
+      req.session.idioma = idiomaRestaurante;
 
       if (usuario.rol === "admin" || usuario.rol === "gerente") {
         return res.redirect("/configuracion");
@@ -1151,8 +1223,19 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
+  const idioma = normalizarIdioma(
+    req.session &&
+    (
+      req.session.idioma ||
+      (
+        req.session.usuario &&
+        req.session.usuario.idioma
+      )
+    )
+  );
+
   req.session.destroy(() => {
-    res.redirect('/login');
+    res.redirect('/login?idioma=' + idioma);
   });
 });
 
