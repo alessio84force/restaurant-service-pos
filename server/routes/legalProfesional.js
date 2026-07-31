@@ -465,51 +465,156 @@ module.exports = function legalProfesionalRoutes() {
     const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(idioma,
-      "Política de privacidad",
-      "Información sobre el tratamiento de datos personales en Restaurant Service POS.",
-      `
-        <h2>1. Responsable del tratamiento</h2>
-        <p>El responsable de los datos necesarios para la contratación, gestión de cuenta, suscripción, soporte y comunicaciones del servicio es:</p>
-        ${bloqueDatosTitular()}
+    const textos = {
+      es: {
+        titulo: "Política de privacidad",
+        subtitulo: "Información sobre el tratamiento de datos personales en Restaurant Service POS.",
+        contenido: `
+          <h2>1. Responsable del tratamiento</h2>
+          <p>El responsable de los datos necesarios para la contratación, gestión de cuenta, suscripción, soporte y comunicaciones del servicio es:</p>
+          ${bloqueDatosTitular("es")}
 
-        <h2>2. Datos tratados</h2>
-        <p>Para prestar el servicio se pueden tratar las siguientes categorías de datos:</p>
-        <ul>
-          <li>Datos identificativos y de contacto del titular o responsable del restaurante: nombre, email, teléfono, dirección, NIF/CIF cuando sea necesario.</li>
-          <li>Datos del restaurante: nombre comercial, dirección, configuración de salas, mesas, productos, categorías, destinos de comanda e impresoras.</li>
-          <li>Datos de usuarios internos creados por el restaurante: email o identificador, rol operativo y estado de acceso.</li>
-          <li>Datos técnicos y de suscripción: estado de prueba gratuita, plan, identificadores de pago de ${escapar(d.pagos)}, eventos de suscripción y registros necesarios para soporte.</li>
-          <li>Comunicaciones transaccionales necesarias para el servicio, enviadas mediante ${escapar(d.emails)} desde ${escapar(d.emailEnvio)}.</li>
-        </ul>
+          <h2>2. Datos tratados</h2>
+          <p>Para prestar el servicio se pueden tratar las siguientes categorías de datos:</p>
+          <ul>
+            <li>Datos identificativos y de contacto del titular o responsable del restaurante: nombre, email, teléfono, dirección, NIF/CIF cuando sea necesario.</li>
+            <li>Datos del restaurante: nombre comercial, dirección, configuración de salas, mesas, productos, categorías, destinos de comanda e impresoras.</li>
+            <li>Datos de usuarios internos creados por el restaurante: email o identificador, rol operativo y estado de acceso.</li>
+            <li>Datos técnicos y de suscripción: estado de prueba gratuita, plan, identificadores de pago de ${escapar(d.pagos)}, eventos de suscripción y registros necesarios para soporte.</li>
+            <li>Comunicaciones transaccionales necesarias para el servicio, enviadas mediante ${escapar(d.emails)} desde ${escapar(d.emailEnvio)}.</li>
+          </ul>
 
-        <h2>3. Finalidades</h2>
-        <p>Los datos se tratan para crear y gestionar la cuenta del restaurante, permitir el uso del POS, gestionar la prueba gratuita y la suscripción, procesar pagos, enviar emails transaccionales, prestar soporte técnico, mejorar la seguridad y cumplir obligaciones legales.</p>
+          <h2>3. Finalidades</h2>
+          <p>Los datos se tratan para crear y gestionar la cuenta del restaurante, permitir el uso del POS, gestionar la prueba gratuita y la suscripción, procesar pagos, enviar emails transaccionales, prestar soporte técnico, mejorar la seguridad y cumplir obligaciones legales.</p>
 
-        <h2>4. Base jurídica</h2>
-        <p>Las bases jurídicas principales son la ejecución de una relación contractual o precontractual, el cumplimiento de obligaciones legales y el interés legítimo en mantener la seguridad, soporte y funcionamiento del servicio.</p>
+          <h2>4. Base jurídica</h2>
+          <p>Las bases jurídicas principales son la ejecución de una relación contractual o precontractual, el cumplimiento de obligaciones legales y el interés legítimo en mantener la seguridad, soporte y funcionamiento del servicio.</p>
 
-        <h2>5. Proveedores y destinatarios</h2>
-        <p>Para prestar el servicio se utilizan proveedores técnicos necesarios:</p>
-        <ul>
-          <li>${escapar(d.pagos)} para pagos, suscripciones e identificadores de facturación.</li>
-          <li>${escapar(d.emails)} para emails transaccionales del sistema.</li>
-          <li>${escapar(d.dns)} para dominio, DNS y servicios técnicos asociados.</li>
-        </ul>
-        <p>No se venden datos personales a terceros.</p>
+          <h2>5. Proveedores y destinatarios</h2>
+          <p>Para prestar el servicio se utilizan proveedores técnicos necesarios:</p>
+          <ul>
+            <li>${escapar(d.pagos)} para pagos, suscripciones e identificadores de facturación.</li>
+            <li>${escapar(d.emails)} para emails transaccionales del sistema.</li>
+            <li>${escapar(d.dns)} para dominio, DNS y servicios técnicos asociados.</li>
+          </ul>
+          <p>No se venden datos personales a terceros.</p>
 
-        <h2>6. Datos operativos del restaurante</h2>
-        <p>El restaurante es responsable de los datos que introduce y gestiona en su actividad diaria, incluyendo datos relacionados con pedidos, mesas, caja, empleados o clientes propios si los introdujera en el sistema. Restaurant Service POS actúa como proveedor técnico en los términos indicados en el documento de encargo del tratamiento.</p>
+          <h2>6. Datos operativos del restaurante</h2>
+          <p>El restaurante es responsable de los datos que introduce y gestiona en su actividad diaria, incluyendo datos relacionados con pedidos, mesas, caja, empleados o clientes propios si los introdujera en el sistema. Restaurant Service POS actúa como proveedor técnico en los términos indicados en el documento de encargo del tratamiento.</p>
 
-        <h2>7. Conservación</h2>
-        <p>Los datos se conservarán mientras exista relación contractual, durante los plazos necesarios para soporte, responsabilidades legales, obligaciones fiscales o defensa de reclamaciones, y posteriormente se bloquearán o eliminarán cuando corresponda.</p>
+          <h2>7. Conservación</h2>
+          <p>Los datos se conservarán mientras exista relación contractual, durante los plazos necesarios para soporte, responsabilidades legales, obligaciones fiscales o defensa de reclamaciones, y posteriormente se bloquearán o eliminarán cuando corresponda.</p>
 
-        <h2>8. Derechos</h2>
-        <p>Puede solicitar acceso, rectificación, supresión, oposición, limitación o portabilidad escribiendo a ${escapar(d.email)}. También puede contactar con la autoridad de control competente si considera que sus derechos no han sido atendidos correctamente.</p>
+          <h2>8. Derechos</h2>
+          <p>Puede solicitar acceso, rectificación, supresión, oposición, limitación o portabilidad escribiendo a ${escapar(d.email)}. También puede contactar con la autoridad de control competente si considera que sus derechos no han sido atendidos correctamente.</p>
 
-        <h2>9. Seguridad</h2>
-        <p>El sistema aplica medidas técnicas razonables como autenticación, roles de usuario, hashing de contraseñas, separación de permisos, uso de proveedores especializados y limitación de datos al funcionamiento necesario del servicio.</p>
-      `
+          <h2>9. Seguridad</h2>
+          <p>El sistema aplica medidas técnicas razonables como autenticación, roles de usuario, hashing de contraseñas, separación de permisos, uso de proveedores especializados y limitación de datos al funcionamiento necesario del servicio.</p>
+        `
+      },
+
+      it: {
+        titulo: "Informativa sulla privacy",
+        subtitulo: "Informazioni sul trattamento dei dati personali in Restaurant Service POS.",
+        contenido: `
+          <h2>1. Titolare del trattamento</h2>
+          <p>Il titolare dei dati necessari per la contrattazione, la gestione dell'account, l'abbonamento, l'assistenza e le comunicazioni relative al servizio è:</p>
+          ${bloqueDatosTitular("it")}
+
+          <h2>2. Dati trattati</h2>
+          <p>Per fornire il servizio possono essere trattate le seguenti categorie di dati:</p>
+          <ul>
+            <li>Dati identificativi e di contatto del titolare o responsabile del ristorante: nome, email, telefono, indirizzo e identificativo fiscale quando necessario.</li>
+            <li>Dati del ristorante: nome commerciale, indirizzo, configurazione di sale, tavoli, prodotti, categorie, destinazioni delle comande e stampanti.</li>
+            <li>Dati degli utenti interni creati dal ristorante: email o identificativo, ruolo operativo e stato di accesso.</li>
+            <li>Dati tecnici e di abbonamento: stato della prova gratuita, piano, identificativi di pagamento di ${escapar(d.pagos)}, eventi dell'abbonamento e registri necessari per l'assistenza.</li>
+            <li>Comunicazioni transazionali necessarie al servizio, inviate tramite ${escapar(d.emails)} da ${escapar(d.emailEnvio)}.</li>
+          </ul>
+
+          <h2>3. Finalità</h2>
+          <p>I dati vengono trattati per creare e gestire l'account del ristorante, consentire l'utilizzo del POS, gestire la prova gratuita e l'abbonamento, elaborare i pagamenti, inviare comunicazioni transazionali, fornire assistenza tecnica, migliorare la sicurezza e adempiere agli obblighi legali.</p>
+
+          <h2>4. Base giuridica</h2>
+          <p>Le principali basi giuridiche sono l'esecuzione di un rapporto contrattuale o precontrattuale, l'adempimento di obblighi legali e il legittimo interesse a mantenere la sicurezza, l'assistenza e il funzionamento del servizio.</p>
+
+          <h2>5. Fornitori e destinatari</h2>
+          <p>Per fornire il servizio vengono utilizzati fornitori tecnici necessari:</p>
+          <ul>
+            <li>${escapar(d.pagos)} per pagamenti, abbonamenti e identificativi di fatturazione.</li>
+            <li>${escapar(d.emails)} per le comunicazioni transazionali del sistema.</li>
+            <li>${escapar(d.dns)} per dominio, DNS e servizi tecnici associati.</li>
+          </ul>
+          <p>I dati personali non vengono venduti a terzi.</p>
+
+          <h2>6. Dati operativi del ristorante</h2>
+          <p>Il ristorante è responsabile dei dati che inserisce e gestisce nella propria attività quotidiana, compresi eventuali dati relativi a ordini, tavoli, cassa, dipendenti o propri clienti. Restaurant Service POS agisce come fornitore tecnico secondo quanto indicato nell'accordo sul trattamento dei dati.</p>
+
+          <h2>7. Conservazione</h2>
+          <p>I dati saranno conservati per la durata del rapporto contrattuale e per i periodi necessari all'assistenza, alle responsabilità legali, agli obblighi fiscali o alla difesa da eventuali reclami. Successivamente saranno bloccati o eliminati quando previsto.</p>
+
+          <h2>8. Diritti</h2>
+          <p>È possibile richiedere accesso, rettifica, cancellazione, opposizione, limitazione o portabilità scrivendo a ${escapar(d.email)}. È inoltre possibile rivolgersi all'autorità di controllo competente qualora si ritenga che i propri diritti non siano stati adeguatamente tutelati.</p>
+
+          <h2>9. Sicurezza</h2>
+          <p>Il sistema applica misure tecniche ragionevoli quali autenticazione, ruoli utente, hashing delle password, separazione dei permessi, utilizzo di fornitori specializzati e limitazione dei dati a quanto necessario per il funzionamento del servizio.</p>
+        `
+      },
+
+      en: {
+        titulo: "Privacy Policy",
+        subtitulo: "Information about the processing of personal data in Restaurant Service POS.",
+        contenido: `
+          <h2>1. Data controller</h2>
+          <p>The controller of the data required for contracting, account management, subscriptions, support and service communications is:</p>
+          ${bloqueDatosTitular("en")}
+
+          <h2>2. Data processed</h2>
+          <p>The following categories of data may be processed in order to provide the service:</p>
+          <ul>
+            <li>Identification and contact details of the restaurant owner or responsible person: name, email, phone number, address and tax identification where required.</li>
+            <li>Restaurant data: trading name, address, configuration of areas, tables, products, categories, order destinations and printers.</li>
+            <li>Data relating to internal users created by the restaurant: email or identifier, operational role and access status.</li>
+            <li>Technical and subscription data: free-trial status, plan, ${escapar(d.pagos)} payment identifiers, subscription events and records required for support.</li>
+            <li>Transactional communications required for the service, sent through ${escapar(d.emails)} from ${escapar(d.emailEnvio)}.</li>
+          </ul>
+
+          <h2>3. Purposes</h2>
+          <p>Data is processed to create and manage the restaurant account, provide access to the POS, manage the free trial and subscription, process payments, send transactional communications, provide technical support, improve security and comply with legal obligations.</p>
+
+          <h2>4. Legal basis</h2>
+          <p>The main legal bases are the performance of a contractual or pre-contractual relationship, compliance with legal obligations and the legitimate interest in maintaining the security, support and operation of the service.</p>
+
+          <h2>5. Service providers and recipients</h2>
+          <p>The service uses the following necessary technical providers:</p>
+          <ul>
+            <li>${escapar(d.pagos)} for payments, subscriptions and billing identifiers.</li>
+            <li>${escapar(d.emails)} for transactional system emails.</li>
+            <li>${escapar(d.dns)} for domain, DNS and related technical services.</li>
+          </ul>
+          <p>Personal data is not sold to third parties.</p>
+
+          <h2>6. Restaurant operational data</h2>
+          <p>The restaurant is responsible for the data it enters and manages as part of its daily operations, including any data relating to orders, tables, cash operations, employees or its own customers. Restaurant Service POS acts as a technical provider under the terms set out in the Data Processing Agreement.</p>
+
+          <h2>7. Retention</h2>
+          <p>Data will be retained while the contractual relationship remains in force and for the periods necessary for support, legal responsibilities, tax obligations or the defence of claims. It will subsequently be restricted or deleted where appropriate.</p>
+
+          <h2>8. Rights</h2>
+          <p>You may request access, rectification, erasure, objection, restriction or portability by writing to ${escapar(d.email)}. You may also contact the competent supervisory authority if you believe your rights have not been properly addressed.</p>
+
+          <h2>9. Security</h2>
+          <p>The system applies reasonable technical measures including authentication, user roles, password hashing, permission separation, specialist service providers and limiting data processing to what is necessary for operation of the service.</p>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
+    res.send(pagina(
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
