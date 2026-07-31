@@ -913,45 +913,138 @@ module.exports = function legalProfesionalRoutes() {
     const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(idioma,
-      "Encargo del tratamiento",
-      "Base informativa sobre el tratamiento de datos entre el restaurante y Restaurant Service POS.",
-      `
-        <h2>1. Partes</h2>
-        <p>El restaurante usuario del software actúa como responsable del tratamiento respecto de los datos personales que introduce o gestiona en su actividad diaria.</p>
-        <p>${escapar(d.nombreComercial)}, titularidad de ${escapar(d.titular)}, actúa como proveedor técnico y, cuando corresponda, como encargado del tratamiento para prestar soporte, mantenimiento y funcionamiento del software.</p>
+    const textos = {
+      es: {
+        titulo: "Encargo del tratamiento",
+        subtitulo: "Base informativa sobre el tratamiento de datos entre el restaurante y Restaurant Service POS.",
+        contenido: `
+          <h2>1. Partes</h2>
+          <p>El restaurante usuario del software actúa como responsable del tratamiento respecto de los datos personales que introduce o gestiona en su actividad diaria.</p>
+          <p>${escapar(d.nombreComercial)}, titularidad de ${escapar(d.titular)}, actúa como proveedor técnico y, cuando corresponda, como encargado del tratamiento para prestar soporte, mantenimiento y funcionamiento del software.</p>
 
-        <h2>2. Objeto del encargo</h2>
-        <p>El encargo consiste en facilitar el uso técnico del POS, mantener funcionalidades de cuenta, usuarios, suscripción, comunicaciones transaccionales, soporte e incidencias relacionadas con el servicio.</p>
+          <h2>2. Objeto del encargo</h2>
+          <p>El encargo consiste en facilitar el uso técnico del POS, mantener funcionalidades de cuenta, usuarios, suscripción, comunicaciones transaccionales, soporte e incidencias relacionadas con el servicio.</p>
 
-        <h2>3. Datos afectados</h2>
-        <p>Pueden tratarse datos del restaurante, usuarios internos, configuración del negocio, información técnica de suscripción y, si el restaurante los introduce, datos operativos relacionados con pedidos, mesas, empleados o clientes.</p>
+          <h2>3. Datos afectados</h2>
+          <p>Pueden tratarse datos del restaurante, usuarios internos, configuración del negocio, información técnica de suscripción y, si el restaurante los introduce, datos operativos relacionados con pedidos, mesas, empleados o clientes.</p>
 
-        <h2>4. Finalidad</h2>
-        <p>Los datos se tratarán únicamente para prestar el servicio contratado, mantener la seguridad, gestionar soporte, comunicaciones necesarias y obligaciones legales o contractuales asociadas.</p>
+          <h2>4. Finalidad</h2>
+          <p>Los datos se tratarán únicamente para prestar el servicio contratado, mantener la seguridad, gestionar soporte, comunicaciones necesarias y obligaciones legales o contractuales asociadas.</p>
 
-        <h2>5. Obligaciones del encargado</h2>
-        <ul>
-          <li>Tratar los datos siguiendo las instrucciones del restaurante y para las finalidades del servicio.</li>
-          <li>No utilizar los datos para finalidades propias incompatibles.</li>
-          <li>Aplicar medidas técnicas y organizativas razonables.</li>
-          <li>Limitar el acceso a personal o proveedores necesarios.</li>
-          <li>Colaborar razonablemente en la atención de derechos o incidencias de seguridad.</li>
-        </ul>
+          <h2>5. Obligaciones del encargado</h2>
+          <ul>
+            <li>Tratar los datos siguiendo las instrucciones del restaurante y para las finalidades del servicio.</li>
+            <li>No utilizar los datos para finalidades propias incompatibles.</li>
+            <li>Aplicar medidas técnicas y organizativas razonables.</li>
+            <li>Limitar el acceso a personal o proveedores necesarios.</li>
+            <li>Colaborar razonablemente en la atención de derechos o incidencias de seguridad.</li>
+          </ul>
 
-        <h2>6. Subencargados y proveedores</h2>
-        <p>Para prestar el servicio pueden intervenir proveedores técnicos necesarios como ${escapar(d.pagos)} para pagos, ${escapar(d.emails)} para emails transaccionales y ${escapar(d.dns)} para dominio, DNS o servicios técnicos asociados.</p>
+          <h2>6. Subencargados y proveedores</h2>
+          <p>Para prestar el servicio pueden intervenir proveedores técnicos necesarios como ${escapar(d.pagos)} para pagos, ${escapar(d.emails)} para emails transaccionales y ${escapar(d.dns)} para dominio, DNS o servicios técnicos asociados.</p>
 
-        <h2>7. Devolución o eliminación</h2>
-        <p>Finalizada la relación, los datos podrán ser eliminados, bloqueados o conservados únicamente durante los plazos necesarios para responsabilidades legales, técnicas, fiscales o de seguridad.</p>
+          <h2>7. Devolución o eliminación</h2>
+          <p>Finalizada la relación, los datos podrán ser eliminados, bloqueados o conservados únicamente durante los plazos necesarios para responsabilidades legales, técnicas, fiscales o de seguridad.</p>
 
-        <h2>8. Documento base</h2>
-        <p>Esta página funciona como base informativa inicial. Para clientes que requieran un contrato específico de encargo del tratamiento, podrá formalizarse un documento individual firmado entre las partes.</p>
+          <h2>8. Documento base</h2>
+          <p>Esta página funciona como base informativa inicial. Para clientes que requieran un contrato específico de encargo del tratamiento, podrá formalizarse un documento individual firmado entre las partes.</p>
 
-        <div class="nota">
-          Recomendación: antes de escalar comercialmente el servicio o firmar con clientes de mayor tamaño, este documento debe ser revisado por un asesor legal especializado en protección de datos.
-        </div>
-      `
+          <div class="nota">
+            Recomendación: antes de escalar comercialmente el servicio o firmar con clientes de mayor tamaño, este documento debe ser revisado por un asesor legal especializado en protección de datos.
+          </div>
+        `
+      },
+
+      it: {
+        titulo: "Accordo sul trattamento dei dati",
+        subtitulo: "Informazioni di base sul trattamento dei dati tra il ristorante e Restaurant Service POS.",
+        contenido: `
+          <h2>1. Parti</h2>
+          <p>Il ristorante che utilizza il software agisce come titolare del trattamento rispetto ai dati personali che inserisce o gestisce nella propria attività quotidiana.</p>
+          <p>${escapar(d.nombreComercial)}, di titolarità di ${escapar(d.titular)}, agisce come fornitore tecnico e, quando applicabile, come responsabile del trattamento per fornire assistenza, manutenzione e funzionamento del software.</p>
+
+          <h2>2. Oggetto del trattamento</h2>
+          <p>L'incarico consiste nel consentire l'utilizzo tecnico del POS e nel mantenere le funzionalità relative ad account, utenti, abbonamento, comunicazioni transazionali, assistenza e gestione delle problematiche connesse al servizio.</p>
+
+          <h2>3. Dati interessati</h2>
+          <p>Possono essere trattati dati del ristorante, degli utenti interni, della configurazione dell'attività, informazioni tecniche relative all'abbonamento e, qualora il ristorante li inserisca, dati operativi relativi a ordini, tavoli, dipendenti o clienti.</p>
+
+          <h2>4. Finalità</h2>
+          <p>I dati saranno trattati esclusivamente per fornire il servizio contrattato, mantenere la sicurezza, gestire l'assistenza, le comunicazioni necessarie e gli obblighi legali o contrattuali connessi.</p>
+
+          <h2>5. Obblighi del responsabile del trattamento</h2>
+          <ul>
+            <li>Trattare i dati secondo le istruzioni del ristorante e per le finalità del servizio.</li>
+            <li>Non utilizzare i dati per finalità proprie incompatibili.</li>
+            <li>Applicare misure tecniche e organizzative ragionevoli.</li>
+            <li>Limitare l'accesso al personale o ai fornitori necessari.</li>
+            <li>Collaborare ragionevolmente nella gestione dei diritti degli interessati o degli incidenti di sicurezza.</li>
+          </ul>
+
+          <h2>6. Ulteriori responsabili e fornitori</h2>
+          <p>Per fornire il servizio possono intervenire fornitori tecnici necessari come ${escapar(d.pagos)} per i pagamenti, ${escapar(d.emails)} per le comunicazioni transazionali e ${escapar(d.dns)} per dominio, DNS o servizi tecnici associati.</p>
+
+          <h2>7. Restituzione o cancellazione</h2>
+          <p>Al termine del rapporto, i dati potranno essere cancellati, bloccati o conservati esclusivamente per i periodi necessari in relazione a responsabilità legali, tecniche, fiscali o di sicurezza.</p>
+
+          <h2>8. Documento di base</h2>
+          <p>Questa pagina costituisce una base informativa iniziale. Per i clienti che richiedano uno specifico accordo sul trattamento dei dati, potrà essere formalizzato un documento individuale sottoscritto dalle parti.</p>
+
+          <div class="nota">
+            Raccomandazione: prima di ampliare commercialmente il servizio o stipulare accordi con clienti di maggiori dimensioni, questo documento dovrebbe essere revisionato da un consulente legale specializzato in protezione dei dati.
+          </div>
+        `
+      },
+
+      en: {
+        titulo: "Data Processing Agreement",
+        subtitulo: "Basic information about data processing between the restaurant and Restaurant Service POS.",
+        contenido: `
+          <h2>1. Parties</h2>
+          <p>The restaurant using the software acts as the data controller in relation to personal data that it enters or manages as part of its daily operations.</p>
+          <p>${escapar(d.nombreComercial)}, owned by ${escapar(d.titular)}, acts as a technical service provider and, where applicable, as a data processor in order to provide software support, maintenance and operation.</p>
+
+          <h2>2. Subject matter of the processing</h2>
+          <p>The processing consists of providing the technical use of the POS and maintaining account, user, subscription, transactional communication, support and service-related incident functionalities.</p>
+
+          <h2>3. Data concerned</h2>
+          <p>Data relating to the restaurant, internal users, business configuration and technical subscription information may be processed, together with operational data relating to orders, tables, employees or customers where such data is entered by the restaurant.</p>
+
+          <h2>4. Purpose</h2>
+          <p>Data will be processed solely to provide the contracted service, maintain security, manage support, provide necessary communications and fulfil associated legal or contractual obligations.</p>
+
+          <h2>5. Processor obligations</h2>
+          <ul>
+            <li>Process data according to the restaurant's instructions and for the purposes of the service.</li>
+            <li>Not use the data for incompatible purposes of its own.</li>
+            <li>Apply reasonable technical and organisational measures.</li>
+            <li>Restrict access to necessary personnel or providers.</li>
+            <li>Provide reasonable assistance regarding data subject rights or security incidents.</li>
+          </ul>
+
+          <h2>6. Sub-processors and providers</h2>
+          <p>Necessary technical providers may participate in providing the service, including ${escapar(d.pagos)} for payments, ${escapar(d.emails)} for transactional communications and ${escapar(d.dns)} for domain, DNS or related technical services.</p>
+
+          <h2>7. Return or deletion</h2>
+          <p>At the end of the relationship, data may be deleted, restricted or retained only for the periods necessary for legal, technical, tax or security responsibilities.</p>
+
+          <h2>8. Base document</h2>
+          <p>This page serves as an initial information document. Where a customer requires a specific Data Processing Agreement, an individual document may be formalised and signed by the parties.</p>
+
+          <div class="nota">
+            Recommendation: before significantly expanding the commercial use of the service or entering into agreements with larger customers, this document should be reviewed by a legal adviser specialising in data protection.
+          </div>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
+    res.send(pagina(
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
