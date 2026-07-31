@@ -37,6 +37,7 @@ const express = require('express');
 const seoLocalesRoutes = require("./routes/seoLocales");
 const marketingPublicoRoutes = require("./routes/marketingPublico");
 const marketingMultilinguaRoutes = require("./routes/marketingMultilingua");
+const { normalizarIdioma } = require("./utils/i18n");
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
@@ -577,6 +578,7 @@ function escapeHtmlRegistro(valor) {
 
 function renderRegistroPropietario(error, valores) {
   const v = valores || {};
+  const idioma = normalizarIdioma(v.idioma);
   const errorHtml = error
     ? '<div class="error">' + escapeHtmlRegistro(error) + '</div>'
     : '';
@@ -614,6 +616,7 @@ function renderRegistroPropietario(error, valores) {
     '<p class="intro">Registra el restaurante y crea el usuario propietario. La cuenta empezará con prueba gratuita.</p>',
     errorHtml,
     '<form method="POST" action="/registro">',
+    '<input type="hidden" name="idioma" value="' + escapeHtmlRegistro(idioma) + '">',
     '<div class="grid">',
     '<div class="full">',
     '<label>Nombre del restaurante</label>',
@@ -870,7 +873,8 @@ app.use(function(req, res, next) {
 });
 
 app.get('/registro', (req, res) => {
-  res.send(renderRegistroPropietario(null, {}));
+  const idioma = normalizarIdioma(req.query.idioma);
+  res.send(renderRegistroPropietario(null, { idioma }));
 });
 
 app.post('/registro', (req, res) => {
@@ -880,7 +884,8 @@ app.post('/registro', (req, res) => {
     telefono: String(req.body.telefono || "").trim(),
     email: String(req.body.email || "").trim().toLowerCase(),
     password: String(req.body.password || ""),
-    codigo_promocional: String(req.body.codigo_promocional || "").trim()
+    codigo_promocional: String(req.body.codigo_promocional || "").trim(),
+    idioma: normalizarIdioma(req.body.idioma)
   };
 
   if (!datos.nombre_restaurante || !datos.nombre_propietario || !datos.email || !datos.password) {

@@ -463,7 +463,7 @@ footer{
 
       <a href="/login">${esc(t.nav.login)}</a>
 
-      <a class="btn primary" href="/registro">
+      <a class="btn primary" href="/registro?idioma=${idioma}">
         ${esc(t.nav.trial)}
       </a>
 
@@ -483,7 +483,7 @@ ${body}
 
 <footer>
   Restaurant Service POS · ${esc(t.footer.text)}
-  · <a href="/registro">${esc(t.footer.trial)}</a>
+  · <a href="/registro?idioma=${idioma}">${esc(t.footer.trial)}</a>
   · <a href="/login">${esc(t.footer.login)}</a>
 </footer>
 
@@ -518,7 +518,7 @@ function renderHome(idioma) {
     <p class="lead">${esc(p.lead)}</p>
 
     <div class="actions">
-      <a class="btn primary" href="/registro">${esc(p.primary)}</a>
+      <a class="btn primary" href="/registro?idioma=${idioma}">${esc(p.primary)}</a>
       <a class="btn secondary" href="/login">${esc(p.secondary)}</a>
     </div>
   </div>
@@ -554,7 +554,7 @@ function renderHome(idioma) {
       ${esc(p.ctaText)}
     </p>
 
-    <a class="btn primary" href="/registro">
+    <a class="btn primary" href="/registro?idioma=${idioma}">
       ${esc(p.ctaButton)}
     </a>
 
@@ -594,7 +594,7 @@ function renderSimple(idioma, pageKey) {
     <p class="lead">${esc(p.text)}</p>
 
     <div class="actions">
-      <a class="btn primary" href="/registro">
+      <a class="btn primary" href="/registro?idioma=${idioma}">
         ${esc(t.nav.trial)}
       </a>
 

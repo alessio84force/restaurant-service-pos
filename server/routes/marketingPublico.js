@@ -89,7 +89,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
       <a href="/software-pos-restaurantes">POS restaurantes</a>
       <a href="/contacto">Contacto</a>
       <a href="/login">Entrar</a>
-      <a class="btn primary" href="/registro">Probar gratis</a>
+      <a class="btn primary" href="/registro?idioma=es">Probar gratis</a>
 
       <div class="lang">
         <a href="/" class="active">ES</a>
@@ -100,7 +100,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
   </div>
 </header>
 <main>${body}</main>
-<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/registro">Prueba gratis</a> · <a href="/login">Entrar</a></footer>
+<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/registro?idioma=es">Prueba gratis</a> · <a href="/login">Entrar</a></footer>
 </body>
 </html>`;
 }
@@ -117,7 +117,7 @@ function home(req, res) {
     <h1>Gestiona tu restaurante desde PC y móvil por 7,50 €/mes.</h1>
     <p class="lead">Restaurant Service POS es un sistema TPV sencillo para abrir mesas, enviar comandas, cobrar, controlar caja y trabajar con camareros desde cualquier navegador.</p>
     <div class="actions">
-      <a class="btn primary" href="/registro">Probar gratis 7 días</a>
+      <a class="btn primary" href="/registro?idioma=es">Probar gratis 7 días</a>
       <a class="btn secondary" href="/login">Entrar al POS</a>
     </div>
   </div>
@@ -143,7 +143,7 @@ function home(req, res) {
   <div class="cta">
     <h2>Empieza con una prueba gratuita</h2>
     <p class="text" style="margin:auto auto 22px;">Configura tu restaurante online, crea mesas y productos, y prueba el POS antes de pagar.</p>
-    <a class="btn primary" href="/registro">Crear cuenta gratis</a>
+    <a class="btn primary" href="/registro?idioma=es">Crear cuenta gratis</a>
   </div>
 </section>`
   }));
@@ -162,7 +162,7 @@ function simple(pathUrl, title, description, h1, text) {
     <h1>${esc(h1)}</h1>
     <p class="lead">${esc(text)}</p>
     <div class="actions">
-      <a class="btn primary" href="/registro">Probar gratis 7 días</a>
+      <a class="btn primary" href="/registro?idioma=es">Probar gratis 7 días</a>
       <a class="btn secondary" href="/login">Entrar</a>
     </div>
   </div>
