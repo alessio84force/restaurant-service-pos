@@ -1302,6 +1302,12 @@ module.exports = function operativaSaasRoutes(db) {
         "UPDATE pedidos SET estado='cerrado', pagado_en=CURRENT_TIMESTAMP WHERE id=? AND COALESCE(restaurante_id,1)=?",
         [pedidoId, restauranteId]
       );
+
+      await run(
+        db,
+        "UPDATE mesas SET estado='libre' WHERE id=? AND COALESCE(restaurante_id,1)=?",
+        [pedido.mesa_id, restauranteId]
+      );
     }
 
     res.json({
