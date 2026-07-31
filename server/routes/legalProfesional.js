@@ -622,25 +622,78 @@ module.exports = function legalProfesionalRoutes() {
     const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(idioma,
-      "Política de cookies",
-      "Información sobre cookies técnicas y tecnologías necesarias.",
-      `
-        <h2>1. Uso actual de cookies</h2>
-        <p>Restaurant Service POS utiliza cookies o mecanismos técnicos equivalentes necesarios para el funcionamiento del login, la sesión de usuario, la seguridad y la navegación interna del sistema.</p>
+    const textos = {
+      es: {
+        titulo: "Política de cookies",
+        subtitulo: "Información sobre cookies técnicas y tecnologías necesarias.",
+        contenido: `
+          <h2>1. Uso actual de cookies</h2>
+          <p>Restaurant Service POS utiliza cookies o mecanismos técnicos equivalentes necesarios para el funcionamiento del login, la sesión de usuario, la seguridad y la navegación interna del sistema.</p>
 
-        <h2>2. Cookies técnicas</h2>
-        <p>Las cookies técnicas son necesarias para que el usuario pueda iniciar sesión, mantener su sesión activa, acceder a las zonas protegidas y utilizar el POS de forma segura. Estas cookies no tienen finalidad publicitaria.</p>
+          <h2>2. Cookies técnicas</h2>
+          <p>Las cookies técnicas son necesarias para que el usuario pueda iniciar sesión, mantener su sesión activa, acceder a las zonas protegidas y utilizar el POS de forma segura. Estas cookies no tienen finalidad publicitaria.</p>
 
-        <h2>3. Analytics y marketing</h2>
-        <p>Actualmente el sistema no utiliza cookies de analítica publicitaria, remarketing, perfiles comerciales ni seguimiento de terceros con fines publicitarios.</p>
+          <h2>3. Analytics y marketing</h2>
+          <p>Actualmente el sistema no utiliza cookies de analítica publicitaria, remarketing, perfiles comerciales ni seguimiento de terceros con fines publicitarios.</p>
 
-        <h2>4. Cambios futuros</h2>
-        <p>Si en el futuro se incorporan herramientas como analítica, píxeles publicitarios o cookies no técnicas, esta política se actualizará y se incorporará el mecanismo de consentimiento correspondiente antes de su uso.</p>
+          <h2>4. Cambios futuros</h2>
+          <p>Si en el futuro se incorporan herramientas como analítica, píxeles publicitarios o cookies no técnicas, esta política se actualizará y se incorporará el mecanismo de consentimiento correspondiente antes de su uso.</p>
 
-        <h2>5. Contacto</h2>
-        <p>Para cualquier duda sobre cookies o tecnologías similares puede escribir a ${escapar(d.email)}.</p>
-      `
+          <h2>5. Contacto</h2>
+          <p>Para cualquier duda sobre cookies o tecnologías similares puede escribir a ${escapar(d.email)}.</p>
+        `
+      },
+
+      it: {
+        titulo: "Informativa sui cookie",
+        subtitulo: "Informazioni sui cookie tecnici e sulle tecnologie necessarie.",
+        contenido: `
+          <h2>1. Utilizzo attuale dei cookie</h2>
+          <p>Restaurant Service POS utilizza cookie o meccanismi tecnici equivalenti necessari per il funzionamento del login, della sessione utente, della sicurezza e della navigazione interna del sistema.</p>
+
+          <h2>2. Cookie tecnici</h2>
+          <p>I cookie tecnici sono necessari per consentire all'utente di accedere, mantenere attiva la sessione, entrare nelle aree protette e utilizzare il POS in modo sicuro. Questi cookie non hanno finalità pubblicitarie.</p>
+
+          <h2>3. Analisi e marketing</h2>
+          <p>Attualmente il sistema non utilizza cookie di analisi pubblicitaria, remarketing, profilazione commerciale o tracciamento di terze parti con finalità pubblicitarie.</p>
+
+          <h2>4. Modifiche future</h2>
+          <p>Qualora in futuro venissero introdotti strumenti di analisi, pixel pubblicitari o cookie non tecnici, questa informativa sarà aggiornata e verrà introdotto il relativo meccanismo di consenso prima del loro utilizzo.</p>
+
+          <h2>5. Contatti</h2>
+          <p>Per qualsiasi domanda relativa ai cookie o a tecnologie simili è possibile scrivere a ${escapar(d.email)}.</p>
+        `
+      },
+
+      en: {
+        titulo: "Cookie Policy",
+        subtitulo: "Information about technical cookies and necessary technologies.",
+        contenido: `
+          <h2>1. Current use of cookies</h2>
+          <p>Restaurant Service POS uses cookies or equivalent technical mechanisms required for login, user sessions, security and internal navigation of the system.</p>
+
+          <h2>2. Technical cookies</h2>
+          <p>Technical cookies are necessary to allow users to sign in, keep their session active, access protected areas and use the POS securely. These cookies are not used for advertising purposes.</p>
+
+          <h2>3. Analytics and marketing</h2>
+          <p>The system currently does not use advertising analytics cookies, remarketing cookies, commercial profiling or third-party tracking for advertising purposes.</p>
+
+          <h2>4. Future changes</h2>
+          <p>If analytics tools, advertising pixels or non-technical cookies are introduced in the future, this policy will be updated and the corresponding consent mechanism will be implemented before they are used.</p>
+
+          <h2>5. Contact</h2>
+          <p>For any questions about cookies or similar technologies, you can write to ${escapar(d.email)}.</p>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
+    res.send(pagina(
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
