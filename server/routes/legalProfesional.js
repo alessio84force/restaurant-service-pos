@@ -701,40 +701,123 @@ module.exports = function legalProfesionalRoutes() {
     const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(idioma,
-      "Términos y condiciones",
-      "Condiciones generales de uso de Restaurant Service POS.",
-      `
-        <h2>1. Objeto</h2>
-        <p>Estos términos regulan el acceso y uso de ${escapar(d.nombreComercial)}, un software de gestión para restaurantes, bares y negocios de hostelería.</p>
+    const textos = {
+      es: {
+        titulo: "Términos y condiciones",
+        subtitulo: "Condiciones generales de uso de Restaurant Service POS.",
+        contenido: `
+          <h2>1. Objeto</h2>
+          <p>Estos términos regulan el acceso y uso de ${escapar(d.nombreComercial)}, un software de gestión para restaurantes, bares y negocios de hostelería.</p>
 
-        <h2>2. Alta y cuenta</h2>
-        <p>El restaurante debe facilitar datos veraces para crear su cuenta. El titular del restaurante o persona autorizada es responsable de custodiar sus credenciales y de crear únicamente usuarios internos autorizados.</p>
+          <h2>2. Alta y cuenta</h2>
+          <p>El restaurante debe facilitar datos veraces para crear su cuenta. El titular del restaurante o persona autorizada es responsable de custodiar sus credenciales y de crear únicamente usuarios internos autorizados.</p>
 
-        <h2>3. Uso permitido</h2>
-        <p>El sistema debe utilizarse para la gestión ordinaria del restaurante. Queda prohibido acceder sin autorización, intentar vulnerar el sistema, revender el servicio, copiar el software o utilizarlo para fines ilícitos.</p>
+          <h2>3. Uso permitido</h2>
+          <p>El sistema debe utilizarse para la gestión ordinaria del restaurante. Queda prohibido acceder sin autorización, intentar vulnerar el sistema, revender el servicio, copiar el software o utilizarlo para fines ilícitos.</p>
 
-        <h2>4. Prueba gratuita</h2>
-        <p>El servicio puede ofrecer una prueba gratuita temporal. Finalizada la prueba, el acceso podrá requerir la activación de una suscripción de pago.</p>
+          <h2>4. Prueba gratuita</h2>
+          <p>El servicio puede ofrecer una prueba gratuita temporal. Finalizada la prueba, el acceso podrá requerir la activación de una suscripción de pago.</p>
 
-        <h2>5. Precio y suscripción</h2>
-        <p>El precio mensual previsto es de ${escapar(d.precio)} € al mes, salvo promociones, acuerdos específicos o cambios comunicados antes de la contratación. Los pagos se gestionan mediante ${escapar(d.pagos)}.</p>
+          <h2>5. Precio y suscripción</h2>
+          <p>El precio mensual previsto es de ${escapar(d.precio)} € al mes, salvo promociones, acuerdos específicos o cambios comunicados antes de la contratación. Los pagos se gestionan mediante ${escapar(d.pagos)}.</p>
 
-        <h2>6. Cancelación</h2>
-        <p>El cliente podrá solicitar la cancelación de la suscripción escribiendo a ${escapar(d.soporte)} o utilizando los mecanismos disponibles en el panel cuando estén habilitados. La cancelación no afectará a importes ya devengados, salvo que legalmente corresponda otra cosa.</p>
+          <h2>6. Cancelación</h2>
+          <p>El cliente podrá solicitar la cancelación de la suscripción escribiendo a ${escapar(d.soporte)} o utilizando los mecanismos disponibles en el panel cuando estén habilitados. La cancelación no afectará a importes ya devengados, salvo que legalmente corresponda otra cosa.</p>
 
-        <h2>7. Soporte</h2>
-        <p>El soporte se prestará de forma razonable a través de ${escapar(d.soporte)}. El servicio se encuentra en evolución y puede recibir mejoras, cambios técnicos o actualizaciones.</p>
+          <h2>7. Soporte</h2>
+          <p>El soporte se prestará de forma razonable a través de ${escapar(d.soporte)}. El servicio se encuentra en evolución y puede recibir mejoras, cambios técnicos o actualizaciones.</p>
 
-        <h2>8. Responsabilidad del restaurante</h2>
-        <p>El restaurante es responsable de la exactitud de sus datos, configuración, precios, productos, impuestos, cierres de caja, cumplimiento fiscal, uso de empleados y tratamiento de datos de sus propios clientes.</p>
+          <h2>8. Responsabilidad del restaurante</h2>
+          <p>El restaurante es responsable de la exactitud de sus datos, configuración, precios, productos, impuestos, cierres de caja, cumplimiento fiscal, uso de empleados y tratamiento de datos de sus propios clientes.</p>
 
-        <h2>9. Disponibilidad</h2>
-        <p>Se procurará mantener el sistema operativo, pero no se garantiza ausencia absoluta de errores, interrupciones, incidencias técnicas o necesidades de mantenimiento. El usuario debe mantener copias y controles internos adecuados para su negocio.</p>
+          <h2>9. Disponibilidad</h2>
+          <p>Se procurará mantener el sistema operativo, pero no se garantiza ausencia absoluta de errores, interrupciones, incidencias técnicas o necesidades de mantenimiento. El usuario debe mantener copias y controles internos adecuados para su negocio.</p>
 
-        <h2>10. Modificaciones</h2>
-        <p>Estos términos podrán actualizarse para reflejar cambios técnicos, comerciales, legales o de funcionamiento. La versión vigente será la publicada en esta página.</p>
-      `
+          <h2>10. Modificaciones</h2>
+          <p>Estos términos podrán actualizarse para reflejar cambios técnicos, comerciales, legales o de funcionamiento. La versión vigente será la publicada en esta página.</p>
+        `
+      },
+
+      it: {
+        titulo: "Termini e condizioni",
+        subtitulo: "Condizioni generali di utilizzo di Restaurant Service POS.",
+        contenido: `
+          <h2>1. Oggetto</h2>
+          <p>I presenti termini regolano l'accesso e l'utilizzo di ${escapar(d.nombreComercial)}, un software gestionale per ristoranti, bar e attività di ristorazione.</p>
+
+          <h2>2. Registrazione e account</h2>
+          <p>Il ristorante deve fornire dati veritieri per creare il proprio account. Il titolare del ristorante o la persona autorizzata è responsabile della custodia delle credenziali e della creazione esclusivamente di utenti interni autorizzati.</p>
+
+          <h2>3. Utilizzo consentito</h2>
+          <p>Il sistema deve essere utilizzato per la normale gestione del ristorante. È vietato accedere senza autorizzazione, tentare di compromettere il sistema, rivendere il servizio, copiare il software o utilizzarlo per finalità illecite.</p>
+
+          <h2>4. Prova gratuita</h2>
+          <p>Il servizio può offrire un periodo di prova gratuito temporaneo. Al termine della prova, l'accesso potrà richiedere l'attivazione di un abbonamento a pagamento.</p>
+
+          <h2>5. Prezzo e abbonamento</h2>
+          <p>Il prezzo mensile previsto è di ${escapar(d.precio)} € al mese, salvo promozioni, accordi specifici o modifiche comunicate prima della sottoscrizione. I pagamenti sono gestiti tramite ${escapar(d.pagos)}.</p>
+
+          <h2>6. Cancellazione</h2>
+          <p>Il cliente può richiedere la cancellazione dell'abbonamento scrivendo a ${escapar(d.soporte)} oppure utilizzando gli strumenti disponibili nel pannello quando saranno abilitati. La cancellazione non incide sugli importi già maturati, salvo ove diversamente previsto dalla legge.</p>
+
+          <h2>7. Assistenza</h2>
+          <p>L'assistenza sarà fornita in modo ragionevole tramite ${escapar(d.soporte)}. Il servizio è in continua evoluzione e può ricevere miglioramenti, modifiche tecniche o aggiornamenti.</p>
+
+          <h2>8. Responsabilità del ristorante</h2>
+          <p>Il ristorante è responsabile dell'accuratezza dei propri dati, della configurazione, dei prezzi, dei prodotti, delle imposte, delle chiusure di cassa, degli adempimenti fiscali, dell'utilizzo da parte dei dipendenti e del trattamento dei dati dei propri clienti.</p>
+
+          <h2>9. Disponibilità</h2>
+          <p>Si cercherà di mantenere il sistema operativo, ma non viene garantita l'assenza assoluta di errori, interruzioni, problemi tecnici o necessità di manutenzione. L'utente deve mantenere copie e controlli interni adeguati alla propria attività.</p>
+
+          <h2>10. Modifiche</h2>
+          <p>I presenti termini possono essere aggiornati per riflettere modifiche tecniche, commerciali, legali o operative. La versione vigente sarà quella pubblicata in questa pagina.</p>
+        `
+      },
+
+      en: {
+        titulo: "Terms and Conditions",
+        subtitulo: "General terms of use of Restaurant Service POS.",
+        contenido: `
+          <h2>1. Purpose</h2>
+          <p>These terms govern access to and use of ${escapar(d.nombreComercial)}, restaurant management software for restaurants, bars and hospitality businesses.</p>
+
+          <h2>2. Registration and account</h2>
+          <p>The restaurant must provide accurate information when creating its account. The restaurant owner or authorized person is responsible for safeguarding account credentials and for creating only authorized internal users.</p>
+
+          <h2>3. Permitted use</h2>
+          <p>The system must be used for the ordinary management of the restaurant. Unauthorized access, attempts to compromise the system, resale of the service, copying of the software or use for unlawful purposes are prohibited.</p>
+
+          <h2>4. Free trial</h2>
+          <p>The service may offer a temporary free trial. Once the trial ends, continued access may require activation of a paid subscription.</p>
+
+          <h2>5. Price and subscription</h2>
+          <p>The expected monthly price is ${escapar(d.precio)} € per month, except where promotions, specific agreements or changes communicated before subscription apply. Payments are managed through ${escapar(d.pagos)}.</p>
+
+          <h2>6. Cancellation</h2>
+          <p>The customer may request cancellation of the subscription by writing to ${escapar(d.soporte)} or by using the mechanisms available in the account panel when enabled. Cancellation will not affect amounts already due, unless otherwise required by law.</p>
+
+          <h2>7. Support</h2>
+          <p>Support will be provided on a reasonable basis through ${escapar(d.soporte)}. The service is under continuous development and may receive improvements, technical changes or updates.</p>
+
+          <h2>8. Restaurant responsibility</h2>
+          <p>The restaurant is responsible for the accuracy of its data, configuration, prices, products, taxes, cash closings, tax compliance, employee use and processing of data relating to its own customers.</p>
+
+          <h2>9. Availability</h2>
+          <p>Reasonable efforts will be made to keep the system operational, but absolute freedom from errors, interruptions, technical incidents or maintenance requirements cannot be guaranteed. Users should maintain appropriate copies and internal controls for their business.</p>
+
+          <h2>10. Amendments</h2>
+          <p>These terms may be updated to reflect technical, commercial, legal or operational changes. The version in force will be the version published on this page.</p>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
+    res.send(pagina(
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
