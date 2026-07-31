@@ -36,6 +36,7 @@ const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
 const seoLocalesRoutes = require("./routes/seoLocales");
 const marketingPublicoRoutes = require("./routes/marketingPublico");
+const marketingMultilinguaRoutes = require("./routes/marketingMultilingua");
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
@@ -80,6 +81,7 @@ const app = express();
 
 app.use(seoLocalesRoutes());
 app.use(marketingPublicoRoutes());
+app.use(marketingMultilinguaRoutes());
 app.use(session({
 secret: "restaurant-service-secret",
 resave: false,

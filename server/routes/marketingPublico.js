@@ -54,6 +54,9 @@ header{border-bottom:1px solid rgba(255,255,255,.12);background:#08111f;position
 .logo{text-decoration:none;font-weight:900}
 .menu{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .menu a{text-decoration:none;color:#cbd5e1;font-size:14px}
+.lang{display:flex;gap:6px;align-items:center;margin-left:4px}
+.lang a{border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 9px;font-size:12px;font-weight:900}
+.lang a.active{background:#f97316;color:#111827;border-color:#f97316}
 .btn{display:inline-block;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:800}
 .btn.primary{background:#f97316;color:#111827}
 .btn.secondary{background:rgba(255,255,255,.1);color:white}
@@ -87,6 +90,12 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
       <a href="/contacto">Contacto</a>
       <a href="/login">Entrar</a>
       <a class="btn primary" href="/registro">Probar gratis</a>
+
+      <div class="lang">
+        <a href="/" class="active">ES</a>
+        <a href="/it">IT</a>
+        <a href="/en">EN</a>
+      </div>
     </nav>
   </div>
 </header>
