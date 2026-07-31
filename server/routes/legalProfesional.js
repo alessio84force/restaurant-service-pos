@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+const { normalizarIdioma } = require("../utils/i18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -45,15 +46,78 @@ function direccionCompleta(d) {
     .join(", ");
 }
 
-function pagina(titulo, subtitulo, contenido) {
+function idiomaDesdeReq(req) {
+  const queryIdioma =
+    req &&
+    req.query &&
+    req.query.idioma;
+
+  const sessionIdioma =
+    req &&
+    req.session &&
+    (
+      req.session.idioma ||
+      (
+        req.session.usuario &&
+        req.session.usuario.idioma
+      )
+    );
+
+  return normalizarIdioma(queryIdioma || sessionIdioma);
+}
+
+function hrefIdioma(path, idioma) {
+  return path + "?idioma=" + encodeURIComponent(idioma);
+}
+
+function pagina(idiomaValor, titulo, subtitulo, contenido) {
   const d = datosLegales();
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      lang: "es",
+      aviso: "Aviso legal",
+      privacidad: "Privacidad",
+      cookies: "Cookies",
+      terminos: "Términos",
+      suscripcion: "Suscripción",
+      tratamiento: "Encargo tratamiento",
+      volver: "Volver"
+    },
+
+    it: {
+      lang: "it",
+      aviso: "Note legali",
+      privacidad: "Privacy",
+      cookies: "Cookie",
+      terminos: "Termini",
+      suscripcion: "Abbonamento",
+      tratamiento: "Trattamento dati",
+      volver: "Torna al login"
+    },
+
+    en: {
+      lang: "en",
+      aviso: "Legal notice",
+      privacidad: "Privacy",
+      cookies: "Cookies",
+      terminos: "Terms",
+      suscripcion: "Subscription",
+      tratamiento: "Data processing",
+      volver: "Back to login"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${t.lang}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)} - ${escapar(d.nombreComercial)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
     :root{
       --bg:#f3f4f6;
@@ -212,19 +276,22 @@ function pagina(titulo, subtitulo, contenido) {
     }
   </style>
 </head>
+
 <body>
   <main class="wrap">
+
     <section class="top">
       <h1>${escapar(titulo)}</h1>
       <p>${escapar(subtitulo)}</p>
+
       <nav class="nav">
-        <a href="/aviso-legal">Aviso legal</a>
-        <a href="/privacidad">Privacidad</a>
-        <a href="/cookies">Cookies</a>
-        <a href="/terminos">Términos</a>
-        <a href="/condiciones-suscripcion">Suscripción</a>
-        <a href="/encargo-tratamiento">Encargo tratamiento</a>
-        <a href="/login">Volver</a>
+        <a href="${hrefIdioma("/aviso-legal", idioma)}">${t.aviso}</a>
+        <a href="${hrefIdioma("/privacidad", idioma)}">${t.privacidad}</a>
+        <a href="${hrefIdioma("/cookies", idioma)}">${t.cookies}</a>
+        <a href="${hrefIdioma("/terminos", idioma)}">${t.terminos}</a>
+        <a href="${hrefIdioma("/condiciones-suscripcion", idioma)}">${t.suscripcion}</a>
+        <a href="${hrefIdioma("/encargo-tratamiento", idioma)}">${t.tratamiento}</a>
+        <a href="${hrefIdioma("/login", idioma)}">${t.volver}</a>
       </nav>
     </section>
 
@@ -234,29 +301,68 @@ function pagina(titulo, subtitulo, contenido) {
 
     <div class="footer">
       © 2026 ${escapar(d.nombreComercial)} ·
-      <a href="/aviso-legal">Aviso legal</a> ·
-      <a href="/privacidad">Privacidad</a> ·
-      <a href="/cookies">Cookies</a> ·
-      <a href="/terminos">Términos</a>
+      <a href="${hrefIdioma("/aviso-legal", idioma)}">${t.aviso}</a> ·
+      <a href="${hrefIdioma("/privacidad", idioma)}">${t.privacidad}</a> ·
+      <a href="${hrefIdioma("/cookies", idioma)}">${t.cookies}</a> ·
+      <a href="${hrefIdioma("/terminos", idioma)}">${t.terminos}</a>
     </div>
+
   </main>
 </body>
 </html>`;
 }
 
-function bloqueDatosTitular() {
+function bloqueDatosTitular(idiomaValor) {
   const d = datosLegales();
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      comercial: "Nombre comercial",
+      titular: "Titular",
+      forma: "Forma jurídica",
+      nif: "NIF/NIE",
+      domicilio: "Domicilio fiscal",
+      dominio: "Dominio",
+      email: "Email legal",
+      soporte: "Soporte"
+    },
+
+    it: {
+      comercial: "Nome commerciale",
+      titular: "Titolare",
+      forma: "Forma giuridica",
+      nif: "NIF/NIE",
+      domicilio: "Domicilio fiscale",
+      dominio: "Dominio",
+      email: "Email legale",
+      soporte: "Assistenza"
+    },
+
+    en: {
+      comercial: "Trading name",
+      titular: "Service provider",
+      forma: "Legal form",
+      nif: "Tax ID",
+      domicilio: "Registered address",
+      dominio: "Domain",
+      email: "Legal email",
+      soporte: "Support"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
 
   return `
     <div class="datos">
-      <div class="dato"><strong>Nombre comercial</strong><span>${escapar(d.nombreComercial)}</span></div>
-      <div class="dato"><strong>Titular</strong><span>${escapar(d.titular)}</span></div>
-      <div class="dato"><strong>Forma jurídica</strong><span>${escapar(d.forma)}</span></div>
-      <div class="dato"><strong>NIF/NIE</strong><span>${escapar(d.nif)}</span></div>
-      <div class="dato"><strong>Domicilio fiscal</strong><span>${escapar(direccionCompleta(d))}</span></div>
-      <div class="dato"><strong>Dominio</strong><span>${escapar(d.dominio)}</span></div>
-      <div class="dato"><strong>Email legal</strong><span>${escapar(d.email)}</span></div>
-      <div class="dato"><strong>Soporte</strong><span>${escapar(d.soporte)}</span></div>
+      <div class="dato"><strong>${t.comercial}</strong><span>${escapar(d.nombreComercial)}</span></div>
+      <div class="dato"><strong>${t.titular}</strong><span>${escapar(d.titular)}</span></div>
+      <div class="dato"><strong>${t.forma}</strong><span>${escapar(d.forma)}</span></div>
+      <div class="dato"><strong>${t.nif}</strong><span>${escapar(d.nif)}</span></div>
+      <div class="dato"><strong>${t.domicilio}</strong><span>${escapar(direccionCompleta(d))}</span></div>
+      <div class="dato"><strong>${t.dominio}</strong><span>${escapar(d.dominio)}</span></div>
+      <div class="dato"><strong>${t.email}</strong><span>${escapar(d.email)}</span></div>
+      <div class="dato"><strong>${t.soporte}</strong><span>${escapar(d.soporte)}</span></div>
     </div>
   `;
 }
@@ -265,38 +371,101 @@ module.exports = function legalProfesionalRoutes() {
   const router = express.Router();
 
   router.get("/aviso-legal", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
+    const textos = {
+      es: {
+        titulo: "Aviso legal",
+        subtitulo: "Información identificativa del titular de Restaurant Service POS.",
+        contenido: `
+          <h2>1. Titular del servicio</h2>
+          <p>En cumplimiento de las obligaciones de información aplicables a los servicios prestados por vía electrónica, se informa de los datos identificativos del titular de este sitio y del servicio Restaurant Service POS.</p>
+          ${bloqueDatosTitular("es")}
+
+          <h2>2. Objeto del servicio</h2>
+          <p>${escapar(d.nombreComercial)} es un sistema de gestión para restaurantes, bares y negocios de hostelería. El servicio permite gestionar mesas, productos, comandas, impresión, caja, usuarios operativos, pruebas gratuitas, suscripciones y comunicaciones transaccionales relacionadas con el uso del software.</p>
+
+          <h2>3. Condiciones de uso</h2>
+          <p>El acceso y uso del servicio implica la aceptación de los términos y condiciones publicados en este sitio. El usuario se compromete a utilizar el sistema de forma lícita, diligente y conforme a la normativa aplicable a su actividad de restauración.</p>
+
+          <h2>4. Propiedad intelectual</h2>
+          <p>El software, diseño, estructura, código, textos, elementos gráficos y denominación comercial Restaurant Service POS pertenecen a su titular o cuentan con autorización suficiente para su uso. No se permite copiar, distribuir, revender, modificar o explotar el software sin autorización expresa.</p>
+
+          <h2>5. Comunicaciones</h2>
+          <p>Para cuestiones legales o generales puede contactar en ${escapar(d.email)}. Para soporte técnico puede contactar en ${escapar(d.soporte)}.</p>
+
+          <h2>6. Legislación aplicable</h2>
+          <p>El servicio se dirige inicialmente al mercado español y se rige por la normativa española y europea aplicable, sin perjuicio de las normas imperativas que puedan corresponder al usuario.</p>
+        `
+      },
+
+      it: {
+        titulo: "Note legali",
+        subtitulo: "Informazioni identificative sul titolare di Restaurant Service POS.",
+        contenido: `
+          <h2>1. Titolare del servizio</h2>
+          <p>In adempimento agli obblighi informativi applicabili ai servizi forniti per via elettronica, vengono indicati i dati identificativi del titolare di questo sito e del servizio Restaurant Service POS.</p>
+          ${bloqueDatosTitular("it")}
+
+          <h2>2. Oggetto del servizio</h2>
+          <p>${escapar(d.nombreComercial)} è un sistema di gestione per ristoranti, bar e attività di ristorazione. Il servizio consente di gestire tavoli, prodotti, comande, stampa, cassa, utenti operativi, prove gratuite, abbonamenti e comunicazioni transazionali relative all'utilizzo del software.</p>
+
+          <h2>3. Condizioni di utilizzo</h2>
+          <p>L'accesso e l'utilizzo del servizio implicano l'accettazione dei termini e delle condizioni pubblicati su questo sito. L'utente si impegna a utilizzare il sistema in modo lecito, diligente e conforme alla normativa applicabile alla propria attività di ristorazione.</p>
+
+          <h2>4. Proprietà intellettuale</h2>
+          <p>Il software, il design, la struttura, il codice, i testi, gli elementi grafici e la denominazione commerciale Restaurant Service POS appartengono al relativo titolare o sono utilizzati con adeguata autorizzazione. Non è consentito copiare, distribuire, rivendere, modificare o sfruttare il software senza espressa autorizzazione.</p>
+
+          <h2>5. Comunicazioni</h2>
+          <p>Per questioni legali o generali è possibile contattare ${escapar(d.email)}. Per assistenza tecnica è possibile contattare ${escapar(d.soporte)}.</p>
+
+          <h2>6. Legge applicabile</h2>
+          <p>Il servizio è inizialmente rivolto al mercato spagnolo ed è disciplinato dalla normativa spagnola ed europea applicabile, fatte salve le norme imperative eventualmente applicabili all'utente.</p>
+        `
+      },
+
+      en: {
+        titulo: "Legal notice",
+        subtitulo: "Identification information for the provider of Restaurant Service POS.",
+        contenido: `
+          <h2>1. Service provider</h2>
+          <p>In accordance with the information requirements applicable to electronically provided services, the identification details of the provider of this website and the Restaurant Service POS service are set out below.</p>
+          ${bloqueDatosTitular("en")}
+
+          <h2>2. Purpose of the service</h2>
+          <p>${escapar(d.nombreComercial)} is a management system for restaurants, bars and hospitality businesses. The service allows users to manage tables, products, orders, printing, cash operations, operational users, free trials, subscriptions and transactional communications related to the use of the software.</p>
+
+          <h2>3. Terms of use</h2>
+          <p>Access to and use of the service implies acceptance of the terms and conditions published on this website. Users agree to use the system lawfully, diligently and in accordance with the regulations applicable to their restaurant business.</p>
+
+          <h2>4. Intellectual property</h2>
+          <p>The software, design, structure, code, texts, graphic elements and Restaurant Service POS trade name belong to their respective owner or are used with sufficient authorization. The software may not be copied, distributed, resold, modified or exploited without express authorization.</p>
+
+          <h2>5. Communications</h2>
+          <p>For legal or general enquiries, contact ${escapar(d.email)}. For technical support, contact ${escapar(d.soporte)}.</p>
+
+          <h2>6. Applicable law</h2>
+          <p>The service is initially aimed at the Spanish market and is governed by applicable Spanish and European legislation, without prejudice to any mandatory rules that may apply to the user.</p>
+        `
+      }
+    };
+
+    const t = textos[idioma] || textos.es;
+
     res.send(pagina(
-      "Aviso legal",
-      "Información identificativa del titular de Restaurant Service POS.",
-      `
-        <h2>1. Titular del servicio</h2>
-        <p>En cumplimiento de las obligaciones de información aplicables a los servicios prestados por vía electrónica, se informa de los datos identificativos del titular de este sitio y del servicio Restaurant Service POS.</p>
-        ${bloqueDatosTitular()}
-
-        <h2>2. Objeto del servicio</h2>
-        <p>${escapar(d.nombreComercial)} es un sistema de gestión para restaurantes, bares y negocios de hostelería. El servicio permite gestionar mesas, productos, comandas, impresión, caja, usuarios operativos, pruebas gratuitas, suscripciones y comunicaciones transaccionales relacionadas con el uso del software.</p>
-
-        <h2>3. Condiciones de uso</h2>
-        <p>El acceso y uso del servicio implica la aceptación de los términos y condiciones publicados en este sitio. El usuario se compromete a utilizar el sistema de forma lícita, diligente y conforme a la normativa aplicable a su actividad de restauración.</p>
-
-        <h2>4. Propiedad intelectual</h2>
-        <p>El software, diseño, estructura, código, textos, elementos gráficos y denominación comercial Restaurant Service POS pertenecen a su titular o cuentan con autorización suficiente para su uso. No se permite copiar, distribuir, revender, modificar o explotar el software sin autorización expresa.</p>
-
-        <h2>5. Comunicaciones</h2>
-        <p>Para cuestiones legales o generales puede contactar en ${escapar(d.email)}. Para soporte técnico puede contactar en ${escapar(d.soporte)}.</p>
-
-        <h2>6. Legislación aplicable</h2>
-        <p>El servicio se dirige inicialmente al mercado español y se rige por la normativa española y europea aplicable, sin perjuicio de las normas imperativas que puedan corresponder al usuario.</p>
-      `
+      idioma,
+      t.titulo,
+      t.subtitulo,
+      t.contenido
     ));
   });
 
   router.get("/privacidad", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(
+    res.send(pagina(idioma,
       "Política de privacidad",
       "Información sobre el tratamiento de datos personales en Restaurant Service POS.",
       `
@@ -345,9 +514,10 @@ module.exports = function legalProfesionalRoutes() {
   });
 
   router.get("/cookies", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(
+    res.send(pagina(idioma,
       "Política de cookies",
       "Información sobre cookies técnicas y tecnologías necesarias.",
       `
@@ -370,9 +540,10 @@ module.exports = function legalProfesionalRoutes() {
   });
 
   router.get("/terminos", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(
+    res.send(pagina(idioma,
       "Términos y condiciones",
       "Condiciones generales de uso de Restaurant Service POS.",
       `
@@ -410,9 +581,10 @@ module.exports = function legalProfesionalRoutes() {
   });
 
   router.get("/condiciones-suscripcion", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(
+    res.send(pagina(idioma,
       "Condiciones de suscripción",
       "Información sobre prueba gratuita, precio, pagos y cancelación.",
       `
@@ -438,9 +610,10 @@ module.exports = function legalProfesionalRoutes() {
   });
 
   router.get("/encargo-tratamiento", function(req, res) {
+    const idioma = idiomaDesdeReq(req);
     const d = datosLegales();
 
-    res.send(pagina(
+    res.send(pagina(idioma,
       "Encargo del tratamiento",
       "Base informativa sobre el tratamiento de datos entre el restaurante y Restaurant Service POS.",
       `
