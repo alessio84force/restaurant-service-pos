@@ -1,6 +1,7 @@
 const { validarCodigoPromocional } = require("../promoCodes");
 const { enviarEmail } = require("../services/emailService");
 const bcrypt = require("bcryptjs");
+const { normalizarIdioma } = require("../utils/i18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -335,7 +336,8 @@ module.exports = function registroSaasMiddleware(db) {
       email: String(req.body.email || "").trim().toLowerCase(),
       password: String(req.body.password || ""),
       telefono: String(req.body.telefono || "").trim(),
-      promo: String(req.body.codigo_promocional || req.body.promo || "").trim()
+      promo: String(req.body.codigo_promocional || req.body.promo || "").trim(),
+      idioma: normalizarIdioma(req.body.idioma)
     };
 
     if (!datos.restaurante || !datos.propietario || !datos.email || !datos.password) {
@@ -413,8 +415,9 @@ module.exports = function registroSaasMiddleware(db) {
             trial_inicio,
             trial_fin,
             plan_tipo,
-            promocion_aplicada
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            promocion_aplicada,
+            idioma
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             datos.restaurante,
             datos.propietario,
@@ -424,7 +427,8 @@ module.exports = function registroSaasMiddleware(db) {
             datos.trialInicio,
             datos.trialFin,
             datos.planTipo || "trial",
-            datos.promocionAplicada || "ninguna"
+            datos.promocionAplicada || "ninguna",
+            datos.idioma
           ],
           function(errRestaurante) {
             if (errRestaurante) {
@@ -449,10 +453,12 @@ module.exports = function registroSaasMiddleware(db) {
                     email: datos.email,
                     rol: "admin",
                     activo: 1,
-                    restaurante_id: datos.restauranteId
+                    restaurante_id: datos.restauranteId,
+                    idioma: datos.idioma
                   };
 
                   req.session.restaurante_id = datos.restauranteId;
+                  req.session.idioma = datos.idioma;
 
                   enviarEmailsRegistroSaas(datos);
 
