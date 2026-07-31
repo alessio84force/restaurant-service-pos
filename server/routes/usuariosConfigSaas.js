@@ -779,6 +779,16 @@ module.exports = function usuariosConfigSaasRoutes(db) {
     const usuario = req.session.usuario || {};
     const restauranteId = restauranteIdFromReq(req);
 
+    const idiomaSesion = String(
+      req.session.idioma ||
+      usuario.idioma ||
+      "es"
+    ).toLowerCase();
+
+    const idioma = ["es", "it", "en"].includes(idiomaSesion)
+      ? idiomaSesion
+      : "es";
+
     res.json({
       ok: true,
       autenticado: true,
@@ -787,12 +797,14 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       email: usuario.email,
       rol: usuario.rol,
       restaurante_id: restauranteId,
+      idioma: idioma,
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
-        restaurante_id: restauranteId
+        restaurante_id: restauranteId,
+        idioma: idioma
       }
     });
   });
