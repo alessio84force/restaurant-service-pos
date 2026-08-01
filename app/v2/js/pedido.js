@@ -11,7 +11,106 @@ function escaparHtmlPedidoV2(texto){
         .replace(/'/g, "&#039;");
 }
 
+function textosPedidoV2(){
+
+    const idiomaDocumento = String(
+        document.documentElement.lang || "es"
+    ).toLowerCase();
+
+    const idioma = ["es","it","en"].includes(idiomaDocumento)
+        ? idiomaDocumento
+        : "es";
+
+    const textos = {
+        es: {
+            mesa: "Mesa",
+            noPedido: "No hay pedido abierto.",
+            abrirMesa: "Abrir mesa",
+            ayudaAbrir: "Abre la mesa para empezar un nuevo pedido.",
+            pedido: "Pedido",
+            abierto: "abierto",
+            cuenta: "cuenta",
+            pedidoAbierto: "Pedido abierto.",
+            anadirProductos: "Añade productos desde el menú.",
+            cantidad: "Cantidad",
+            unidad: "unidad",
+            editarNota: "Editar nota",
+            anadirNota: "Añadir nota",
+            enviarComandas: "ENVIAR COMANDAS",
+            cuentaBoton: "CUENTA",
+            cobrar: "COBRAR",
+            abriendo: "Abriendo mesa...",
+            errorAbrir: "No se pudo abrir la mesa.",
+            reintentar: "Intentar de nuevo"
+        },
+
+        it: {
+            mesa: "Tavolo",
+            noPedido: "Nessun ordine aperto.",
+            abrirMesa: "Apri tavolo",
+            ayudaAbrir: "Apri il tavolo per iniziare un nuovo ordine.",
+            pedido: "Ordine",
+            abierto: "aperto",
+            cuenta: "conto richiesto",
+            pedidoAbierto: "Ordine aperto.",
+            anadirProductos: "Aggiungi prodotti dal menu.",
+            cantidad: "Quantità",
+            unidad: "unità",
+            editarNota: "Modifica nota",
+            anadirNota: "Aggiungi nota",
+            enviarComandas: "INVIA COMANDE",
+            cuentaBoton: "CONTO",
+            cobrar: "INCASSA",
+            abriendo: "Apertura tavolo...",
+            errorAbrir: "Impossibile aprire il tavolo.",
+            reintentar: "Riprova"
+        },
+
+        en: {
+            mesa: "Table",
+            noPedido: "There is no open order.",
+            abrirMesa: "Open table",
+            ayudaAbrir: "Open the table to start a new order.",
+            pedido: "Order",
+            abierto: "open",
+            cuenta: "bill requested",
+            pedidoAbierto: "Order open.",
+            anadirProductos: "Add products from the menu.",
+            cantidad: "Quantity",
+            unidad: "unit",
+            editarNota: "Edit note",
+            anadirNota: "Add note",
+            enviarComandas: "SEND ORDERS",
+            cuentaBoton: "BILL",
+            cobrar: "PAY",
+            abriendo: "Opening table...",
+            errorAbrir: "The table could not be opened.",
+            reintentar: "Try again"
+        }
+    };
+
+    return textos[idioma];
+}
+
+function traducirEstadoPedidoV2(estado){
+
+    const textos = textosPedidoV2();
+    const valor = String(estado || "abierto").toLowerCase();
+
+    if(valor === "cuenta"){
+        return textos.cuenta;
+    }
+
+    if(valor === "abierto"){
+        return textos.abierto;
+    }
+
+    return estado || textos.abierto;
+}
+
 async function cargarPedidoV2(numeroMesa){
+
+    const textos = textosPedidoV2();
 
     const data = await apiGet("/pedido/" + numeroMesa);
 
@@ -23,19 +122,19 @@ async function cargarPedidoV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>No hay pedido abierto.</p>
+                <p>${textos.noPedido}</p>
 
                 <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
-                    Abrir mesa
+                    ${textos.abrirMesa}
 
                 </button>
 
                 <p class="texto-ayuda-mesa-v2">
 
-                    Abre la mesa para empezar un nuevo pedido.
+                    ${textos.ayudaAbrir}
 
                 </p>
 
@@ -55,15 +154,15 @@ async function cargarPedidoV2(numeroMesa){
 
             <div>
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>Pedido ${data.pedido}</p>
+                <p>${textos.pedido} ${data.pedido}</p>
 
             </div>
 
             <div class="pedido-estado-v2">
 
-                ${data.estado || "abierto"}
+                ${traducirEstadoPedidoV2(data.estado || data.pedido_estado)}
 
             </div>
 
@@ -79,9 +178,9 @@ async function cargarPedidoV2(numeroMesa){
 
         <div class="pedido-vacio">
 
-            <p>Pedido abierto.</p>
+            <p>${textos.pedidoAbierto}</p>
 
-            <p>Añade productos desde el menú.</p>
+            <p>${textos.anadirProductos}</p>
 
         </div>
 
@@ -109,14 +208,14 @@ async function cargarPedidoV2(numeroMesa){
 
                     <strong>${p.nombre}</strong>
 
-                    <span>Cantidad: ${p.cantidad}</span>
+                    <span>${textos.cantidad}: ${p.cantidad}</span>
 
-                    <small>${precioLinea.toFixed(2)} € / unidad</small>
+                    <small>${precioLinea.toFixed(2)} € / ${textos.unidad}</small>
 
                     ${p.nota ? '<small class="linea-nota-v2">' + escaparHtmlPedidoV2(p.nota) + '</small>' : ''}
 
                     <button class="btn-nota-linea-v2" onclick="editarNotaLineaV2(${p.id}, ${mesaArgV2(numeroMesa)}, '${encodeURIComponent(p.nota || "")}')">
-                        📝 ${p.nota ? "Editar nota" : "Añadir nota"}
+                        📝 ${p.nota ? textos.editarNota : textos.anadirNota}
                     </button>
 
                 </div>
@@ -171,19 +270,19 @@ async function cargarPedidoV2(numeroMesa){
 
             <button onclick="enviarTodasComandasV2(${mesaArgV2(numeroMesa)})">
 
-                📤 ENVIAR COMANDAS
+                📤 ${textos.enviarComandas}
 
             </button>
 
             <button onclick="generarPrecuenta(${mesaArgV2(numeroMesa)})">
 
-                🧾 CUENTA
+                🧾 ${textos.cuentaBoton}
 
             </button>
 
             <button onclick="abrirCobro(${data.pedido},${data.total})">
 
-                💰 COBRAR
+                💰 ${textos.cobrar}
 
             </button>
 
@@ -197,6 +296,8 @@ async function cargarPedidoV2(numeroMesa){
 
 async function abrirMesaV2(numeroMesa){
 
+    const textos = textosPedidoV2();
+
     const panel = document.getElementById("panel-central");
 
     try{
@@ -205,9 +306,9 @@ async function abrirMesaV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>Abriendo mesa...</p>
+                <p>${textos.abriendo}</p>
 
             </div>
 
@@ -229,13 +330,13 @@ async function abrirMesaV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>No se pudo abrir la mesa.</p>
+                <p>${textos.errorAbrir}</p>
 
                 <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
-                    Intentar de nuevo
+                    ${textos.reintentar}
 
                 </button>
 
