@@ -618,13 +618,138 @@ function volverAlPedidoDesdeCobroV2(){
 }
 
 
-function imprimirTicketFinalCobroV2(pedidoId){
+async function imprimirTicketFinalCobroV2(pedidoId){
 
     if(!pedidoId){
         alert("No se encontró el pedido para imprimir el ticket final.");
         return;
     }
 
-    window.open(API + "/ticket-final/" + pedidoId, "_blank");
+    const ventanaTicket = window.open(
+        "",
+        "_blank",
+        "width=420,height=700"
+    );
+
+    if(ventanaTicket){
+
+        ventanaTicket.document.open();
+
+        ventanaTicket.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Preparando ticket final</title>
+                <style>
+                    body{
+                        font-family:Arial,sans-serif;
+                        padding:30px;
+                        text-align:center;
+                        color:#1f2937;
+                    }
+
+                    .cargando{
+                        margin-top:80px;
+                    }
+
+                    .spinner{
+                        width:42px;
+                        height:42px;
+                        border:5px solid #e5e7eb;
+                        border-top:5px solid #2563eb;
+                        border-radius:50%;
+                        margin:0 auto 20px auto;
+                        animation:girar 1s linear infinite;
+                    }
+
+                    @keyframes girar{
+                        from{transform:rotate(0deg);}
+                        to{transform:rotate(360deg);}
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="cargando">
+                    <div class="spinner"></div>
+                    <h2>Preparando ticket final...</h2>
+                    <p>Pedido ${pedidoId}</p>
+                </div>
+            </body>
+            </html>
+        `);
+
+        ventanaTicket.document.close();
+
+    }
+
+    try{
+
+        const respuesta = await fetch(
+            API + "/ticket-final/" + pedidoId,
+            {
+                credentials: "include"
+            }
+        );
+
+        if(!respuesta.ok){
+            throw new Error("No se pudo generar el ticket final");
+        }
+
+        const htmlTicket = await respuesta.text();
+
+        if(ventanaTicket){
+
+            ventanaTicket.document.open();
+            ventanaTicket.document.write(htmlTicket);
+            ventanaTicket.document.close();
+
+            ventanaTicket.focus();
+
+            return;
+        }
+
+        alert(
+            "El navegador ha bloqueado la ventana del ticket final. " +
+            "Permite las ventanas emergentes para este sitio."
+        );
+
+    }catch(error){
+
+        console.error("Error generando ticket final:", error);
+
+        if(ventanaTicket){
+
+            ventanaTicket.document.open();
+
+            ventanaTicket.document.write(`
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Error ticket final</title>
+                </head>
+                <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;color:#1f2937;">
+                    <h2>No se pudo generar el ticket final</h2>
+                    <p>Cierra esta ventana e inténtalo de nuevo.</p>
+                    <button
+                        onclick="window.close()"
+                        style="margin-top:20px;padding:12px 18px;border:0;border-radius:10px;background:#111827;color:white;font-weight:700;"
+                    >
+                        Cerrar
+                    </button>
+                </body>
+                </html>
+            `);
+
+            ventanaTicket.document.close();
+
+        }else{
+
+            alert("No se pudo generar el ticket final.");
+
+        }
+
+    }
 
 }
