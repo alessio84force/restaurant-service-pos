@@ -41,7 +41,23 @@ function textosPedidoV2(){
             cobrar: "COBRAR",
             abriendo: "Abriendo mesa...",
             errorAbrir: "No se pudo abrir la mesa.",
-            reintentar: "Intentar de nuevo"
+            reintentar: "Intentar de nuevo",
+            errorCantidad: "No se pudo modificar la cantidad del producto.",
+            notaGuardada: "Nota guardada.",
+            notaEliminada: "Nota eliminada.",
+            errorGuardarNota: "No se pudo guardar la nota.",
+            tituloNota: "Nota del producto",
+            instruccionNota: "Escribe la petición exacta del cliente.",
+            placeholderNota: "Ej. Sin cebolla, salsa aparte, alergia frutos secos...",
+            maxCaracteres: "Máximo 180 caracteres",
+            cancelar: "Cancelar",
+            quitarNota: "Quitar nota",
+            guardarNota: "Guardar nota",
+            sinMesa: "No hay mesa seleccionada.",
+            enviandoComandas: "Enviando comandas...",
+            comandasEnviadas: "Comandas enviadas",
+            sinProductosNuevos: "No hay productos nuevos para enviar.",
+            errorComandas: "No se pudieron enviar las comandas."
         },
 
         it: {
@@ -63,7 +79,23 @@ function textosPedidoV2(){
             cobrar: "INCASSA",
             abriendo: "Apertura tavolo...",
             errorAbrir: "Impossibile aprire il tavolo.",
-            reintentar: "Riprova"
+            reintentar: "Riprova",
+            errorCantidad: "Impossibile modificare la quantità del prodotto.",
+            notaGuardada: "Nota salvata.",
+            notaEliminada: "Nota eliminata.",
+            errorGuardarNota: "Impossibile salvare la nota.",
+            tituloNota: "Nota del prodotto",
+            instruccionNota: "Scrivi la richiesta esatta del cliente.",
+            placeholderNota: "Es. Senza cipolla, salsa a parte, allergia alla frutta secca...",
+            maxCaracteres: "Massimo 180 caratteri",
+            cancelar: "Annulla",
+            quitarNota: "Rimuovi nota",
+            guardarNota: "Salva nota",
+            sinMesa: "Nessun tavolo selezionato.",
+            enviandoComandas: "Invio comande...",
+            comandasEnviadas: "Comande inviate",
+            sinProductosNuevos: "Nessun nuovo prodotto da inviare.",
+            errorComandas: "Impossibile inviare le comande."
         },
 
         en: {
@@ -85,7 +117,23 @@ function textosPedidoV2(){
             cobrar: "PAY",
             abriendo: "Opening table...",
             errorAbrir: "The table could not be opened.",
-            reintentar: "Try again"
+            reintentar: "Try again",
+            errorCantidad: "The product quantity could not be changed.",
+            notaGuardada: "Note saved.",
+            notaEliminada: "Note removed.",
+            errorGuardarNota: "The note could not be saved.",
+            tituloNota: "Product note",
+            instruccionNota: "Enter the customer's exact request.",
+            placeholderNota: "E.g. No onion, sauce on the side, nut allergy...",
+            maxCaracteres: "Maximum 180 characters",
+            cancelar: "Cancel",
+            quitarNota: "Remove note",
+            guardarNota: "Save note",
+            sinMesa: "No table selected.",
+            enviandoComandas: "Sending orders...",
+            comandasEnviadas: "Orders sent",
+            sinProductosNuevos: "No new products to send.",
+            errorComandas: "The orders could not be sent."
         }
     };
 
@@ -350,6 +398,8 @@ async function abrirMesaV2(numeroMesa){
 
 async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
+    const textos = textosPedidoV2();
+
     try{
 
         const botones = document.querySelectorAll(".btn-cantidad-v2");
@@ -370,7 +420,7 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
         console.error("Error cambiando cantidad:", error);
 
-        mostrarToastPedidoV2("No se pudo modificar la cantidad del producto.", "error");
+        mostrarToastPedidoV2(textos.errorCantidad, "error");
 
     }
 
@@ -379,6 +429,7 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
 async function editarNotaLineaV2(lineaId, numeroMesa, notaCodificada){
 
+    const textos = textosPedidoV2();
     const notaActual = decodeURIComponent(notaCodificada || "");
     const nuevaNota = await abrirModalNotaLineaV2(notaActual);
 
@@ -396,21 +447,23 @@ async function editarNotaLineaV2(lineaId, numeroMesa, notaCodificada){
         await cargarMesasV2();
 
         if(nuevaNota.trim()){
-            mostrarToastPedidoV2("Nota guardada.", "correcto");
+            mostrarToastPedidoV2(textos.notaGuardada, "correcto");
         }else{
-            mostrarToastPedidoV2("Nota eliminada.", "correcto");
+            mostrarToastPedidoV2(textos.notaEliminada, "correcto");
         }
 
     }catch(error){
 
         console.error("Error guardando nota:", error);
-        mostrarToastPedidoV2("No se pudo guardar la nota.", "error");
+        mostrarToastPedidoV2(textos.errorGuardarNota, "error");
 
     }
 
 }
 
 function abrirModalNotaLineaV2(notaActual){
+
+    const textos = textosPedidoV2();
 
     return new Promise((resolve)=>{
 
@@ -419,19 +472,19 @@ function abrirModalNotaLineaV2(notaActual){
 
         overlay.innerHTML = `
             <div class="modal-nota-card-v2">
-                <h3>Nota del producto</h3>
-                <p>Escribe la petición exacta del cliente.</p>
+                <h3>${textos.tituloNota}</h3>
+                <p>${textos.instruccionNota}</p>
 
-                <textarea id="textarea-nota-linea-v2" maxlength="180" placeholder="Ej. Sin cebolla, salsa aparte, alergia frutos secos...">${escaparHtmlPedidoV2(notaActual)}</textarea>
+                <textarea id="textarea-nota-linea-v2" maxlength="180" placeholder="${textos.placeholderNota}">${escaparHtmlPedidoV2(notaActual)}</textarea>
 
                 <div class="modal-nota-contador-v2">
-                    Máximo 180 caracteres
+                    ${textos.maxCaracteres}
                 </div>
 
                 <div class="modal-nota-acciones-v2">
-                    <button type="button" class="nota-cancelar-v2">Cancelar</button>
-                    <button type="button" class="nota-eliminar-v2">Quitar nota</button>
-                    <button type="button" class="nota-guardar-v2">Guardar nota</button>
+                    <button type="button" class="nota-cancelar-v2">${textos.cancelar}</button>
+                    <button type="button" class="nota-eliminar-v2">${textos.quitarNota}</button>
+                    <button type="button" class="nota-guardar-v2">${textos.guardarNota}</button>
                 </div>
             </div>
         `;
@@ -583,18 +636,21 @@ function bloquearAccionesPedidoV2(bloquear){
 
 
 async function enviarTodasComandasV2(numeroMesa){
+
+    const textos = textosPedidoV2();
+
     if(!numeroMesa){
-        mostrarToastPedidoV2("No hay mesa seleccionada.", "error");
+        mostrarToastPedidoV2(textos.sinMesa, "error");
         return;
     }
 
     try{
-        mostrarToastPedidoV2("Enviando comandas...", "info");
+        mostrarToastPedidoV2(textos.enviandoComandas, "info");
 
         const respuesta = await apiPost("/saas/comandas/enviar-todas/" + encodeURIComponent(numeroMesa), {});
 
         if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
-            mostrarToastPedidoV2("Comandas enviadas: " + respuesta.enviados.join(", ") + ".", "correcto");
+            mostrarToastPedidoV2(textos.comandasEnviadas + ": " + respuesta.enviados.join(", ") + ".", "correcto");
 
             if(typeof cargarPedidoV2 === "function"){
                 await cargarPedidoV2(numeroMesa);
@@ -606,10 +662,10 @@ async function enviarTodasComandasV2(numeroMesa){
         }
 
         console.log("DEBUG enviarTodasComandasV2:", respuesta);
-        mostrarToastPedidoV2("No hay productos nuevos para enviar.", "aviso");
+        mostrarToastPedidoV2(textos.sinProductosNuevos, "aviso");
     }catch(error){
         console.error("Error enviando comandas:", error);
-        mostrarToastPedidoV2("No se pudieron enviar las comandas.", "error");
+        mostrarToastPedidoV2(textos.errorComandas, "error");
     }
 }
 
