@@ -1,9 +1,169 @@
 const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
 const express = require("express");
+const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { normalizarIdioma } = require("../utils/i18n");
 
 function ticketRoutes(db) {
 
   const router = express.Router();
+
+
+  function textosTicketV2(idiomaValor) {
+
+    const idioma = normalizarIdioma(
+      idiomaValor
+    );
+
+    const textos = {
+      es: {
+        lang: "es",
+        locale: "es-ES",
+        restaurante: "Restaurante",
+        gracias: "Gracias por su visita",
+        ticketFinal: "Ticket final",
+        precuenta: "Precuenta",
+        mesa: "Mesa",
+        pedido: "Pedido",
+        fecha: "Fecha",
+        producto: "Producto",
+        cantidad: "Cant.",
+        total: "Total",
+        nota: "Nota",
+        pagos: "Pagos",
+        pago: "Pago",
+        tarjeta: "Tarjeta",
+        efectivo: "Efectivo",
+        bizum: "Bizum",
+        baseImponible: "Base imponible",
+        ivaIncluido: "IVA incluido",
+        imprimir: "Imprimir",
+        documentoPagado:
+          "Documento emitido tras el pago.",
+        precuentaInformativa:
+          "Precuenta informativa.",
+        revisarPedido:
+          "Revise su pedido antes del pago.",
+        nif: "NIF/CIF",
+        telefono: "Tel",
+        logo: "Logo restaurante"
+      },
+
+      it: {
+        lang: "it",
+        locale: "it-IT",
+        restaurante: "Ristorante",
+        gracias: "Grazie per la visita",
+        ticketFinal: "Ticket finale",
+        precuenta: "Preconto",
+        mesa: "Tavolo",
+        pedido: "Ordine",
+        fecha: "Data",
+        producto: "Prodotto",
+        cantidad: "Qtà",
+        total: "Totale",
+        nota: "Nota",
+        pagos: "Pagamenti",
+        pago: "Pagamento",
+        tarjeta: "Carta",
+        efectivo: "Contanti",
+        bizum: "Bizum",
+        baseImponible: "Imponibile",
+        ivaIncluido: "IVA inclusa",
+        imprimir: "Stampa",
+        documentoPagado:
+          "Documento emesso dopo il pagamento.",
+        precuentaInformativa:
+          "Preconto informativo.",
+        revisarPedido:
+          "Controlla l'ordine prima del pagamento.",
+        nif: "P. IVA",
+        telefono: "Tel",
+        logo: "Logo ristorante"
+      },
+
+      en: {
+        lang: "en",
+        locale: "en-GB",
+        restaurante: "Restaurant",
+        gracias: "Thank you for visiting",
+        ticketFinal: "Final receipt",
+        precuenta: "Bill preview",
+        mesa: "Table",
+        pedido: "Order",
+        fecha: "Date",
+        producto: "Product",
+        cantidad: "Qty.",
+        total: "Total",
+        nota: "Note",
+        pagos: "Payments",
+        pago: "Payment",
+        tarjeta: "Card",
+        efectivo: "Cash",
+        bizum: "Bizum",
+        baseImponible: "Net amount",
+        ivaIncluido: "VAT included",
+        imprimir: "Print",
+        documentoPagado:
+          "Document issued after payment.",
+        precuentaInformativa:
+          "Informative bill preview.",
+        revisarPedido:
+          "Check the order before payment.",
+        nif: "VAT No.",
+        telefono: "Tel",
+        logo: "Restaurant logo"
+      }
+    };
+
+    return textos[idioma] || textos.es;
+  }
+
+  function formatearMetodoTicketV2(
+    metodo,
+    textos
+  ) {
+
+    const valor = String(
+      metodo || ""
+    ).trim().toLowerCase();
+
+    if (valor === "tarjeta") {
+      return textos.tarjeta;
+    }
+
+    if (valor === "efectivo") {
+      return textos.efectivo;
+    }
+
+    if (valor === "bizum") {
+      return textos.bizum;
+    }
+
+    return metodo || textos.pago;
+  }
+
+  function requiereLoginTicket(req, res, next) {
+    if (
+      req.session &&
+      req.session.usuario
+    ) {
+      return next();
+    }
+
+    return res.status(401).send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <title>Sesión no válida</title>
+      </head>
+      <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
+        <h1>Sesión no válida</h1>
+        <p>Inicia sesión para consultar el ticket.</p>
+      </body>
+      </html>
+    `);
+  }
 
   function escaparHTML(valor) {
 
@@ -16,20 +176,39 @@ function ticketRoutes(db) {
 
   }
 
-  function dinero(valor) {
+  function dinero(valor, locale) {
 
-    return Number(valor || 0).toFixed(2).replace(".", ",") + " EUR";
-
+    return new Intl.NumberFormat(
+      locale || "es-ES",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }
+    ).format(
+      Number(valor || 0)
+    ) + " EUR";
   }
 
-  function obtenerConfiguracion(callback) {
+  function obtenerConfiguracion(restauranteId, callback) {
 
     db.get(
-      "SELECT * FROM configurazione WHERE id = 1",
-      [],
+      `
+      SELECT
+        configurazione.*,
+        COALESCE(restaurantes.idioma,'es') AS idioma
+      FROM configurazione
+      LEFT JOIN restaurantes
+        ON restaurantes.id = ?
+      WHERE COALESCE(configurazione.restaurante_id,1)=?
+      ORDER BY configurazione.id DESC
+      LIMIT 1
+      `,
+      [restauranteId, restauranteId],
       (err, config) => {
 
-        if (err) return callback(err);
+        if (err) {
+          return callback(err);
+        }
 
         callback(null, config || {
           nome_ristorante: "Restaurante",
@@ -39,44 +218,68 @@ function ticketRoutes(db) {
           email: "",
           logo: "",
           iva: 10,
+          idioma: "es",
           mensaje_ticket: "Gracias por su visita"
         });
-
       }
     );
-
   }
 
-  function obtenerLineasPedido(pedidoId, callback) {
+  function obtenerLineasPedido(
+    pedidoId,
+    restauranteId,
+    callback
+  ) {
 
     const lineasSql = `
-      SELECT 
-        pedido_lineas.id, 
-        productos.nombre, 
-        pedido_lineas.cantidad, 
+      SELECT
+        pedido_lineas.id,
+        productos.nombre,
+        pedido_lineas.cantidad,
         pedido_lineas.precio,
-        (pedido_lineas.cantidad * pedido_lineas.precio) AS subtotal,
+        (
+          pedido_lineas.cantidad *
+          pedido_lineas.precio
+        ) AS subtotal,
         pedido_lineas.nota
       FROM pedido_lineas
-      JOIN productos ON pedido_lineas.producto_id = productos.id
-      WHERE pedido_lineas.pedido_id = ?
+      JOIN productos
+        ON pedido_lineas.producto_id = productos.id
+        AND COALESCE(productos.restaurante_id,1)=?
+      WHERE pedido_lineas.pedido_id=?
+        AND COALESCE(pedido_lineas.restaurante_id,1)=?
       ORDER BY pedido_lineas.id
     `;
 
-    db.all(lineasSql, [pedidoId], callback);
-
-  }
-
-  function obtenerPagosPedido(pedidoId, callback) {
-
     db.all(
-      "SELECT * FROM pagos WHERE pedido_id = ? ORDER BY id",
-      [pedidoId],
+      lineasSql,
+      [
+        restauranteId,
+        pedidoId,
+        restauranteId
+      ],
       callback
     );
-
   }
 
+  function obtenerPagosPedido(
+    pedidoId,
+    restauranteId,
+    callback
+  ) {
+
+    db.all(
+      `
+      SELECT *
+      FROM pagos
+      WHERE pedido_id=?
+        AND COALESCE(restaurante_id,1)=?
+      ORDER BY id
+      `,
+      [pedidoId, restauranteId],
+      callback
+    );
+  }
 
   function obtenerConfigTicketCentroImpresion(config) {
     try {
@@ -90,53 +293,159 @@ function ticketRoutes(db) {
     }
   }
 
-  function generarTextoTicketCentroImpresion(config, pedido, productos, pagos, tipo) {
-    const titulo = tipo === "final" ? "TICKET FINAL" : "PRECUENTA";
-    const total = Number(pedido.total || 0);
-    const nombreRestaurante = config.nombre_ristorante || "Restaurant Service";
-    const mensajeFinal = config.mensaje_ticket || "Gracias por su visita";
+  function generarTextoTicketCentroImpresion(
+    config,
+    pedido,
+    productos,
+    pagos,
+    tipo
+  ) {
+
+    const textos = textosTicketV2(
+      config && config.idioma
+    );
+
+    const titulo = tipo === "final"
+      ? textos.ticketFinal.toUpperCase()
+      : textos.precuenta.toUpperCase();
+
+    const total = Number(
+      pedido.total || 0
+    );
+
+    const nombreRestaurante =
+      config.nome_ristorante ||
+      config.nombre_ristorante ||
+      textos.restaurante;
+
+    const mensajeFinal =
+      config.mensaje_ticket ||
+      textos.gracias;
+
+    function importe(valor) {
+      return dinero(
+        valor,
+        textos.locale
+      );
+    }
 
     let texto = "";
+
     texto += "================================\n";
     texto += String(nombreRestaurante).toUpperCase() + "\n";
     texto += "================================\n";
     texto += titulo + "\n";
-    texto += "MESA: " + pedido.mesa + "\n";
-    texto += "PEDIDO: " + pedido.id + "\n";
-    texto += "FECHA: " + new Date().toLocaleString("es-ES") + "\n";
+
+    texto +=
+      textos.mesa.toUpperCase() +
+      ": " +
+      pedido.mesa +
+      "\n";
+
+    texto +=
+      textos.pedido.toUpperCase() +
+      ": " +
+      pedido.id +
+      "\n";
+
+    texto +=
+      textos.fecha.toUpperCase() +
+      ": " +
+      new Date().toLocaleString(
+        textos.locale
+      ) +
+      "\n";
+
     texto += "--------------------------------\n";
 
-    (productos || []).forEach((p) => {
-      const cantidad = Number(p.cantidad || 0);
-      const nombre = String(p.nombre || p.producto || "Producto").toUpperCase();
-      const precio = Number(p.precio || 0);
-      const subtotal = Number(p.subtotal || (cantidad * precio) || 0);
+    (productos || []).forEach((producto) => {
 
-      texto += cantidad + " x " + nombre + "\n";
-      texto += "  " + precio.toFixed(2) + " EUR  " + subtotal.toFixed(2) + " EUR\n";
+      const cantidad = Number(
+        producto.cantidad || 0
+      );
 
-      if (p.nota) {
-        texto += "  >>> NOTA <<<\n";
-        texto += "  " + String(p.nota).toUpperCase() + "\n";
+      const nombre = String(
+        producto.nombre ||
+        producto.producto ||
+        textos.producto
+      ).toUpperCase();
+
+      const precio = Number(
+        producto.precio || 0
+      );
+
+      const subtotal = Number(
+        producto.subtotal ||
+        cantidad * precio ||
+        0
+      );
+
+      texto +=
+        cantidad +
+        " x " +
+        nombre +
+        "\n";
+
+      texto +=
+        "  " +
+        importe(precio) +
+        "  " +
+        importe(subtotal) +
+        "\n";
+
+      if (producto.nota) {
+        texto +=
+          "  >>> " +
+          textos.nota.toUpperCase() +
+          " <<<\n";
+
+        texto +=
+          "  " +
+          String(producto.nota).toUpperCase() +
+          "\n";
       }
     });
 
     texto += "--------------------------------\n";
-    texto += "TOTAL: " + total.toFixed(2) + " EUR\n";
 
-    if (Array.isArray(pagos) && pagos.length > 0) {
+    texto +=
+      textos.total.toUpperCase() +
+      ": " +
+      importe(total) +
+      "\n";
+
+    if (
+      Array.isArray(pagos) &&
+      pagos.length > 0
+    ) {
+
       texto += "--------------------------------\n";
-      texto += "PAGOS\n";
+      texto += textos.pagos.toUpperCase() + "\n";
 
       pagos.forEach((pago) => {
-        texto += String(pago.metodo || "pago").toUpperCase() + ": " + Number(pago.importe || 0).toFixed(2) + " EUR\n";
+        texto +=
+          formatearMetodoTicketV2(
+            pago.metodo,
+            textos
+          ).toUpperCase() +
+          ": " +
+          importe(pago.importe) +
+          "\n";
       });
     }
 
     if (tipo !== "final") {
       texto += "--------------------------------\n";
-      texto += "PRECUENTA INFORMATIVA\n";
-      texto += "REVise SU PEDIDO ANTES DEL PAGO\n";
+
+      texto +=
+        textos.precuentaInformativa
+          .toUpperCase() +
+        "\n";
+
+      texto +=
+        textos.revisarPedido
+          .toUpperCase() +
+        "\n";
     }
 
     texto += "--------------------------------\n";
@@ -169,7 +478,13 @@ function ticketRoutes(db) {
 
   function generarHTMLTicket(config, pedido, productos, pagos, tipo) {
 
-    const fecha = new Date().toLocaleString("es-ES");
+    const textos = textosTicketV2(
+      config && config.idioma
+    );
+
+    const fecha = new Date().toLocaleString(
+      textos.locale
+    );
     const total = Number(pedido.total || 0);
     const ivaPorcentaje = Number(config.iva || 10);
     const baseImponible = ivaPorcentaje > 0 ? total / (1 + (ivaPorcentaje / 100)) : total;
@@ -183,10 +498,13 @@ function ticketRoutes(db) {
         <tr>
           <td class="producto">
             <strong>${escaparHTML(p.nombre)}</strong>
-            ${p.nota ? `<div class="nota">Nota: ${escaparHTML(p.nota)}</div>` : ""}
+            ${p.nota ? `<div class="nota">${textos.nota}: ${escaparHTML(p.nota)}</div>` : ""}
           </td>
           <td class="cantidad">${p.cantidad}</td>
-          <td class="importe">${dinero(p.subtotal)}</td>
+          <td class="importe">${dinero(
+              p.subtotal,
+              textos.locale
+            )}</td>
         </tr>
       `;
 
@@ -198,11 +516,19 @@ function ticketRoutes(db) {
 
       pagosHtml = `
         <div class="pagos">
-          <div class="titulo-seccion">Pagos</div>
+          <div class="titulo-seccion">${textos.pagos}</div>
           ${pagos.map(pago => `
             <div class="linea-pago">
-              <span>${escaparHTML(String(pago.metodo || "").toUpperCase())}</span>
-              <strong>${dinero(pago.importe)}</strong>
+              <span>${escaparHTML(
+                formatearMetodoTicketV2(
+                  pago.metodo,
+                  textos
+                )
+              )}</span>
+              <strong>${dinero(
+                pago.importe,
+                textos.locale
+              )}</strong>
             </div>
           `).join("")}
         </div>
@@ -211,11 +537,11 @@ function ticketRoutes(db) {
     }
 
     const logoHtml = config.logo
-      ? `<img class="logo" src="${escaparHTML(config.logo)}" alt="Logo restaurante">`
+      ? `<img class="logo" src="${escaparHTML(config.logo)}" alt="${textos.logo}">`
       : "";
 
     const nifHtml = config.partita_iva
-      ? `<div><strong>NIF/CIF:</strong> ${escaparHTML(config.partita_iva)}</div>`
+      ? `<div><strong>${textos.nif}:</strong> ${escaparHTML(config.partita_iva)}</div>`
       : "";
 
     const direccionHtml = config.indirizzo
@@ -223,39 +549,44 @@ function ticketRoutes(db) {
       : "";
 
     const telefonoHtml = config.telefono
-      ? `<div>Tel: ${escaparHTML(config.telefono)}</div>`
+      ? `<div>${textos.telefono}: ${escaparHTML(config.telefono)}</div>`
       : "";
 
     const emailHtml = config.email
       ? `<div>${escaparHTML(config.email)}</div>`
       : "";
 
-    const mensajeFinal = config.mensaje_ticket || "Gracias por su visita";
+    const mensajeFinal =
+      config.mensaje_ticket ||
+      textos.gracias;
 
     const ticketCentroConfig = obtenerConfigTicketCentroImpresion(config);
     const ticketModoImpresion = String(ticketCentroConfig.modo || "preview");
     const autoPrintSistema = ticketModoImpresion === "sistema";
 
-    const tituloDocumento = tipo === "final" ? "Ticket final" : "Precuenta";
+    const tituloDocumento =
+      tipo === "final"
+        ? textos.ticketFinal
+        : textos.precuenta;
     const avisoHtml = tipo === "final"
       ? `
         <div class="aviso">
-          Documento emitido tras el pago.
+          ${textos.documentoPagado}
         </div>
       `
       : `
         <div class="aviso">
-          Precuenta informativa.<br>
-          Revise su pedido antes del pago.
+          ${textos.precuentaInformativa}<br>
+          ${textos.revisarPedido}
         </div>
       `;
 
     return `
       <!DOCTYPE html>
-      <html lang="es">
+      <html lang="${textos.lang}">
       <head>
         <meta charset="UTF-8">
-        <title>${tituloDocumento} Mesa ${pedido.mesa}</title>
+        <title>${tituloDocumento} - ${textos.mesa} ${pedido.mesa}</title>
         <style>
           * {
             box-sizing: border-box;
@@ -476,7 +807,11 @@ function ticketRoutes(db) {
         <div class="ticket">
           <div class="marca">
             ${logoHtml}
-            <h1>${escaparHTML(config.nome_ristorante || "Restaurante")}</h1>
+            <h1>${escaparHTML(
+              config.nome_ristorante ||
+              config.nombre_ristorante ||
+              textos.restaurante
+            )}</h1>
             <p>${tituloDocumento}</p>
 
             <div class="datos-restaurante">
@@ -488,17 +823,17 @@ function ticketRoutes(db) {
           </div>
 
           <div class="datos">
-            <div><strong>Mesa:</strong> ${pedido.mesa}</div>
-            <div><strong>Pedido:</strong> ${pedido.id}</div>
-            <div><strong>Fecha:</strong> ${fecha}</div>
+            <div><strong>${textos.mesa}:</strong> ${pedido.mesa}</div>
+            <div><strong>${textos.pedido}:</strong> ${pedido.id}</div>
+            <div><strong>${textos.fecha}:</strong> ${fecha}</div>
           </div>
 
           <table>
             <thead>
               <tr>
-                <th>Producto</th>
-                <th>Cant.</th>
-                <th>Total</th>
+                <th>${textos.producto}</th>
+                <th>${textos.cantidad}</th>
+                <th>${textos.total}</th>
               </tr>
             </thead>
             <tbody>
@@ -508,16 +843,25 @@ function ticketRoutes(db) {
 
           <div class="resumen">
             <div class="linea-resumen">
-              <span>Base imponible</span>
-              <strong>${dinero(baseImponible)}</strong>
+              <span>${textos.baseImponible}</span>
+              <strong>${dinero(
+                baseImponible,
+                textos.locale
+              )}</strong>
             </div>
             <div class="linea-resumen">
-              <span>IVA incluido ${ivaPorcentaje}%</span>
-              <strong>${dinero(ivaImporte)}</strong>
+              <span>${textos.ivaIncluido} ${ivaPorcentaje}%</span>
+              <strong>${dinero(
+                ivaImporte,
+                textos.locale
+              )}</strong>
             </div>
             <div class="linea-total">
-              <span>TOTAL</span>
-              <span>${dinero(total)}</span>
+              <span>${textos.total.toUpperCase()}</span>
+              <span>${dinero(
+              total,
+              textos.locale
+            )}</span>
             </div>
           </div>
 
@@ -535,7 +879,7 @@ function ticketRoutes(db) {
         </div>
 
         <div class="acciones-ticket">
-          <button onclick="window.print()">Imprimir</button>
+          <button onclick="window.print()">${textos.imprimir}</button>
           ${autoPrintSistema ? `
           <script>
             window.addEventListener('load', function(){
@@ -552,138 +896,231 @@ function ticketRoutes(db) {
 
   }
 
-  router.get("/ticket/:mesa", (req, res) => {
+  router.get(
+    "/ticket/:mesa",
+    requiereLoginTicket,
+    (req, res) => {
 
-    const mesa = req.params.mesa;
+      const restauranteId =
+        restauranteIdFromReq(req);
 
-    obtenerConfiguracion((errConfig, config) => {
+      const mesa = req.params.mesa;
 
-      if (errConfig) return res.status(500).send(errConfig.message);
+      obtenerConfiguracion(
+        restauranteId,
+        (errConfig, config) => {
 
-      const pedidoSql = `
-        SELECT 
-          pedidos.id, 
-          mesas.numero AS mesa, 
-          pedidos.estado, 
-          pedidos.total, 
-          pedidos.creado_en
-        FROM pedidos
-        JOIN mesas ON pedidos.mesa_id = mesas.id
-        WHERE mesas.numero = ? 
-        AND pedidos.estado IN ('abierto','cuenta')
-        ORDER BY pedidos.id DESC
-        LIMIT 1
-      `;
+          if (errConfig) {
+            return res
+              .status(500)
+              .send(errConfig.message);
+          }
 
-      db.get(pedidoSql, [mesa], (err, pedido) => {
+          const pedidoSql = `
+            SELECT
+              pedidos.id,
+              mesas.numero AS mesa,
+              pedidos.estado,
+              pedidos.total,
+              pedidos.creado_en
+            FROM pedidos
+            JOIN mesas
+              ON pedidos.mesa_id = mesas.id
+              AND COALESCE(mesas.restaurante_id,1)=?
+            WHERE mesas.numero=?
+              AND COALESCE(pedidos.restaurante_id,1)=?
+              AND pedidos.estado IN ('abierto','cuenta')
+            ORDER BY pedidos.id DESC
+            LIMIT 1
+          `;
 
-        if (err) return res.status(500).send(err.message);
+          db.get(
+            pedidoSql,
+            [
+              restauranteId,
+              mesa,
+              restauranteId
+            ],
+            (err, pedido) => {
 
-        if (!pedido) {
-          return res.send(`
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-              <meta charset="UTF-8">
-              <title>Sin pedido</title>
-              <style>
-                body { font-family: Arial, sans-serif; padding: 30px; text-align: center; }
-              </style>
-            </head>
-            <body>
-              <h1>No hay pedido abierto para esta mesa</h1>
-              <p>Mesa ${escaparHTML(mesa)}</p>
-            </body>
-            </html>
-          `);
+              if (err) {
+                return res
+                  .status(500)
+                  .send(err.message);
+              }
+
+              if (!pedido) {
+                return res.status(404).send(`
+                  <!DOCTYPE html>
+                  <html lang="es">
+                  <head>
+                    <meta charset="UTF-8">
+                    <title>Sin pedido</title>
+                  </head>
+                  <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
+                    <h1>No hay pedido abierto para esta mesa</h1>
+                    <p>Mesa ${escaparHTML(mesa)}</p>
+                  </body>
+                  </html>
+                `);
+              }
+
+              obtenerLineasPedido(
+                pedido.id,
+                restauranteId,
+                (errLineas, productos) => {
+
+                  if (errLineas) {
+                    return res
+                      .status(500)
+                      .send(errLineas.message);
+                  }
+
+                  imprimirTicketCentroImpresion(
+                    db,
+                    config,
+                    pedido,
+                    productos,
+                    [],
+                    "precuenta"
+                  );
+
+                  const html = generarHTMLTicket(
+                    config,
+                    pedido,
+                    productos,
+                    [],
+                    "precuenta"
+                  );
+
+                  res.send(html);
+                }
+              );
+            }
+          );
         }
+      );
+    }
+  );
 
-        obtenerLineasPedido(pedido.id, (err, productos) => {
+  router.get(
+    "/ticket-final/:pedido",
+    requiereLoginTicket,
+    (req, res) => {
 
-          if (err) return res.status(500).send(err.message);
+      const restauranteId =
+        restauranteIdFromReq(req);
 
-          imprimirTicketCentroImpresion(db, config, pedido, productos, [], "precuenta");
+      const pedidoId = req.params.pedido;
 
-          const html = generarHTMLTicket(config, pedido, productos, [], "precuenta");
+      obtenerConfiguracion(
+        restauranteId,
+        (errConfig, config) => {
 
-          res.send(html);
+          if (errConfig) {
+            return res
+              .status(500)
+              .send(errConfig.message);
+          }
 
-        });
+          const pedidoSql = `
+            SELECT
+              pedidos.id,
+              mesas.numero AS mesa,
+              pedidos.estado,
+              pedidos.total,
+              pedidos.creado_en,
+              pedidos.pagado_en
+            FROM pedidos
+            JOIN mesas
+              ON pedidos.mesa_id = mesas.id
+              AND COALESCE(mesas.restaurante_id,1)=?
+            WHERE pedidos.id=?
+              AND COALESCE(pedidos.restaurante_id,1)=?
+            LIMIT 1
+          `;
 
-      });
+          db.get(
+            pedidoSql,
+            [
+              restauranteId,
+              pedidoId,
+              restauranteId
+            ],
+            (err, pedido) => {
 
-    });
+              if (err) {
+                return res
+                  .status(500)
+                  .send(err.message);
+              }
 
-  });
+              if (!pedido) {
+                return res.status(404).send(`
+                  <!DOCTYPE html>
+                  <html lang="es">
+                  <head>
+                    <meta charset="UTF-8">
+                    <title>Pedido no encontrado</title>
+                  </head>
+                  <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
+                    <h1>Pedido no encontrado</h1>
+                    <p>Pedido ${escaparHTML(pedidoId)}</p>
+                  </body>
+                  </html>
+                `);
+              }
 
-  router.get("/ticket-final/:pedido", (req, res) => {
+              obtenerLineasPedido(
+                pedido.id,
+                restauranteId,
+                (errLineas, productos) => {
 
-    const pedidoId = req.params.pedido;
+                  if (errLineas) {
+                    return res
+                      .status(500)
+                      .send(errLineas.message);
+                  }
 
-    obtenerConfiguracion((errConfig, config) => {
+                  obtenerPagosPedido(
+                    pedido.id,
+                    restauranteId,
+                    (errPagos, pagos) => {
 
-      if (errConfig) return res.status(500).send(errConfig.message);
+                      if (errPagos) {
+                        return res
+                          .status(500)
+                          .send(errPagos.message);
+                      }
 
-      const pedidoSql = `
-        SELECT 
-          pedidos.id, 
-          mesas.numero AS mesa, 
-          pedidos.estado, 
-          pedidos.total, 
-          pedidos.creado_en,
-          pedidos.pagado_en
-        FROM pedidos
-        JOIN mesas ON pedidos.mesa_id = mesas.id
-        WHERE pedidos.id = ?
-        LIMIT 1
-      `;
+                      imprimirTicketCentroImpresion(
+                        db,
+                        config,
+                        pedido,
+                        productos,
+                        pagos,
+                        "final"
+                      );
 
-      db.get(pedidoSql, [pedidoId], (err, pedido) => {
+                      const html = generarHTMLTicket(
+                        config,
+                        pedido,
+                        productos,
+                        pagos,
+                        "final"
+                      );
 
-        if (err) return res.status(500).send(err.message);
-
-        if (!pedido) {
-          return res.status(404).send(`
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-              <meta charset="UTF-8">
-              <title>Pedido no encontrado</title>
-              <style>
-                body { font-family: Arial, sans-serif; padding: 30px; text-align: center; }
-              </style>
-            </head>
-            <body>
-              <h1>Pedido no encontrado</h1>
-              <p>Pedido ${escaparHTML(pedidoId)}</p>
-            </body>
-            </html>
-          `);
+                      res.send(html);
+                    }
+                  );
+                }
+              );
+            }
+          );
         }
-
-        obtenerLineasPedido(pedido.id, (err, productos) => {
-
-          if (err) return res.status(500).send(err.message);
-
-          obtenerPagosPedido(pedido.id, (err, pagos) => {
-
-            if (err) return res.status(500).send(err.message);
-
-            imprimirTicketCentroImpresion(db, config, pedido, productos, pagos, "final");
-
-            const html = generarHTMLTicket(config, pedido, productos, pagos, "final");
-
-            res.send(html);
-
-          });
-
-        });
-
-      });
-
-    });
-
-  });
+      );
+    }
+  );
 
   return router;
 
