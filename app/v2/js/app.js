@@ -112,6 +112,8 @@ async function cargarUsuarioTopbarV2(){
             ? String(usuario.idioma).toLowerCase()
             : "es";
 
+        document.documentElement.lang = idioma;
+
         const textosTopbar = textosTopbarV2(idioma);
 
         if(!usuario.autenticado){
