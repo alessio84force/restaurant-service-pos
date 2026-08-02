@@ -7,7 +7,8 @@
             bienvenida: "Bienvenido",
             seleccionar_mesa: "Selecciona una mesa para comenzar.",
             menu: "Menú",
-            cerrar_sesion: "Cerrar sesión"
+            cerrar_sesion: "Cerrar sesión",
+            cargando_usuario: "Cargando usuario..."
         },
 
         it: {
@@ -16,7 +17,8 @@
             bienvenida: "Benvenuto",
             seleccionar_mesa: "Seleziona un tavolo per iniziare.",
             menu: "Menu",
-            cerrar_sesion: "Chiudi sessione"
+            cerrar_sesion: "Chiudi sessione",
+            cargando_usuario: "Caricamento utente..."
         },
 
         en: {
@@ -25,7 +27,8 @@
             bienvenida: "Welcome",
             seleccionar_mesa: "Select a table to get started.",
             menu: "Menu",
-            cerrar_sesion: "Sign out"
+            cerrar_sesion: "Sign out",
+            cargando_usuario: "Loading user..."
         }
     };
 

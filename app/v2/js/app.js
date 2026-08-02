@@ -82,6 +82,27 @@ function textosTopbarV2(idioma){
     return textos[lingua];
 }
 
+function obtenerIdiomaInicialTopbarV2(){
+
+    const parametroIdioma =
+        new URLSearchParams(
+            window.location.search
+        ).get("idioma");
+
+    const idiomaDocumento =
+        document.documentElement.lang;
+
+    const candidato = String(
+        parametroIdioma ||
+        idiomaDocumento ||
+        "es"
+    ).trim().toLowerCase();
+
+    return ["es","it","en"].includes(candidato)
+        ? candidato
+        : "es";
+}
+
 function formatearRolTopbarV2(rol, idioma){
 
     const textos = textosTopbarV2(idioma);
@@ -155,11 +176,22 @@ async function cargarUsuarioTopbarV2(){
 
         console.error("Error cargando usuario:", error);
 
-        contenedor.innerHTML = `
-            <span>Sin sesión</span>
+        const idioma =
+            obtenerIdiomaInicialTopbarV2();
 
-            <a class="btn-login-v2" href="${API}/login">
-                Iniciar sesión
+        const textosTopbar =
+            textosTopbarV2(idioma);
+
+        document.documentElement.lang = idioma;
+
+        contenedor.innerHTML = `
+            <span>${textosTopbar.sinSesion}</span>
+
+            <a
+                class="btn-login-v2"
+                href="${API}/login?idioma=${idioma}"
+            >
+                ${textosTopbar.iniciarSesion}
             </a>
         `;
 
