@@ -45,7 +45,12 @@ function ticketRoutes(db) {
           "Revise su pedido antes del pago.",
         nif: "NIF/CIF",
         telefono: "Tel",
-        logo: "Logo restaurante"
+        logo: "Logo restaurante",
+        sinPedidoTitulo: "Sin pedido",
+        sinPedidoMensaje:
+          "No hay pedido abierto para esta mesa",
+        pedidoNoEncontradoTitulo:
+          "Pedido no encontrado"
       },
 
       it: {
@@ -78,7 +83,12 @@ function ticketRoutes(db) {
           "Controlla l'ordine prima del pagamento.",
         nif: "P. IVA",
         telefono: "Tel",
-        logo: "Logo ristorante"
+        logo: "Logo ristorante",
+        sinPedidoTitulo: "Nessun ordine",
+        sinPedidoMensaje:
+          "Non c'è un ordine aperto per questo tavolo",
+        pedidoNoEncontradoTitulo:
+          "Ordine non trovato"
       },
 
       en: {
@@ -111,7 +121,12 @@ function ticketRoutes(db) {
           "Check the order before payment.",
         nif: "VAT No.",
         telefono: "Tel",
-        logo: "Restaurant logo"
+        logo: "Restaurant logo",
+        sinPedidoTitulo: "No order",
+        sinPedidoMensaje:
+          "There is no open order for this table",
+        pedidoNoEncontradoTitulo:
+          "Order not found"
       }
     };
 
@@ -163,6 +178,32 @@ function ticketRoutes(db) {
       </body>
       </html>
     `);
+  }
+
+  function generarPaginaErrorTicketV2(
+    textos,
+    titulo,
+    mensaje,
+    etiqueta,
+    valor
+  ) {
+
+    return `
+      <!DOCTYPE html>
+      <html lang="${textos.lang}">
+      <head>
+        <meta charset="UTF-8">
+        <title>${escaparHTML(titulo)}</title>
+      </head>
+      <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
+        <h1>${escaparHTML(mensaje)}</h1>
+        <p>
+          ${escaparHTML(etiqueta)}
+          ${escaparHTML(valor)}
+        </p>
+      </body>
+      </html>
+    `;
   }
 
   function escaparHTML(valor) {
@@ -950,19 +991,21 @@ function ticketRoutes(db) {
               }
 
               if (!pedido) {
-                return res.status(404).send(`
-                  <!DOCTYPE html>
-                  <html lang="es">
-                  <head>
-                    <meta charset="UTF-8">
-                    <title>Sin pedido</title>
-                  </head>
-                  <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
-                    <h1>No hay pedido abierto para esta mesa</h1>
-                    <p>Mesa ${escaparHTML(mesa)}</p>
-                  </body>
-                  </html>
-                `);
+
+                const textos =
+                  textosTicketV2(
+                    config && config.idioma
+                  );
+
+                return res.status(404).send(
+                  generarPaginaErrorTicketV2(
+                    textos,
+                    textos.sinPedidoTitulo,
+                    textos.sinPedidoMensaje,
+                    textos.mesa,
+                    mesa
+                  )
+                );
               }
 
               obtenerLineasPedido(
@@ -1056,19 +1099,21 @@ function ticketRoutes(db) {
               }
 
               if (!pedido) {
-                return res.status(404).send(`
-                  <!DOCTYPE html>
-                  <html lang="es">
-                  <head>
-                    <meta charset="UTF-8">
-                    <title>Pedido no encontrado</title>
-                  </head>
-                  <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
-                    <h1>Pedido no encontrado</h1>
-                    <p>Pedido ${escaparHTML(pedidoId)}</p>
-                  </body>
-                  </html>
-                `);
+
+                const textos =
+                  textosTicketV2(
+                    config && config.idioma
+                  );
+
+                return res.status(404).send(
+                  generarPaginaErrorTicketV2(
+                    textos,
+                    textos.pedidoNoEncontradoTitulo,
+                    textos.pedidoNoEncontradoTitulo,
+                    textos.pedido,
+                    pedidoId
+                  )
+                );
               }
 
               obtenerLineasPedido(
