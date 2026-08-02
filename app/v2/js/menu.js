@@ -1,5 +1,70 @@
 let menuCompletoV2 = [];
 
+function textosMenuV2(){
+
+    const lingua = String(
+        document.documentElement.lang || "es"
+    ).trim().toLowerCase();
+
+    const testi = {
+        es: {
+            volverCategorias: "← Categorías",
+            badgeCoccion: "Punto cocción",
+            seleccionarCoccion:
+                "Selecciona el punto de cocción",
+            cancelar: "Cancelar",
+            seleccionaMesa:
+                "Selecciona una mesa antes de añadir productos.",
+            prefijoPunto: "Punto",
+            puntosCoccion: [
+                "Poco hecho",
+                "Al punto menos",
+                "Al punto",
+                "Al punto más",
+                "Muy hecho"
+            ]
+        },
+
+        it: {
+            volverCategorias: "← Categorie",
+            badgeCoccion: "Cottura",
+            seleccionarCoccion:
+                "Seleziona il punto di cottura",
+            cancelar: "Annulla",
+            seleccionaMesa:
+                "Seleziona un tavolo prima di aggiungere prodotti.",
+            prefijoPunto: "Cottura",
+            puntosCoccion: [
+                "Al sangue",
+                "Media al sangue",
+                "Media",
+                "Media ben cotta",
+                "Ben cotta"
+            ]
+        },
+
+        en: {
+            volverCategorias: "← Categories",
+            badgeCoccion: "Cooking level",
+            seleccionarCoccion:
+                "Select the cooking level",
+            cancelar: "Cancel",
+            seleccionaMesa:
+                "Select a table before adding products.",
+            prefijoPunto: "Cooking",
+            puntosCoccion: [
+                "Rare",
+                "Medium rare",
+                "Medium",
+                "Medium well",
+                "Well done"
+            ]
+        }
+    };
+
+    return testi[lingua] || testi.es;
+}
+
 async function cargarMenuV2(){
 
     menuCompletoV2 = await apiGet("/menu");
@@ -50,7 +115,8 @@ function mostrarProductosV2(categoriaId){
 
     const volver = document.createElement("button");
     volver.className = "menu-btn";
-    volver.textContent = "← Categorías";
+    volver.textContent =
+        textosMenuV2().volverCategorias;
     volver.onclick = mostrarCategoriasV2;
 
     categorias.appendChild(volver);
@@ -62,7 +128,22 @@ function mostrarProductosV2(categoriaId){
         const btn = document.createElement("button");
 
         btn.className = "producto-btn";
-        btn.innerHTML = p.producto + "<br><span>" + Number(p.precio).toFixed(2) + " €</span>" + (Number(p.requiere_coccion || 0) === 1 ? "<small class=\"badge-coccion-v2\">Punto cocción</small>" : "");
+        const testi = textosMenuV2();
+
+        btn.innerHTML =
+            p.producto +
+            "<br><span>" +
+            Number(p.precio).toFixed(2) +
+            " €</span>" +
+            (
+                Number(
+                    p.requiere_coccion || 0
+                ) === 1
+                    ? '<small class="badge-coccion-v2">' +
+                      testi.badgeCoccion +
+                      "</small>"
+                    : ""
+            );
 
         btn.onclick = ()=>{
             agregarProductoV2(p.producto_id);
@@ -78,13 +159,9 @@ function mostrarProductosV2(categoriaId){
 
 // V2.2.7 - Puntos de cocción
 
-const puntosCoccionV2 = [
-    "Poco hecho",
-    "Al punto menos",
-    "Al punto",
-    "Al punto más",
-    "Muy hecho"
-];
+function obtenerPuntosCoccionV2(){
+    return textosMenuV2().puntosCoccion;
+}
 
 function buscarProductoMenuV2(productoId){
     return menuCompletoV2.find(p => Number(p.producto_id) === Number(productoId));
@@ -92,6 +169,10 @@ function buscarProductoMenuV2(productoId){
 
 function seleccionarPuntoCoccionV2(producto){
     return new Promise((resolve)=>{
+        const testi = textosMenuV2();
+        const puntosCoccionV2 =
+            obtenerPuntosCoccionV2();
+
         const overlay = document.createElement("div");
         overlay.className = "modal-coccion-v2";
 
@@ -102,14 +183,14 @@ function seleccionarPuntoCoccionV2(producto){
         overlay.innerHTML = `
             <div class="modal-coccion-card-v2">
                 <h3>${producto.producto}</h3>
-                <p>Selecciona el punto de cocción</p>
+                <p>${testi.seleccionarCoccion}</p>
 
                 <div class="modal-coccion-opciones-v2">
                     ${opciones}
                 </div>
 
                 <button type="button" class="modal-coccion-cancelar-v2">
-                    Cancelar
+                    ${testi.cancelar}
                 </button>
             </div>
         `;
@@ -140,7 +221,9 @@ function seleccionarPuntoCoccionV2(producto){
 
 async function agregarProductoV2(productoId){
     if(!mesaSeleccionada){
-        alert("Selecciona una mesa antes de añadir productos.");
+        alert(
+            textosMenuV2().seleccionaMesa
+        );
         return;
     }
 
@@ -156,7 +239,10 @@ async function agregarProductoV2(productoId){
             return;
         }
 
-        nota = "Punto: " + puntoCoccion;
+        nota =
+            textosMenuV2().prefijoPunto +
+            ": " +
+            puntoCoccion;
     }
 
     await apiPost("/anadir-producto",{
