@@ -57,7 +57,15 @@ function textosPedidoV2(){
             enviandoComandas: "Enviando comandas...",
             comandasEnviadas: "Comandas enviadas",
             sinProductosNuevos: "No hay productos nuevos para enviar.",
-            errorComandas: "No se pudieron enviar las comandas."
+            errorComandas: "No se pudieron enviar las comandas.",
+            destinoBar: "Bar",
+            destinoCocina: "Cocina",
+            enviandoComandaA: "Enviando comanda a",
+            sinProductosDestino: "No hay productos nuevos para enviar a",
+            comandaEnviadaA: "Comanda enviada a",
+            lineasEnviadas: "Líneas enviadas",
+            errorComandaDestino: "No se pudo enviar la comanda a",
+            productoGenerico: "Producto"
         },
 
         it: {
@@ -95,7 +103,15 @@ function textosPedidoV2(){
             enviandoComandas: "Invio comande...",
             comandasEnviadas: "Comande inviate",
             sinProductosNuevos: "Nessun nuovo prodotto da inviare.",
-            errorComandas: "Impossibile inviare le comande."
+            errorComandas: "Impossibile inviare le comande.",
+            destinoBar: "Bar",
+            destinoCocina: "Cucina",
+            enviandoComandaA: "Invio comanda a",
+            sinProductosDestino: "Nessun nuovo prodotto da inviare a",
+            comandaEnviadaA: "Comanda inviata a",
+            lineasEnviadas: "Righe inviate",
+            errorComandaDestino: "Impossibile inviare la comanda a",
+            productoGenerico: "Prodotto"
         },
 
         en: {
@@ -133,7 +149,15 @@ function textosPedidoV2(){
             enviandoComandas: "Sending orders...",
             comandasEnviadas: "Orders sent",
             sinProductosNuevos: "No new products to send.",
-            errorComandas: "The orders could not be sent."
+            errorComandas: "The orders could not be sent.",
+            destinoBar: "Bar",
+            destinoCocina: "Kitchen",
+            enviandoComandaA: "Sending order to",
+            sinProductosDestino: "No new products to send to",
+            comandaEnviadaA: "Order sent to",
+            lineasEnviadas: "Lines sent",
+            errorComandaDestino: "The order could not be sent to",
+            productoGenerico: "Product"
         }
     };
 
@@ -683,15 +707,25 @@ async function enviarCocina(numeroMesa){
 
 async function enviarComandaV2(numeroMesa, destino){
 
-    const destinoTexto = destino === "bar" ? "bar" : "cocina";
-    const destinoTitulo = destino === "bar" ? "Bar" : "Cocina";
+    const textos = textosPedidoV2();
+    const destinoCodigo = destino === "bar" ? "bar" : "cocina";
+
+    /*
+      Il valore tecnico rimane Bar/Cocina per individuare
+      correttamente la configurazione della stampante.
+    */
+    const destinoTitulo = destinoCodigo === "bar" ? "Bar" : "Cocina";
+
+    const destinoVisible = destinoCodigo === "bar"
+        ? textos.destinoBar
+        : textos.destinoCocina;
     const endpoint = "/saas/comandas/enviar/" + encodeURIComponent(destino) + "/" + encodeURIComponent(numeroMesa);
 
     try{
 
         bloquearAccionesPedidoV2(true);
 
-        mostrarToastPedidoV2("Enviando comanda a " + destinoTitulo + "...", "info");
+        mostrarToastPedidoV2(textos.enviandoComandaA + " " + destinoVisible + "...", "info");
 
         const ventanaPreviewComandaV2 = window.open("", "_blank", "width=420,height=720");
 
@@ -718,7 +752,7 @@ async function enviarComandaV2(numeroMesa, destino){
 
         if(lineas.length === 0){
 
-            mostrarToastPedidoV2("No hay productos nuevos para enviar a " + destinoTexto + ".", "aviso");
+            mostrarToastPedidoV2(textos.sinProductosDestino + " " + destinoVisible + ".", "aviso");
 
             return;
 
@@ -732,15 +766,15 @@ async function enviarComandaV2(numeroMesa, destino){
             configDestinoImpresionV2
         );
 
-        mostrarToastPedidoV2("Comanda enviada a " + destinoTitulo + ". Líneas enviadas: " + lineas.length + ".", "correcto");
+        mostrarToastPedidoV2(textos.comandaEnviadaA + " " + destinoVisible + ". " + textos.lineasEnviadas + ": " + lineas.length + ".", "correcto");
 
     }catch(error){
 
-        console.error("Error enviando comanda a " + destinoTexto + ":", error);
+        console.error("Error enviando comanda a " + destinoCodigo + ":", error);
 
         bloquearAccionesPedidoV2(false);
 
-        mostrarToastPedidoV2("No se pudo enviar la comanda a " + destinoTexto + ".", "error");
+        mostrarToastPedidoV2(textos.errorComandaDestino + " " + destinoVisible + ".", "error");
 
     }
 
@@ -758,13 +792,14 @@ function escaparHtmlComandaPreviewV2(texto){
 
 function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaExistente){
 
+    const textos = textosPedidoV2();
     const destino = String(destinoTitulo || "").toUpperCase();
     const pedido = lineas && lineas.length > 0 ? (lineas[0].pedido || lineas[0].pedido_id || "") : "";
     const ahora = new Date().toLocaleString("es-ES");
 
     const lineasHtml = (lineas || []).map((linea)=>{
         const cantidad = Number(linea.cantidad || 0);
-        const nombre = escaparHtmlComandaPreviewV2(linea.nombre || linea.producto || "Producto");
+        const nombre = escaparHtmlComandaPreviewV2(linea.nombre || linea.producto || textos.productoGenerico);
         const nota = String(linea.nota || "").trim();
 
         return `
@@ -997,6 +1032,7 @@ function escribirVentanaPreparandoComandaV2(ventana, destinoTitulo, modo){
 }
 
 function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, lineas, ventana, configDestino){
+    const textos = textosPedidoV2();
     const modo = String((configDestino && configDestino.modo) || "preview");
     const nombre = String((configDestino && configDestino.nombre) || "");
     const ip = String((configDestino && configDestino.ip) || "");
@@ -1039,7 +1075,7 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
         const lineasHtml = lineas.map(function(linea){
             const cantidad = Number(linea.cantidad || 0);
-            const nombreProducto = String(linea.nombre || linea.producto || "Producto").toUpperCase();
+            const nombreProducto = String(linea.nombre || linea.producto || textos.productoGenerico).toUpperCase();
             const nota = String(linea.nota || "").trim().toUpperCase();
 
             return "<div style='padding:10px 0;border-bottom:1px dashed #d1d5db;'>" +
