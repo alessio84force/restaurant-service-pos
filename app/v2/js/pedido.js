@@ -65,7 +65,17 @@ function textosPedidoV2(){
             comandaEnviadaA: "Comanda enviada a",
             lineasEnviadas: "Líneas enviadas",
             errorComandaDestino: "No se pudo enviar la comanda a",
-            productoGenerico: "Producto"
+            productoGenerico: "Producto",
+            idiomaHtmlPrecuenta: "es",
+            tituloPrecuenta: "Precuenta",
+            mesaPrecuenta: "Mesa",
+            preparandoPrecuenta: "Preparando precuenta...",
+            generandoPrecuenta: "Generando precuenta...",
+            precuentaGenerada: "Precuenta generada correctamente.",
+            errorTituloPrecuenta: "Error de precuenta",
+            noImprimirPrecuenta: "No se pudo imprimir la precuenta",
+            revisarServidorPrecuenta: "Revisa que el servidor esté funcionando.",
+            noGenerarPrecuenta: "No se pudo generar la precuenta."
         },
 
         it: {
@@ -111,7 +121,17 @@ function textosPedidoV2(){
             comandaEnviadaA: "Comanda inviata a",
             lineasEnviadas: "Righe inviate",
             errorComandaDestino: "Impossibile inviare la comanda a",
-            productoGenerico: "Prodotto"
+            productoGenerico: "Prodotto",
+            idiomaHtmlPrecuenta: "it",
+            tituloPrecuenta: "Preconto",
+            mesaPrecuenta: "Tavolo",
+            preparandoPrecuenta: "Preparazione preconto...",
+            generandoPrecuenta: "Generazione preconto...",
+            precuentaGenerada: "Preconto generato correttamente.",
+            errorTituloPrecuenta: "Errore preconto",
+            noImprimirPrecuenta: "Impossibile generare il preconto",
+            revisarServidorPrecuenta: "Controlla che il server sia in funzione.",
+            noGenerarPrecuenta: "Impossibile generare il preconto."
         },
 
         en: {
@@ -157,7 +177,17 @@ function textosPedidoV2(){
             comandaEnviadaA: "Order sent to",
             lineasEnviadas: "Lines sent",
             errorComandaDestino: "The order could not be sent to",
-            productoGenerico: "Product"
+            productoGenerico: "Product",
+            idiomaHtmlPrecuenta: "en",
+            tituloPrecuenta: "Bill preview",
+            mesaPrecuenta: "Table",
+            preparandoPrecuenta: "Preparing bill preview...",
+            generandoPrecuenta: "Generating bill preview...",
+            precuentaGenerada: "Bill preview generated successfully.",
+            errorTituloPrecuenta: "Bill preview error",
+            noImprimirPrecuenta: "The bill preview could not be generated",
+            revisarServidorPrecuenta: "Check that the server is running.",
+            noGenerarPrecuenta: "The bill preview could not be generated."
         }
     };
 
@@ -1114,9 +1144,14 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
 async function generarPrecuenta(numeroMesa){
 
+    const textos = textosPedidoV2();
     const panel = document.getElementById("panel-central");
 
-    const ventanaTicket = window.open("", "_blank", "width=420,height=700");
+    const ventanaTicket = window.open(
+        "",
+        "_blank",
+        "width=420,height=700"
+    );
 
     if(ventanaTicket){
 
@@ -1124,10 +1159,11 @@ async function generarPrecuenta(numeroMesa){
 
         ventanaTicket.document.write(`
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="${textos.idiomaHtmlPrecuenta}">
             <head>
                 <meta charset="UTF-8">
-                <title>Precuenta Mesa ${numeroMesa}</title>
+                <title>${textos.tituloPrecuenta} - ${textos.mesaPrecuenta} ${numeroMesa}</title>
+
                 <style>
                     body{
                         font-family:Arial,sans-serif;
@@ -1135,9 +1171,11 @@ async function generarPrecuenta(numeroMesa){
                         text-align:center;
                         color:#1f2937;
                     }
+
                     .cargando{
                         margin-top:80px;
                     }
+
                     .spinner{
                         width:42px;
                         height:42px;
@@ -1147,46 +1185,61 @@ async function generarPrecuenta(numeroMesa){
                         margin:0 auto 20px auto;
                         animation:girar 1s linear infinite;
                     }
+
                     @keyframes girar{
                         from{transform:rotate(0deg);}
                         to{transform:rotate(360deg);}
                     }
                 </style>
             </head>
+
             <body>
                 <div class="cargando">
                     <div class="spinner"></div>
-                    <h2>Preparando precuenta...</h2>
-                    <p>Mesa ${numeroMesa}</p>
+                    <h2>${textos.preparandoPrecuenta}</h2>
+                    <p>${textos.mesaPrecuenta} ${numeroMesa}</p>
                 </div>
             </body>
             </html>
         `);
 
         ventanaTicket.document.close();
-
     }
 
     try{
 
-        mostrarToastPedidoV2("Generando precuenta...", "info");
+        mostrarToastPedidoV2(
+            textos.generandoPrecuenta,
+            "info"
+        );
 
         try{
 
-            await apiPost("/mesa/" + numeroMesa + "/cuenta", {});
+            await apiPost(
+                "/mesa/" + numeroMesa + "/cuenta",
+                {}
+            );
 
         }catch(errorCuenta){
 
-            console.warn("La mesa puede estar ya en cuenta:", errorCuenta);
-
+            console.warn(
+                "La mesa puede estar ya en cuenta:",
+                errorCuenta
+            );
         }
 
-        const respuestaTicket = await fetch(API + "/saas/ticket/" + numeroMesa);
+        const respuestaTicket = await fetch(
+            API + "/saas/ticket/" + numeroMesa,
+            {
+                credentials: "same-origin"
+            }
+        );
 
         if(!respuestaTicket.ok){
 
-            throw new Error("No se pudo generar el ticket");
-
+            throw new Error(
+                textos.noGenerarPrecuenta
+            );
         }
 
         const htmlTicket = await respuestaTicket.text();
@@ -1197,7 +1250,7 @@ async function generarPrecuenta(numeroMesa){
             <script>
                 window.addEventListener("load", function(){
                     setTimeout(function(){
-                        
+
                     }, 400);
                 });
             </script>
@@ -1208,26 +1261,31 @@ async function generarPrecuenta(numeroMesa){
         if(ventanaTicket){
 
             ventanaTicket.document.open();
-
             ventanaTicket.document.write(htmlConImpresion);
-
             ventanaTicket.document.close();
 
         }else{
 
-            window.open(API + "/saas/ticket/" + numeroMesa, "_blank");
-
+            window.open(
+                API + "/saas/ticket/" + numeroMesa,
+                "_blank"
+            );
         }
 
         await cargarMesasV2();
-
         await cargarPedidoV2(numeroMesa);
 
-        mostrarToastPedidoV2("Precuenta generada correctamente.", "correcto");
+        mostrarToastPedidoV2(
+            textos.precuentaGenerada,
+            "correcto"
+        );
 
     }catch(error){
 
-        console.error("Error generando precuenta:", error);
+        console.error(
+            "Error generando precuenta:",
+            error
+        );
 
         if(ventanaTicket){
 
@@ -1235,24 +1293,25 @@ async function generarPrecuenta(numeroMesa){
 
             ventanaTicket.document.write(`
                 <!DOCTYPE html>
-                <html lang="es">
+                <html lang="${textos.idiomaHtmlPrecuenta}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Error precuenta</title>
+                    <title>${textos.errorTituloPrecuenta}</title>
                 </head>
+
                 <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
-                    <h2>No se pudo imprimir la precuenta</h2>
-                    <p>Revisa que el servidor esté funcionando.</p>
+                    <h2>${textos.noImprimirPrecuenta}</h2>
+                    <p>${textos.revisarServidorPrecuenta}</p>
                 </body>
                 </html>
             `);
 
             ventanaTicket.document.close();
-
         }
 
-        mostrarToastPedidoV2("No se pudo generar la precuenta.", "error");
-
+        mostrarToastPedidoV2(
+            textos.noGenerarPrecuenta,
+            "error"
+        );
     }
-
 }
