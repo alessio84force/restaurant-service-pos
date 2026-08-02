@@ -53,7 +53,14 @@ function textosCobroV2(){
             imprimirTicketFinal: "Imprimir ticket final",
             volverMesas: "Volver a mesas",
             bienvenida: "Bienvenido",
-            seleccionaMesaComenzar: "Selecciona una mesa para comenzar."
+            seleccionaMesaComenzar: "Selecciona una mesa para comenzar.",
+            preparandoTicketFinal: "Preparando ticket final...",
+            noGenerarTicketFinal: "No se pudo generar el ticket final",
+            popupBloqueadoTicket:
+                "El navegador ha bloqueado la ventana del ticket final. Permite las ventanas emergentes para este sitio.",
+            cerrarVentanaReintentar:
+                "Cierra esta ventana e inténtalo de nuevo.",
+            cerrar: "Cerrar"
         },
 
         it: {
@@ -98,7 +105,14 @@ function textosCobroV2(){
             imprimirTicketFinal: "Stampa ticket finale",
             volverMesas: "Torna ai tavoli",
             bienvenida: "Benvenuto",
-            seleccionaMesaComenzar: "Seleziona un tavolo per iniziare."
+            seleccionaMesaComenzar: "Seleziona un tavolo per iniziare.",
+            preparandoTicketFinal: "Preparazione ticket finale...",
+            noGenerarTicketFinal: "Impossibile generare il ticket finale",
+            popupBloqueadoTicket:
+                "Il browser ha bloccato la finestra del ticket finale. Consenti le finestre popup per questo sito.",
+            cerrarVentanaReintentar:
+                "Chiudi questa finestra e riprova.",
+            cerrar: "Chiudi"
         },
 
         en: {
@@ -143,7 +157,14 @@ function textosCobroV2(){
             imprimirTicketFinal: "Print final receipt",
             volverMesas: "Back to tables",
             bienvenida: "Welcome",
-            seleccionaMesaComenzar: "Select a table to get started."
+            seleccionaMesaComenzar: "Select a table to get started.",
+            preparandoTicketFinal: "Preparing final receipt...",
+            noGenerarTicketFinal: "The final receipt could not be generated",
+            popupBloqueadoTicket:
+                "The browser blocked the final receipt window. Allow pop-up windows for this site.",
+            cerrarVentanaReintentar:
+                "Close this window and try again.",
+            cerrar: "Close"
         }
     };
 
@@ -1004,6 +1025,18 @@ function volverAlPedidoDesdeCobroV2(){
 
 async function imprimirTicketFinalCobroV2(pedidoId){
 
+    const textos = textosCobroV2();
+
+    const idiomaDocumento = String(
+        document.documentElement.lang || "es"
+    ).toLowerCase();
+
+    const idioma = ["es","it","en"].includes(
+        idiomaDocumento
+    )
+        ? idiomaDocumento
+        : "es";
+
     if(!pedidoId){
         alert("No se encontró el pedido para imprimir el ticket final.");
         return;
@@ -1021,10 +1054,10 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
         ventanaTicket.document.write(`
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="${idioma}">
             <head>
                 <meta charset="UTF-8">
-                <title>Preparando ticket final</title>
+                <title>${textos.preparandoTicketFinal}</title>
                 <style>
                     body{
                         font-family:Arial,sans-serif;
@@ -1056,8 +1089,8 @@ async function imprimirTicketFinalCobroV2(pedidoId){
             <body>
                 <div class="cargando">
                     <div class="spinner"></div>
-                    <h2>Preparando ticket final...</h2>
-                    <p>Pedido ${pedidoId}</p>
+                    <h2>${textos.preparandoTicketFinal}</h2>
+                    <p>${textos.pedido} ${pedidoId}</p>
                 </div>
             </body>
             </html>
@@ -1077,7 +1110,9 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         );
 
         if(!respuesta.ok){
-            throw new Error("No se pudo generar el ticket final");
+            throw new Error(
+                textos.noGenerarTicketFinal
+            );
         }
 
         const htmlTicket = await respuesta.text();
@@ -1094,8 +1129,7 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         }
 
         alert(
-            "El navegador ha bloqueado la ventana del ticket final. " +
-            "Permite las ventanas emergentes para este sitio."
+            textos.popupBloqueadoTicket
         );
 
     }catch(error){
@@ -1108,19 +1142,19 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
             ventanaTicket.document.write(`
                 <!DOCTYPE html>
-                <html lang="es">
+                <html lang="${idioma}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Error ticket final</title>
+                    <title>${textos.noGenerarTicketFinal}</title>
                 </head>
                 <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;color:#1f2937;">
-                    <h2>No se pudo generar el ticket final</h2>
-                    <p>Cierra esta ventana e inténtalo de nuevo.</p>
+                    <h2>${textos.noGenerarTicketFinal}</h2>
+                    <p>${textos.cerrarVentanaReintentar}</p>
                     <button
                         onclick="window.close()"
                         style="margin-top:20px;padding:12px 18px;border:0;border-radius:10px;background:#111827;color:white;font-weight:700;"
                     >
-                        Cerrar
+                        ${textos.cerrar}
                     </button>
                 </body>
                 </html>
@@ -1130,7 +1164,9 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
         }else{
 
-            alert("No se pudo generar el ticket final.");
+            alert(
+                textos.noGenerarTicketFinal + "."
+            );
 
         }
 
