@@ -1,5 +1,6 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { textosProductosConfig } = require("../utils/productosConfigI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -58,6 +59,18 @@ function get(db, sql, params) {
   });
 }
 
+async function textosProductosRestaurante(db, restauranteId) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=?",
+    [restauranteId]
+  );
+
+  return textosProductosConfig(
+    restaurante && restaurante.idioma
+  );
+}
+
 function run(db, sql, params) {
   return new Promise((resolve) => {
     db.run(sql, params || [], function(err) {
@@ -78,12 +91,23 @@ function opcionesDestinosHtml(destinos, seleccionado) {
   }).join("");
 }
 
-async function destinosProductoRestaurante(db, restauranteId) {
+function nombreDestinoVisible(destino, textos) {
+  const id = String(destino || "").toLowerCase();
+
+  if (id === "bar") return textos.destinoBar;
+  if (id === "cocina") return textos.destinoCocina;
+  if (id === "pizzeria") return textos.destinoPizzeria;
+  if (id === "general") return textos.destinoGeneral;
+
+  return destino || "";
+}
+
+async function destinosProductoRestaurante(db, restauranteId, textos) {
   const base = [
-    { id: "bar", nombre: "Bar" },
-    { id: "cocina", nombre: "Cocina" },
-    { id: "pizzeria", nombre: "Pizzeria" },
-    { id: "general", nombre: "General" }
+    { id: "bar", nombre: textos.destinoBar },
+    { id: "cocina", nombre: textos.destinoCocina },
+    { id: "pizzeria", nombre: textos.destinoPizzeria },
+    { id: "general", nombre: textos.destinoGeneral }
   ];
 
   const extras = await all(
@@ -105,12 +129,12 @@ async function destinosProductoRestaurante(db, restauranteId) {
   return salida;
 }
 
-function renderPagina(categorias, productos, destinos, query) {
+function renderPagina(categorias, productos, destinos, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
 
   const opcionesCategorias = categorias.map((cat) => {
-    return `<option value="${cat.id}">${escapar(cat.nombre)} · ${escapar(cat.destino || "cocina")}</option>`;
+    return `<option value="${cat.id}">${escapar(cat.nombre)} · ${escapar(nombreDestinoVisible(cat.destino || "cocina", textos))}</option>`;
   }).join("");
 
   const categoriasHtml = categorias.length
@@ -121,11 +145,11 @@ function renderPagina(categorias, productos, destinos, query) {
           <select name="destino" required>
 ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
           </select>
-          <button type="submit">Guardar</button>
+          <button type="submit">${escapar(textos.guardar)}</button>
         </form>
       </div>
     `).join("")
-    : `<p class="empty">Todavía no hay categorías. Crea la primera categoría para empezar.</p>`;
+    : `<p class="empty">${escapar(textos.sinCategorias)}</p>`;
 
   const productosHtml = productos.length
     ? productos.map((p) => {
@@ -138,34 +162,34 @@ ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
             <span>${Number(p.precio || 0).toFixed(2)} €</span>
           </div>
 
-          <small>${escapar(p.categoria || "Sin categoría")} · ${escapar(p.destino || "cocina")}</small>
+          <small>${escapar(p.categoria || textos.sinCategoria)} · ${escapar(nombreDestinoVisible(p.destino || "cocina", textos))}</small>
 
           <form method="POST" action="/configuracion-productos/productos/${p.id}" class="producto-form">
             <input name="nombre" value="${escapar(p.nombre)}" required>
             <input name="precio" type="number" step="0.01" min="0" value="${Number(p.precio || 0).toFixed(2)}" required>
             <select name="categoria_id" required>
-              ${categorias.map((cat) => `<option value="${cat.id}" ${Number(cat.id) === Number(p.categoria_id) ? "selected" : ""}>${escapar(cat.nombre)} · ${escapar(cat.destino || "cocina")}</option>`).join("")}
+              ${categorias.map((cat) => `<option value="${cat.id}" ${Number(cat.id) === Number(p.categoria_id) ? "selected" : ""}>${escapar(cat.nombre)} · ${escapar(nombreDestinoVisible(cat.destino || "cocina", textos))}</option>`).join("")}
             </select>
             <label class="check">
               <input type="checkbox" name="requiere_coccion" value="1" ${Number(p.requiere_coccion || 0) === 1 ? "checked" : ""}>
-              Punto de cocción
+              ${escapar(textos.puntoCoccion)}
             </label>
-            <button type="submit">Guardar producto</button>
+            <button type="submit">${escapar(textos.guardarProducto)}</button>
           </form>
 
           <form method="POST" action="/configuracion-productos/productos/${p.id}/disponible">
-            <button class="sec" type="submit">${disponible ? "Ocultar producto" : "Activar producto"}</button>
+            <button class="sec" type="submit">${escapar(disponible ? textos.ocultarProducto : textos.activarProducto)}</button>
           </form>
         </div>
       `;
     }).join("")
-    : `<p class="empty">Todavía no hay productos.</p>`;
+    : `<p class="empty">${escapar(textos.sinProductos)}</p>`;
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Productos y precios - Restaurant Service POS</title>
+  <title>${escapar(textos.productosPrecios)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -324,12 +348,12 @@ ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Productos y precios</h1>
-      <p>Crea categorías, productos, precios y destinos. Cada restaurante solo ve su propio menú.</p>
+      <h1>${escapar(textos.productosPrecios)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
       <div class="hero-actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/primeros-pasos">Primeros pasos</a>
-        <a class="btn sec" href="/app/v2">Abrir POS</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/primeros-pasos">${escapar(textos.primerosPasos)}</a>
+        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
@@ -339,57 +363,57 @@ ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
     <section class="grid">
       <div>
         <div class="card">
-          <h2>Nueva categoría</h2>
+          <h2>${escapar(textos.nuevaCategoria)}</h2>
           <form method="POST" action="/configuracion-productos/categorias">
             <div class="field">
-              <label>Nombre</label>
-              <input name="nombre" placeholder="Bebidas, Carnes, Postres..." required>
+              <label>${escapar(textos.nombre)}</label>
+              <input name="nombre" placeholder="${escapar(textos.placeholderCategoria)}" required>
             </div>
             <div class="field">
-              <label>Destino</label>
+              <label>${escapar(textos.destino)}</label>
               <select name="destino" required>
 ${opcionesDestinosHtml(destinos, "cocina")}
               </select>
             </div>
-            <button type="submit">Crear categoría</button>
+            <button type="submit">${escapar(textos.crearCategoria)}</button>
           </form>
         </div>
 
         <div class="card">
-          <h2>Categorías</h2>
+          <h2>${escapar(textos.categorias)}</h2>
           ${categoriasHtml}
         </div>
       </div>
 
       <div>
         <div class="card">
-          <h2>Nuevo producto</h2>
+          <h2>${escapar(textos.nuevoProducto)}</h2>
           <form method="POST" action="/configuracion-productos/productos">
             <div class="field">
-              <label>Nombre producto</label>
-              <input name="nombre" placeholder="Coca-Cola, Pizza margarita..." required>
+              <label>${escapar(textos.nombreProducto)}</label>
+              <input name="nombre" placeholder="${escapar(textos.placeholderProducto)}" required>
             </div>
             <div class="field">
-              <label>Precio</label>
+              <label>${escapar(textos.precio)}</label>
               <input name="precio" type="number" step="0.01" min="0" placeholder="0.00" required>
             </div>
             <div class="field">
-              <label>Categoría</label>
+              <label>${escapar(textos.categoria)}</label>
               <select name="categoria_id" required>
-                ${opcionesCategorias || '<option value="">Primero crea una categoría</option>'}
+                ${opcionesCategorias || `<option value="">${escapar(textos.primeroCategoria)}</option>`}
               </select>
             </div>
             <label class="check">
               <input type="checkbox" name="requiere_coccion" value="1">
-              Requiere punto de cocción
+              ${escapar(textos.requiereCoccion)}
             </label>
             <br>
-            <button type="submit">Crear producto</button>
+            <button type="submit">${escapar(textos.crearProducto)}</button>
           </form>
         </div>
 
         <div class="card">
-          <h2>Productos</h2>
+          <h2>${escapar(textos.productos)}</h2>
           <div class="productos-grid">
             ${productosHtml}
           </div>
@@ -409,8 +433,16 @@ module.exports = function productosSaasRoutes(db) {
 
   router.get("/configuracion-productos", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(
+      db,
+      restauranteId
+    );
 
-    const destinos = await destinosProductoRestaurante(db, restauranteId);
+    const destinos = await destinosProductoRestaurante(
+      db,
+      restauranteId,
+      textos
+    );
 
     const categorias = await all(
       db,
@@ -438,17 +470,26 @@ module.exports = function productosSaasRoutes(db) {
       [restauranteId, restauranteId]
     );
 
-    res.send(renderPagina(categorias, productos, destinos, req.query || {}));
+    res.send(
+      renderPagina(
+        categorias,
+        productos,
+        destinos,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-productos/categorias", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(db, restauranteId);
     const body = req.body || {};
     const nombre = String(body.nombre || "").trim();
     const destino = String(body.destino || "cocina").trim() || "cocina";
 
     if (!nombre) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Nombre de categoría obligatorio"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.nombreCategoriaObligatorio));
     }
 
     await run(
@@ -457,18 +498,19 @@ module.exports = function productosSaasRoutes(db) {
       [nombre, destino, restauranteId]
     );
 
-    res.redirect("/configuracion-productos?ok=" + encodeURIComponent("Categoría creada"));
+    res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.categoriaCreada));
   });
 
   router.post("/configuracion-productos/categorias/:id", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(db, restauranteId);
     const body = req.body || {};
     const id = Number(req.params.id || 0);
     const nombre = String(body.nombre || "").trim();
     const destino = String(body.destino || "cocina").trim() || "cocina";
 
     if (!id || !nombre) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Datos de categoría incompletos"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.datosCategoriaIncompletos));
     }
 
     await run(
@@ -477,11 +519,12 @@ module.exports = function productosSaasRoutes(db) {
       [nombre, destino, id, restauranteId]
     );
 
-    res.redirect("/configuracion-productos?ok=" + encodeURIComponent("Categoría actualizada"));
+    res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.categoriaActualizada));
   });
 
   router.post("/configuracion-productos/productos", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(db, restauranteId);
     const body = req.body || {};
     const nombre = String(body.nombre || "").trim();
     const precio = Number(body.precio || 0);
@@ -489,7 +532,7 @@ module.exports = function productosSaasRoutes(db) {
     const requiereCoccion = body.requiere_coccion ? 1 : 0;
 
     if (!nombre || !categoriaId || Number.isNaN(precio)) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Faltan datos del producto"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.faltanDatosProducto));
     }
 
     const categoria = await get(
@@ -499,7 +542,7 @@ module.exports = function productosSaasRoutes(db) {
     );
 
     if (!categoria) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Categoría no encontrada para este restaurante"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.categoriaNoEncontrada));
     }
 
     await run(
@@ -508,11 +551,12 @@ module.exports = function productosSaasRoutes(db) {
       [nombre, precio, categoriaId, requiereCoccion, restauranteId]
     );
 
-    res.redirect("/configuracion-productos?ok=" + encodeURIComponent("Producto creado"));
+    res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.productoCreado));
   });
 
   router.post("/configuracion-productos/productos/:id", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(db, restauranteId);
     const body = req.body || {};
     const id = Number(req.params.id || 0);
     const nombre = String(body.nombre || "").trim();
@@ -521,7 +565,7 @@ module.exports = function productosSaasRoutes(db) {
     const requiereCoccion = body.requiere_coccion ? 1 : 0;
 
     if (!id || !nombre || !categoriaId || Number.isNaN(precio)) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Faltan datos del producto"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.faltanDatosProducto));
     }
 
     const categoria = await get(
@@ -531,7 +575,7 @@ module.exports = function productosSaasRoutes(db) {
     );
 
     if (!categoria) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Categoría no encontrada para este restaurante"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.categoriaNoEncontrada));
     }
 
     await run(
@@ -540,11 +584,12 @@ module.exports = function productosSaasRoutes(db) {
       [nombre, precio, categoriaId, requiereCoccion, id, restauranteId]
     );
 
-    res.redirect("/configuracion-productos?ok=" + encodeURIComponent("Producto actualizado"));
+    res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.productoActualizado));
   });
 
   router.post("/configuracion-productos/productos/:id/disponible", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(db, restauranteId);
     const id = Number(req.params.id || 0);
 
     const producto = await get(
@@ -554,7 +599,7 @@ module.exports = function productosSaasRoutes(db) {
     );
 
     if (!producto) {
-      return res.redirect("/configuracion-productos?error=" + encodeURIComponent("Producto no encontrado"));
+      return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.productoNoEncontrado));
     }
 
     const nuevo = Number(producto.disponible) === 1 ? 0 : 1;
@@ -565,7 +610,7 @@ module.exports = function productosSaasRoutes(db) {
       [nuevo, id, restauranteId]
     );
 
-    res.redirect("/configuracion-productos?ok=" + encodeURIComponent("Estado del producto actualizado"));
+    res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.estadoProductoActualizado));
   });
 
   router.get("/menu", requiereLoginJson, async function(req, res) {
@@ -619,6 +664,10 @@ module.exports = function productosSaasRoutes(db) {
 
   router.get("/producto/:id", requiereLoginJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosProductosRestaurante(
+      db,
+      restauranteId
+    );
     const id = Number(req.params.id || 0);
 
     const producto = await get(
@@ -630,7 +679,7 @@ module.exports = function productosSaasRoutes(db) {
     if (!producto) {
       return res.status(404).json({
         ok: false,
-        error: "Producto no encontrado para este restaurante"
+        error: textos.productoNoEncontradoRestaurante
       });
     }
 
