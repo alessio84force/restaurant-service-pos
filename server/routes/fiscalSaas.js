@@ -1,5 +1,6 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { textosFiscalRestaurante } = require("../utils/fiscalRestauranteI18n");
 
 function escapar(v) {
   return String(v == null ? "" : v)
@@ -113,9 +114,9 @@ function fiscalesCompletosBody(body) {
   );
 }
 
-function layout(titulo, contenido) {
+function layout(titulo, contenido, idioma) {
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(idioma || "es")}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)} - Restaurant Service POS</title>
@@ -349,103 +350,103 @@ function mensaje(query) {
   return ok + error;
 }
 
-function renderRestaurante(config, query) {
+function renderRestaurante(config, query, textos) {
   const okFiscal = fiscalesCompletos(config);
 
-  return layout("Datos del restaurante", `
+  return layout(textos.datosRestaurante, `
     <section class="hero">
-      <h1>Datos del restaurante</h1>
-      <p>Datos generales, fiscales y de ticket del restaurante actual.</p>
+      <h1>${escapar(textos.datosRestaurante)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-suscripcion">Suscripción</a>
-        <a class="btn sec" target="_blank" href="/configuracion-restaurante/preview-ticket">Vista previa ticket</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-suscripcion">${escapar(textos.suscripcion)}</a>
+        <a class="btn sec" target="_blank" href="/configuracion-restaurante/preview-ticket">${escapar(textos.vistaPreviaTicket)}</a>
       </div>
     </section>
 
     ${mensaje(query)}
 
     <div class="msg ${okFiscal ? "ok" : "error"}">
-      ${okFiscal ? "Datos fiscales completos para facturación." : "Faltan datos fiscales. Antes de pagar la suscripción deben estar completos."}
+      ${escapar(okFiscal ? textos.fiscalesCompletos : textos.fiscalesFaltan)}
     </div>
 
     <section class="card">
-      <h2>Datos fiscales para facturación</h2>
-      <p>Estos datos se usarán para facturas de suscripción cuando el restaurante empiece a pagar.</p>
+      <h2>${escapar(textos.datosFiscalesFacturacion)}</h2>
+      <p>${escapar(textos.datosFiscalesDescripcion)}</p>
 
       <form method="POST" action="/configuracion-restaurante">
         <div class="grid">
           <div>
-            <label>Nombre comercial</label>
+            <label>${escapar(textos.nombreComercial)}</label>
             <input name="nome_ristorante" value="${escapar(config.nome_ristorante || "")}" required>
           </div>
           <div>
-            <label>Razón social / nombre fiscal</label>
+            <label>${escapar(textos.razonSocial)}</label>
             <input name="razon_social" value="${escapar(config.razon_social || config.nome_ristorante || "")}" required>
           </div>
           <div>
-            <label>NIF / CIF / VAT</label>
+            <label>${escapar(textos.identificacionFiscal)}</label>
             <input name="partita_iva" value="${escapar(config.partita_iva || "")}" required>
           </div>
           <div>
-            <label>Email de facturación</label>
+            <label>${escapar(textos.emailFacturacion)}</label>
             <input type="email" name="email_facturacion" value="${escapar(config.email_facturacion || config.email || config.propietario_email || "")}" required>
           </div>
           <div>
-            <label>Dirección fiscal</label>
+            <label>${escapar(textos.direccionFiscal)}</label>
             <input name="indirizzo" value="${escapar(config.indirizzo || "")}" required>
           </div>
           <div>
-            <label>Código postal</label>
+            <label>${escapar(textos.codigoPostal)}</label>
             <input name="codigo_postal" value="${escapar(config.codigo_postal || "")}" required>
           </div>
           <div>
-            <label>Ciudad</label>
+            <label>${escapar(textos.ciudad)}</label>
             <input name="ciudad" value="${escapar(config.ciudad || "")}" required>
           </div>
           <div>
-            <label>Provincia</label>
+            <label>${escapar(textos.provincia)}</label>
             <input name="provincia" value="${escapar(config.provincia || "")}" required>
           </div>
           <div>
-            <label>País</label>
+            <label>${escapar(textos.pais)}</label>
             <input name="pais" value="${escapar(config.pais || "España")}" required>
           </div>
           <div>
-            <label>IVA por defecto (%)</label>
+            <label>${escapar(textos.ivaDefecto)}</label>
             <input type="number" step="0.01" name="iva" value="${escapar(config.iva || 10)}">
           </div>
         </div>
 
         <br>
 
-        <h2>Contacto y ticket</h2>
+        <h2>${escapar(textos.contactoTicket)}</h2>
         <div class="grid">
           <div>
-            <label>Teléfono restaurante</label>
+            <label>${escapar(textos.telefonoRestaurante)}</label>
             <input name="telefono" value="${escapar(config.telefono || "")}">
           </div>
           <div>
-            <label>Email restaurante</label>
+            <label>${escapar(textos.emailRestaurante)}</label>
             <input type="email" name="email" value="${escapar(config.email || "")}">
           </div>
           <div>
-            <label>Nombre propietario</label>
+            <label>${escapar(textos.nombrePropietario)}</label>
             <input name="propietario_nombre" value="${escapar(config.propietario_nombre || "")}">
           </div>
           <div>
-            <label>Email propietario</label>
+            <label>${escapar(textos.emailPropietario)}</label>
             <input type="email" name="propietario_email" value="${escapar(config.propietario_email || "")}">
           </div>
           <div>
-            <label>Teléfono propietario</label>
+            <label>${escapar(textos.telefonoPropietario)}</label>
             <input name="propietario_telefono" value="${escapar(config.propietario_telefono || "")}">
           </div>
           <div>
-            <label>Logo ticket</label>
+            <label>${escapar(textos.logoTicket)}</label>
             <input type="hidden" id="logo" name="logo" value="${escapar(config.logo || "")}">
             <input type="file" id="logo_archivo" accept="image/*">
-            <small>Haz clic para elegir una imagen del ordenador.</small>
+            <small>${escapar(textos.elegirImagen)}</small>
             <div style="margin-top:10px;">
               <img id="logo_preview" src="${escapar(config.logo || "")}" style="${config.logo ? "" : "display:none;"}max-width:170px;max-height:90px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:white;">
             </div>
@@ -454,17 +455,17 @@ function renderRestaurante(config, query) {
 
         <br>
 
-        <label>Mensaje del ticket</label>
-        <textarea name="mensaje_ticket">${escapar(config.mensaje_ticket || "Gracias por su visita")}</textarea>
+        <label>${escapar(textos.mensajeTicket)}</label>
+        <textarea name="mensaje_ticket">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</textarea>
 
         <br><br>
 
-        <button type="submit">Guardar datos del restaurante</button>
+        <button type="submit">${escapar(textos.guardarDatos)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Vista previa rápida del ticket</h2>
+      <h2>${escapar(textos.vistaPreviaRapida)}</h2>
       <div class="ticket-preview">
         ${config.logo ? `<div style="text-align:center;margin-bottom:10px;"><img src="${escapar(config.logo)}" style="max-width:160px;max-height:80px;object-fit:contain;"></div>` : ""}
         <div style="text-align:center;">
@@ -475,13 +476,13 @@ function renderRestaurante(config, query) {
           <small>${escapar(config.telefono || "")}</small>
         </div>
         <hr>
-        <p>1 x Producto ejemplo · 10.00 €</p>
+        <p>1 x ${escapar(textos.productoEjemplo)} · 10.00 €</p>
         <hr>
-        <p><strong>Total: 10.00 €</strong></p>
-        <p style="text-align:center;">${escapar(config.mensaje_ticket || "Gracias por su visita")}</p>
+        <p><strong>${escapar(textos.total)}: 10.00 €</strong></p>
+        <p style="text-align:center;">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</p>
       </div>
     </section>
-  `);
+  `, textos.lang);
 }
 
 function stripeDisponible() {
@@ -610,7 +611,7 @@ PRICE_ID: ${escapar(process.env.STRIPE_PRICE_ID || "No configurado")}</code>
   `);
 }
 
-async function guardarRestaurante(db, restauranteId, body) {
+async function guardarRestaurante(db, restauranteId, body, mensajePredefinito) {
   const b = body || {};
   const completo = fiscalesCompletosBody(b) ? 1 : 0;
 
@@ -652,7 +653,7 @@ async function guardarRestaurante(db, restauranteId, body) {
       String(b.email || "").trim(),
       Number(b.iva || 10),
       String(b.logo || "").trim(),
-      String(b.mensaje_ticket || "Gracias por su visita").trim(),
+      String(b.mensaje_ticket || mensajePredefinito || "Gracias por su visita").trim(),
       String(b.propietario_nombre || "").trim(),
       String(b.propietario_email || "").trim(),
       String(b.propietario_telefono || "").trim(),
@@ -746,27 +747,65 @@ module.exports = function fiscalSaasRoutes(db) {
   router.get("/configuracion-restaurante", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
-    res.send(renderRestaurante(config, req.query || {}));
+    res.send(
+      renderRestaurante(
+        config,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-restaurante", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
-    await guardarRestaurante(db, restauranteId, req.body || {});
+    await guardarRestaurante(
+      db,
+      restauranteId,
+      req.body || {},
+      textos.mensajeVisita
+    );
 
-    res.redirect("/configuracion-restaurante?ok=" + encodeURIComponent("Datos del restaurante guardados correctamente"));
+    res.redirect(
+      "/configuracion-restaurante?ok=" +
+      encodeURIComponent(textos.guardadoCorrecto)
+    );
   });
 
   router.get("/configuracion-restaurante/preview-ticket", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
     res.send(`<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Vista previa ticket</title>
+  <title>${escapar(textos.vistaPreviaTicket)}</title>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;margin:0;padding:30px;}
     .ticket{max-width:360px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;padding:18px;color:#111827;}
@@ -781,7 +820,7 @@ module.exports = function fiscalSaasRoutes(db) {
   </style>
 </head>
 <body>
-  <button onclick="window.print()">Imprimir prueba</button>
+  <button onclick="window.print()">${escapar(textos.imprimirPrueba)}</button>
   <div class="ticket">
     <div class="center">
       ${config.logo ? `<img src="${escapar(config.logo)}">` : ""}
@@ -794,17 +833,17 @@ module.exports = function fiscalSaasRoutes(db) {
       <div>${escapar(config.email || "")}</div>
     </div>
     <hr>
-    <div>Mesa: 1</div>
-    <div>Fecha: ${new Date().toLocaleString("es-ES")}</div>
+    <div>${escapar(textos.mesa)}: 1</div>
+    <div>${escapar(textos.fecha)}: ${new Date().toLocaleString(textos.localeFecha)}</div>
     <hr>
     <table>
-      <tr><td>1 x Café</td><td style="text-align:right;">1.50 €</td></tr>
-      <tr><td>2 x Menú</td><td style="text-align:right;">20.00 €</td></tr>
+      <tr><td>1 x ${escapar(textos.cafeEjemplo)}</td><td style="text-align:right;">1.50 €</td></tr>
+      <tr><td>2 x ${escapar(textos.menuEjemplo)}</td><td style="text-align:right;">20.00 €</td></tr>
     </table>
     <hr>
-    <div class="total">Total: 21.50 €</div>
+    <div class="total">${escapar(textos.total)}: 21.50 €</div>
     <hr>
-    <div class="center">${escapar(config.mensaje_ticket || "Gracias por su visita")}</div>
+    <div class="center">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</div>
   </div>
 </body>
 </html>`);
