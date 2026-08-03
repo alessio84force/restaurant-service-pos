@@ -2,6 +2,10 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosDestinosImpresion,
+  nombreDestinoVisible
+} = require("../utils/destinosImpresionI18n");
 
 const DESTINOS_BASE = [
   { id: "bar", nombre: "Bar", activo: 1, orden: 10 },
@@ -37,7 +41,11 @@ function requiereConfig(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para configurar destinos e impresión.");
+    const textos = textosDestinosImpresion(
+      req.session.usuario.idioma
+    );
+
+    return res.status(403).send(textos.sinPermisos);
   }
 
   return next();
@@ -76,6 +84,18 @@ function get(db, sql, params) {
       resolve(row || null);
     });
   });
+}
+
+async function textosDestinosRestaurante(db, restauranteId) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=?",
+    [restauranteId]
+  );
+
+  return textosDestinosImpresion(
+    restaurante && restaurante.idioma
+  );
 }
 
 function run(db, sql, params) {
@@ -187,19 +207,23 @@ function configDestino(config, configJson, destino) {
   };
 }
 
-function renderDestinos(destinos, query) {
+function renderDestinos(destinos, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
 
   const filas = destinos.map((d) => `
     <tr>
-      <td><strong>${escapar(d.nombre)}</strong><br><small>${escapar(d.id)}</small></td>
-      <td>${d.base ? "Base del sistema" : "Personalizado"}</td>
-      <td>${Number(d.activo) === 1 ? "<span class='ok'>Activo</span>" : "<span class='off'>Desactivado</span>"}</td>
+      <td><strong>${escapar(nombreDestinoVisible(d, textos))}</strong><br><small>${escapar(d.id)}</small></td>
+      <td>${d.base ? escapar(textos.baseSistema) : escapar(textos.personalizado)}</td>
+      <td>${Number(d.activo) === 1
+        ? "<span class='ok'>" + escapar(textos.activo) + "</span>"
+        : "<span class='off'>" + escapar(textos.desactivado) + "</span>"}</td>
       <td>
-        ${d.base ? "<small>No se elimina. Siempre disponible para empezar rápido.</small>" : `
+        ${d.base
+          ? "<small>" + escapar(textos.baseNoEliminar) + "</small>"
+          : `
           <form method="POST" action="/configuracion-destinos/${encodeURIComponent(d.id)}/${Number(d.activo) === 1 ? "desactivar" : "activar"}">
-            <button type="submit">${Number(d.activo) === 1 ? "Desactivar" : "Activar"}</button>
+            <button type="submit">${escapar(Number(d.activo) === 1 ? textos.desactivar : textos.activar)}</button>
           </form>
         `}
       </td>
@@ -207,10 +231,10 @@ function renderDestinos(destinos, query) {
   `).join("");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Destinos de comanda - Restaurant Service POS</title>
+  <title>${escapar(textos.destinosComanda)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -366,12 +390,12 @@ function renderDestinos(destinos, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Destinos de comanda</h1>
-      <p>Define dónde se envía cada comanda: bar, cocina, pizzeria, parrilla, coctelería u otros puntos de trabajo.</p>
+      <h1>${escapar(textos.destinosComanda)}</h1>
+      <p>${escapar(textos.descripcionDestinos)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-productos">Productos</a>
-        <a class="btn sec" href="/configuracion-impresoras">Impresión</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-productos">${escapar(textos.productos)}</a>
+        <a class="btn sec" href="/configuracion-impresoras">${escapar(textos.impresion)}</a>
       </div>
     </section>
 
@@ -379,25 +403,25 @@ function renderDestinos(destinos, query) {
     ${error ? `<div class="msg errmsg">${escapar(error)}</div>` : ""}
 
     <section class="card">
-      <h2>Crear destino personalizado</h2>
+      <h2>${escapar(textos.crearDestinoPersonalizado)}</h2>
       <form method="POST" action="/configuracion-destinos/crear">
-        <label>Nombre</label>
+        <label>${escapar(textos.nombre)}</label>
         <div class="line">
-          <input name="nombre" placeholder="Parrilla, Coctelería, Terraza bar..." required>
-          <button type="submit">Crear destino</button>
+          <input name="nombre" placeholder="${escapar(textos.placeholderDestino)}" required>
+          <button type="submit">${escapar(textos.crearDestino)}</button>
         </div>
       </form>
     </section>
 
     <section class="card">
-      <h2>Destinos disponibles</h2>
+      <h2>${escapar(textos.destinosDisponibles)}</h2>
       <table>
         <thead>
           <tr>
-            <th>Destino</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th>Acción</th>
+            <th>${escapar(textos.destino)}</th>
+            <th>${escapar(textos.tipo)}</th>
+            <th>${escapar(textos.estado)}</th>
+            <th>${escapar(textos.accion)}</th>
           </tr>
         </thead>
         <tbody>
@@ -551,23 +575,40 @@ module.exports = function destinosImpresionSaasRoutes(db) {
 
   router.get("/configuracion-destinos", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const destinos = await destinosRestaurante(db, restauranteId);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
+    const destinos = await destinosRestaurante(
+      db,
+      restauranteId
+    );
 
-    res.send(renderDestinos(destinos, req.query || {}));
+    res.send(
+      renderDestinos(
+        destinos,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-destinos/crear", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const nombre = String((req.body || {}).nombre || "").trim();
 
     if (!nombre) {
-      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent("Nombre no válido"));
+      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent(textos.nombreNoValido));
     }
 
     const idBase = slug(nombre);
 
     if (!idBase) {
-      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent("Nombre no válido"));
+      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent(textos.nombreNoValido));
     }
 
     const id = "r" + restauranteId + "_" + idBase;
@@ -578,11 +619,15 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, nombre, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino creado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoCreado));
   });
 
   router.post("/configuracion-destinos/:id/activar", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const id = String(req.params.id || "");
 
     await run(
@@ -591,11 +636,15 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino activado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoActivado));
   });
 
   router.post("/configuracion-destinos/:id/desactivar", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const id = String(req.params.id || "");
 
     await run(
@@ -604,7 +653,7 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino desactivado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoDesactivado));
   });
 
   router.get("/api/centro-impresion", requiereLoginJson, async function(req, res) {
