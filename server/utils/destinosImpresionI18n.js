@@ -50,6 +50,46 @@ function textosDestinosImpresion(idiomaValor) {
       destinoActivado: "Destino activado",
       destinoDesactivado: "Destino desactivado",
 
+      centroImpresion: "Centro de impresión",
+      descripcionImpresion:
+        "Configura el ticket, el bar, la cocina y todos los destinos de comanda de este restaurante.",
+      destinos: "Destinos",
+      abrirPos: "Abrir POS",
+
+      ticketCaja: "Ticket / caja",
+      nombreImpresora: "Nombre de impresora / IP / referencia",
+      placeholderImpresora:
+        "Ej. EPSON barra, 192.168.1.50...",
+      modo: "Modo",
+      modoGeneral: "Modo general",
+      modoImpresionGeneral: "Modo de impresión general",
+
+      modoPreview: "Vista previa / ventana",
+      modoArchivoTxt: "Archivo TXT",
+      modoEscposRed: "ESC/POS de red futuro",
+      modoCentroImpresion: "Centro de impresión",
+
+      probar: "Probar",
+      verUltimaPrueba: "Ver última prueba",
+      guardarCentroImpresion:
+        "Guardar centro de impresión",
+
+      centroImpresionGuardado:
+        "Centro de impresión guardado correctamente",
+      noGenerarPrueba:
+        "No se pudo generar la prueba",
+      pruebaGenerada: "Prueba generada en",
+      sinPruebaGenerada:
+        "Todavía no hay una prueba generada para este destino.",
+
+      prueba: "PRUEBA",
+      etiquetaDestino: "DESTINO",
+      etiquetaHora: "HORA",
+      productoPrueba: "1 x PRODUCTO DE PRUEBA",
+      pruebaCorrecta:
+        "Si ves esto, la prueba se generó correctamente.",
+      localeFecha: "es-ES",
+
       sinPermisos:
         "No tienes permisos para configurar destinos e impresión."
     },
@@ -100,6 +140,46 @@ function textosDestinosImpresion(idiomaValor) {
       destinoActivado: "Destinazione attivata",
       destinoDesactivado: "Destinazione disattivata",
 
+      centroImpresion: "Centro di stampa",
+      descripcionImpresion:
+        "Configura lo scontrino, il bar, la cucina e tutte le destinazioni delle comande di questo ristorante.",
+      destinos: "Destinazioni",
+      abrirPos: "Apri POS",
+
+      ticketCaja: "Scontrino / cassa",
+      nombreImpresora: "Nome stampante / IP / riferimento",
+      placeholderImpresora:
+        "Es. EPSON bar, 192.168.1.50...",
+      modo: "Modalità",
+      modoGeneral: "Modalità generale",
+      modoImpresionGeneral: "Modalità generale di stampa",
+
+      modoPreview: "Anteprima / finestra",
+      modoArchivoTxt: "File TXT",
+      modoEscposRed: "ESC/POS di rete futuro",
+      modoCentroImpresion: "Centro di stampa",
+
+      probar: "Prova",
+      verUltimaPrueba: "Visualizza ultima prova",
+      guardarCentroImpresion:
+        "Salva centro di stampa",
+
+      centroImpresionGuardado:
+        "Centro di stampa salvato correttamente",
+      noGenerarPrueba:
+        "Impossibile generare la prova",
+      pruebaGenerada: "Prova generata in",
+      sinPruebaGenerada:
+        "Non è stata ancora generata una prova per questa destinazione.",
+
+      prueba: "PROVA",
+      etiquetaDestino: "DESTINAZIONE",
+      etiquetaHora: "ORA",
+      productoPrueba: "1 x PRODOTTO DI PROVA",
+      pruebaCorrecta:
+        "Se vedi questo testo, la prova è stata generata correttamente.",
+      localeFecha: "it-IT",
+
       sinPermisos:
         "Non hai i permessi per configurare destinazioni e stampa."
     },
@@ -149,6 +229,46 @@ function textosDestinosImpresion(idiomaValor) {
       destinoCreado: "Destination created",
       destinoActivado: "Destination activated",
       destinoDesactivado: "Destination disabled",
+
+      centroImpresion: "Printing center",
+      descripcionImpresion:
+        "Configure the receipt, bar, kitchen and all order destinations for this restaurant.",
+      destinos: "Destinations",
+      abrirPos: "Open POS",
+
+      ticketCaja: "Receipt / till",
+      nombreImpresora: "Printer name / IP / reference",
+      placeholderImpresora:
+        "E.g. EPSON bar, 192.168.1.50...",
+      modo: "Mode",
+      modoGeneral: "General mode",
+      modoImpresionGeneral: "General printing mode",
+
+      modoPreview: "Preview / window",
+      modoArchivoTxt: "TXT file",
+      modoEscposRed: "Future network ESC/POS",
+      modoCentroImpresion: "Printing center",
+
+      probar: "Test",
+      verUltimaPrueba: "View latest test",
+      guardarCentroImpresion:
+        "Save printing center",
+
+      centroImpresionGuardado:
+        "Printing center saved successfully",
+      noGenerarPrueba:
+        "The test could not be generated",
+      pruebaGenerada: "Test generated in",
+      sinPruebaGenerada:
+        "No test has been generated for this destination yet.",
+
+      prueba: "TEST",
+      etiquetaDestino: "DESTINATION",
+      etiquetaHora: "TIME",
+      productoPrueba: "1 x TEST PRODUCT",
+      pruebaCorrecta:
+        "If you can see this, the test was generated successfully.",
+      localeFecha: "en-GB",
 
       sinPermisos:
         "You do not have permission to configure destinations and printing."
