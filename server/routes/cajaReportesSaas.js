@@ -1,5 +1,10 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosCajaReportes,
+  tipoCierreVisible,
+  metodoPagoVisible
+} = require("../utils/cajaReportesI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -29,7 +34,13 @@ function requiereCaja(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para ver caja o reportes.");
+    const textos = textosCajaReportes(
+      req.session.usuario.idioma
+    );
+
+    return res.status(403).send(
+      textos.sinPermisos
+    );
   }
 
   return next();
@@ -59,6 +70,18 @@ function get(db, sql, params) {
       resolve(row || null);
     });
   });
+}
+
+async function textosCajaRestaurante(db, restauranteId) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=?",
+    [restauranteId]
+  );
+
+  return textosCajaReportes(
+    restaurante && restaurante.idioma
+  );
 }
 
 function run(db, sql, params) {
@@ -382,7 +405,13 @@ async function pagosReporte(db, restauranteId, desde, hasta) {
   );
 }
 
-function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
+function renderCaja(
+  resumenDiaData,
+  resumenMesData,
+  cierres,
+  query,
+  textos
+) {
   const ok = query.ok || "";
   const fecha = resumenDiaData.fecha;
   const mes = resumenMesData.mes;
@@ -392,14 +421,14 @@ function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
       <td>${escapar(p.fecha)}</td>
       <td>${escapar(p.mesa || "-")}</td>
       <td>${escapar(p.pedido_id || "-")}</td>
-      <td>${escapar(p.metodo)}</td>
+      <td>${escapar(metodoPagoVisible(p.metodo, textos))}</td>
       <td>${euro(p.importe)}</td>
     </tr>
   `).join("");
 
   const cierresHtml = cierres.map((c) => `
     <tr>
-      <td>${escapar(c.tipo)}</td>
+      <td>${escapar(tipoCierreVisible(c.tipo, textos))}</td>
       <td>${escapar(c.periodo || c.fecha)}</td>
       <td>${euro(c.total_ventas)}</td>
       <td>${escapar(c.pedidos_cerrados)}</td>
@@ -408,10 +437,10 @@ function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
   `).join("");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Caja - Restaurant Service POS</title>
+  <title>${escapar(textos.caja)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -600,83 +629,83 @@ function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Caja y pagos</h1>
-      <p>Ventas, pagos, cierre diario, cierre mensual e histórico del restaurante actual.</p>
+      <h1>${escapar(textos.cajaPagos)}</h1>
+      <p>${escapar(textos.descripcionCaja)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-reportes">Reportes CSV</a>
-        <a class="btn sec" href="/app/v2">Abrir POS</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-reportes">${escapar(textos.reportesCsv)}</a>
+        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
     ${ok ? `<div class="msg">${escapar(ok)}</div>` : ""}
 
     <section class="card">
-      <h2>Resumen diario</h2>
+      <h2>${escapar(textos.resumenDiario)}</h2>
       <form class="line" method="GET" action="/configuracion-caja">
         <div>
-          <label>Fecha</label>
+          <label>${escapar(textos.fecha)}</label>
           <input type="date" name="fecha" value="${escapar(fecha)}">
         </div>
-        <button type="submit">Ver fecha</button>
-        <a class="btn sec" target="_blank" href="/configuracion-caja/reporte-diario?fecha=${encodeURIComponent(fecha)}">Reporte imprimible</a>
+        <button type="submit">${escapar(textos.verFecha)}</button>
+        <a class="btn sec" target="_blank" href="/configuracion-caja/reporte-diario?fecha=${encodeURIComponent(fecha)}">${escapar(textos.reporteImprimible)}</a>
       </form>
 
       <div class="grid">
-        <div class="metric"><span>Total caja</span><strong>${euro(resumenDiaData.total_caja)}</strong></div>
-        <div class="metric"><span>Efectivo</span><strong>${euro(resumenDiaData.efectivo)}</strong></div>
-        <div class="metric"><span>Tarjeta</span><strong>${euro(resumenDiaData.tarjeta)}</strong></div>
-        <div class="metric"><span>Ticket medio</span><strong>${euro(resumenDiaData.ticket_medio)}</strong></div>
+        <div class="metric"><span>${escapar(textos.totalCaja)}</span><strong>${euro(resumenDiaData.total_caja)}</strong></div>
+        <div class="metric"><span>${escapar(textos.efectivo)}</span><strong>${euro(resumenDiaData.efectivo)}</strong></div>
+        <div class="metric"><span>${escapar(textos.tarjeta)}</span><strong>${euro(resumenDiaData.tarjeta)}</strong></div>
+        <div class="metric"><span>${escapar(textos.ticketMedio)}</span><strong>${euro(resumenDiaData.ticket_medio)}</strong></div>
       </div>
 
       <form method="POST" action="/configuracion-caja/cierre-diario">
         <input type="hidden" name="fecha" value="${escapar(fecha)}">
-        <label>Efectivo contado</label>
+        <label>${escapar(textos.efectivoContado)}</label>
         <input type="number" step="0.01" name="efectivo_contado" value="${Number(resumenDiaData.efectivo || 0).toFixed(2)}">
-        <label>Observaciones</label>
-        <textarea name="observaciones" placeholder="Notas del cierre diario..."></textarea>
+        <label>${escapar(textos.observaciones)}</label>
+        <textarea name="observaciones" placeholder="${escapar(textos.notasCierreDiario)}"></textarea>
         <br><br>
-        <button type="submit">Guardar cierre diario</button>
+        <button type="submit">${escapar(textos.guardarCierreDiario)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Pagos del día</h2>
+      <h2>${escapar(textos.pagosDia)}</h2>
       <table>
-        <thead><tr><th>Fecha</th><th>Mesa</th><th>Pedido</th><th>Método</th><th>Importe</th></tr></thead>
-        <tbody>${pagosHtml || `<tr><td colspan="5">Todavía no hay pagos registrados este día.</td></tr>`}</tbody>
+        <thead><tr><th>${escapar(textos.fecha)}</th><th>${escapar(textos.mesa)}</th><th>${escapar(textos.pedido)}</th><th>${escapar(textos.metodo)}</th><th>${escapar(textos.importe)}</th></tr></thead>
+        <tbody>${pagosHtml || `<tr><td colspan="5">${escapar(textos.sinPagosDia)}</td></tr>`}</tbody>
       </table>
     </section>
 
     <section class="card">
-      <h2>Resumen mensual</h2>
+      <h2>${escapar(textos.resumenMensual)}</h2>
       <form class="line" method="GET" action="/configuracion-caja">
         <div>
-          <label>Mes</label>
+          <label>${escapar(textos.mes)}</label>
           <input type="month" name="mes" value="${escapar(mes)}">
         </div>
-        <button type="submit">Ver mes</button>
-        <a class="btn sec" target="_blank" href="/configuracion-caja/reporte-mensual?mes=${encodeURIComponent(mes)}">Reporte mensual</a>
+        <button type="submit">${escapar(textos.verMes)}</button>
+        <a class="btn sec" target="_blank" href="/configuracion-caja/reporte-mensual?mes=${encodeURIComponent(mes)}">${escapar(textos.reporteMensual)}</a>
       </form>
 
       <div class="grid">
-        <div class="metric"><span>Total mes</span><strong>${euro(resumenMesData.total_caja)}</strong></div>
-        <div class="metric"><span>Pagos</span><strong>${euro(resumenMesData.total_pagos)}</strong></div>
-        <div class="metric"><span>Pedidos cerrados</span><strong>${resumenMesData.pedidos_cerrados}</strong></div>
-        <div class="metric"><span>Ticket medio</span><strong>${euro(resumenMesData.ticket_medio)}</strong></div>
+        <div class="metric"><span>${escapar(textos.totalMes)}</span><strong>${euro(resumenMesData.total_caja)}</strong></div>
+        <div class="metric"><span>${escapar(textos.pagos)}</span><strong>${euro(resumenMesData.total_pagos)}</strong></div>
+        <div class="metric"><span>${escapar(textos.pedidosCerrados)}</span><strong>${resumenMesData.pedidos_cerrados}</strong></div>
+        <div class="metric"><span>${escapar(textos.ticketMedio)}</span><strong>${euro(resumenMesData.ticket_medio)}</strong></div>
       </div>
 
       <form method="POST" action="/configuracion-caja/cierre-mensual">
         <input type="hidden" name="mes" value="${escapar(mes)}">
-        <button type="submit">Guardar cierre mensual</button>
+        <button type="submit">${escapar(textos.guardarCierreMensual)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Últimos cierres guardados</h2>
+      <h2>${escapar(textos.ultimosCierres)}</h2>
       <table>
-        <thead><tr><th>Tipo</th><th>Periodo</th><th>Total</th><th>Pedidos</th><th>Ticket medio</th></tr></thead>
-        <tbody>${cierresHtml || `<tr><td colspan="5">Sin cierres guardados todavía.</td></tr>`}</tbody>
+        <thead><tr><th>${escapar(textos.tipo)}</th><th>${escapar(textos.periodo)}</th><th>${escapar(textos.total)}</th><th>${escapar(textos.pedidos)}</th><th>${escapar(textos.ticketMedio)}</th></tr></thead>
+        <tbody>${cierresHtml || `<tr><td colspan="5">${escapar(textos.sinCierres)}</td></tr>`}</tbody>
       </table>
     </section>
   </main>
@@ -684,9 +713,14 @@ function renderCaja(resumenDiaData, resumenMesData, cierres, query) {
 </html>`;
 }
 
-function renderReporteHtml(titulo, resumen, filasHtml) {
+function renderReporteHtml(
+  titulo,
+  resumen,
+  filasHtml,
+  textos
+) {
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)}</title>
@@ -861,13 +895,13 @@ function renderReporteHtml(titulo, resumen, filasHtml) {
 </style>
 </head>
 <body>
-  <button onclick="window.print()">Imprimir</button>
+  <button onclick="window.print()">${escapar(textos.imprimir)}</button>
   <h1>${escapar(titulo)}</h1>
   <div class="grid">
-    <div class="card"><span>Total caja</span><strong>${euro(resumen.total_caja)}</strong></div>
-    <div class="card"><span>Efectivo</span><strong>${euro(resumen.efectivo)}</strong></div>
-    <div class="card"><span>Tarjeta</span><strong>${euro(resumen.tarjeta)}</strong></div>
-    <div class="card"><span>Ticket medio</span><strong>${euro(resumen.ticket_medio)}</strong></div>
+    <div class="card"><span>${escapar(textos.totalCaja)}</span><strong>${euro(resumen.total_caja)}</strong></div>
+    <div class="card"><span>${escapar(textos.efectivo)}</span><strong>${euro(resumen.efectivo)}</strong></div>
+    <div class="card"><span>${escapar(textos.tarjeta)}</span><strong>${euro(resumen.tarjeta)}</strong></div>
+    <div class="card"><span>${escapar(textos.ticketMedio)}</span><strong>${euro(resumen.ticket_medio)}</strong></div>
   </div>
   ${filasHtml}
 </body>
@@ -879,30 +913,43 @@ function csvEscape(valor) {
   return '"' + v.replace(/"/g, '""') + '"';
 }
 
-function sendCsv(res, filename, rows) {
+function sendCsv(res, filename, rows, textos) {
+  const traducciones =
+    textos || textosCajaReportes("es");
   const data = rows || [];
-  const headers = data.length ? Object.keys(data[0]) : ["sin_datos"];
+  const headers = data.length
+    ? Object.keys(data[0])
+    : ["sin_datos"];
   const lines = [headers.map(csvEscape).join(",")];
 
   data.forEach((row) => {
     lines.push(headers.map((h) => csvEscape(row[h])).join(","));
   });
 
-  if (!data.length) lines.push(csvEscape("Sin datos"));
+  if (!data.length) {
+    lines.push(
+      csvEscape(traducciones.sinDatosCsv)
+    );
+  }
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", 'attachment; filename="' + filename + '"');
   res.send("\ufeff" + lines.join("\n"));
 }
 
-function renderReportes(desde, hasta, resumen) {
+function renderReportes(
+  desde,
+  hasta,
+  resumen,
+  textos
+) {
   const qs = "desde=" + encodeURIComponent(desde) + "&hasta=" + encodeURIComponent(hasta);
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Reportes - Restaurant Service POS</title>
+  <title>${escapar(textos.reportesCsv)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -1083,48 +1130,48 @@ function renderReportes(desde, hasta, resumen) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Reportes CSV</h1>
-      <p>Exporta solo los datos del restaurante actual.</p>
+      <h1>${escapar(textos.reportesCsv)}</h1>
+      <p>${escapar(textos.descripcionReportesCsv)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-caja">Caja</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-caja">${escapar(textos.caja)}</a>
       </div>
     </section>
 
     <section class="card">
       <form method="GET" action="/configuracion-reportes">
         <div>
-          <label>Desde</label>
+          <label>${escapar(textos.desde)}</label>
           <input type="date" name="desde" value="${escapar(desde)}">
         </div>
         <div>
-          <label>Hasta</label>
+          <label>${escapar(textos.hasta)}</label>
           <input type="date" name="hasta" value="${escapar(hasta)}">
         </div>
-        <button type="submit">Filtrar</button>
+        <button type="submit">${escapar(textos.filtrar)}</button>
       </form>
     </section>
 
     <section class="grid">
       <div class="export">
-        <h3>Resumen</h3>
-        <p>Total caja: <strong>${euro(resumen.total_caja)}</strong></p>
-        <a class="btn" href="/configuracion-reportes/export/resumen?${qs}">Descargar CSV</a>
+        <h3>${escapar(textos.resumen)}</h3>
+        <p>${escapar(textos.totalCaja)}: <strong>${euro(resumen.total_caja)}</strong></p>
+        <a class="btn" href="/configuracion-reportes/export/resumen?${qs}">${escapar(textos.descargarCsv)}</a>
       </div>
       <div class="export">
-        <h3>Pedidos</h3>
-        <p>Pedidos cerrados y abiertos del rango.</p>
-        <a class="btn" href="/configuracion-reportes/export/pedidos?${qs}">Descargar CSV</a>
+        <h3>${escapar(textos.pedidos)}</h3>
+        <p>${escapar(textos.pedidosRango)}</p>
+        <a class="btn" href="/configuracion-reportes/export/pedidos?${qs}">${escapar(textos.descargarCsv)}</a>
       </div>
       <div class="export">
-        <h3>Pagos</h3>
-        <p>Pagos registrados por método.</p>
-        <a class="btn" href="/configuracion-reportes/export/pagos?${qs}">Descargar CSV</a>
+        <h3>${escapar(textos.pagos)}</h3>
+        <p>${escapar(textos.pagosMetodo)}</p>
+        <a class="btn" href="/configuracion-reportes/export/pagos?${qs}">${escapar(textos.descargarCsv)}</a>
       </div>
       <div class="export">
-        <h3>Productos</h3>
-        <p>Unidades vendidas por producto.</p>
-        <a class="btn" href="/configuracion-reportes/export/productos?${qs}">Descargar CSV</a>
+        <h3>${escapar(textos.productos)}</h3>
+        <p>${escapar(textos.unidadesProducto)}</p>
+        <a class="btn" href="/configuracion-reportes/export/productos?${qs}">${escapar(textos.descargarCsv)}</a>
       </div>
     </section>
   </main>
@@ -1141,92 +1188,190 @@ module.exports = function cajaReportesSaasRoutes(db) {
 
   router.get("/configuracion-caja", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const fecha = String(req.query.fecha || hoyISO()).slice(0, 10);
-    const mes = String(req.query.mes || mesISO()).slice(0, 7);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const fecha = String(
+      req.query.fecha || hoyISO()
+    ).slice(0, 10);
+    const mes = String(
+      req.query.mes || mesISO()
+    ).slice(0, 7);
 
-    const dia = await resumenDia(db, restauranteId, fecha);
-    const mesData = await resumenMes(db, restauranteId, mes);
-    const cierres = await ultimosCierres(db, restauranteId);
+    const dia = await resumenDia(
+      db,
+      restauranteId,
+      fecha
+    );
+    const mesData = await resumenMes(
+      db,
+      restauranteId,
+      mes
+    );
+    const cierres = await ultimosCierres(
+      db,
+      restauranteId
+    );
 
-    res.send(renderCaja(dia, mesData, cierres, req.query || {}));
+    res.send(
+      renderCaja(
+        dia,
+        mesData,
+        cierres,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.get("/configuracion-caja/reporte-diario", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const fecha = String(req.query.fecha || hoyISO()).slice(0, 10);
-    const resumen = await resumenDia(db, restauranteId, fecha);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const fecha = String(
+      req.query.fecha || hoyISO()
+    ).slice(0, 10);
+    const resumen = await resumenDia(
+      db,
+      restauranteId,
+      fecha
+    );
 
     const filas = resumen.pagos.map((p) => `
       <tr>
         <td>${escapar(p.fecha)}</td>
         <td>${escapar(p.mesa || "-")}</td>
         <td>${escapar(p.pedido_id || "-")}</td>
-        <td>${escapar(p.metodo)}</td>
+        <td>${escapar(
+          metodoPagoVisible(p.metodo, textos)
+        )}</td>
         <td>${euro(p.importe)}</td>
       </tr>
     `).join("");
 
-    res.send(renderReporteHtml(
-      "Reporte diario " + fecha,
-      resumen,
-      `<table><thead><tr><th>Fecha</th><th>Mesa</th><th>Pedido</th><th>Método</th><th>Importe</th></tr></thead><tbody>${filas || `<tr><td colspan="5">Sin pagos.</td></tr>`}</tbody></table>`
-    ));
+    res.send(
+      renderReporteHtml(
+        textos.reporteDiario + " " + fecha,
+        resumen,
+        `<table><thead><tr><th>${escapar(textos.fecha)}</th><th>${escapar(textos.mesa)}</th><th>${escapar(textos.pedido)}</th><th>${escapar(textos.metodo)}</th><th>${escapar(textos.importe)}</th></tr></thead><tbody>${filas || `<tr><td colspan="5">${escapar(textos.sinPagos)}</td></tr>`}</tbody></table>`,
+        textos
+      )
+    );
   });
 
   router.get("/configuracion-caja/reporte-mensual", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const mes = String(req.query.mes || mesISO()).slice(0, 7);
-    const resumen = await resumenMes(db, restauranteId, mes);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const mes = String(
+      req.query.mes || mesISO()
+    ).slice(0, 7);
+    const resumen = await resumenMes(
+      db,
+      restauranteId,
+      mes
+    );
 
-    res.send(renderReporteHtml(
-      "Reporte mensual " + mes,
-      resumen,
-      `<p>Pagos registrados: ${resumen.pagos_registrados}. Pedidos cerrados: ${resumen.pedidos_cerrados}.</p>`
-    ));
+    res.send(
+      renderReporteHtml(
+        textos.reporteMensual + " " + mes,
+        resumen,
+        `<p>${escapar(textos.pagosRegistrados)}: ${resumen.pagos_registrados}. ${escapar(textos.pedidosCerrados)}: ${resumen.pedidos_cerrados}.</p>`,
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-caja/cierre-diario", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const fecha = String((req.body || {}).fecha || hoyISO()).slice(0, 10);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const fecha = String(
+      (req.body || {}).fecha || hoyISO()
+    ).slice(0, 10);
     const resumen = await resumenDia(db, restauranteId, fecha);
 
     await guardarCierre(db, restauranteId, "diario", fecha, resumen, req.body || {});
 
-    res.redirect("/configuracion-caja?fecha=" + encodeURIComponent(fecha) + "&ok=" + encodeURIComponent("Cierre diario guardado correctamente"));
+    res.redirect("/configuracion-caja?fecha=" + encodeURIComponent(fecha) + "&ok=" + encodeURIComponent(textos.cierreDiarioGuardado));
   });
 
   router.post("/configuracion-caja/cierre-mensual", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const mes = String((req.body || {}).mes || mesISO()).slice(0, 7);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const mes = String(
+      (req.body || {}).mes || mesISO()
+    ).slice(0, 7);
     const resumen = await resumenMes(db, restauranteId, mes);
 
     await guardarCierre(db, restauranteId, "mensual", mes, resumen, req.body || {});
 
-    res.redirect("/configuracion-caja?mes=" + encodeURIComponent(mes) + "&ok=" + encodeURIComponent("Cierre mensual guardado correctamente"));
+    res.redirect("/configuracion-caja?mes=" + encodeURIComponent(mes) + "&ok=" + encodeURIComponent(textos.cierreMensualGuardado));
   });
 
   router.post("/cierre-caja/cerrar", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
     const fecha = hoyISO();
     const resumen = await resumenDia(db, restauranteId, fecha);
 
     await guardarCierre(db, restauranteId, "diario", fecha, resumen, req.body || {});
 
-    res.redirect("/configuracion-caja?fecha=" + encodeURIComponent(fecha) + "&ok=" + encodeURIComponent("Cierre diario guardado correctamente"));
+    res.redirect("/configuracion-caja?fecha=" + encodeURIComponent(fecha) + "&ok=" + encodeURIComponent(textos.cierreDiarioGuardado));
   });
 
   router.get("/configuracion-reportes", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const desde = String(req.query.desde || hoyISO()).slice(0, 10);
-    const hasta = String(req.query.hasta || hoyISO()).slice(0, 10);
-    const pagos = await pagosReporte(db, restauranteId, desde, hasta);
-    const total = pagos.reduce((acc, p) => acc + Number(p.importe || 0), 0);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
+    const desde = String(
+      req.query.desde || hoyISO()
+    ).slice(0, 10);
+    const hasta = String(
+      req.query.hasta || hoyISO()
+    ).slice(0, 10);
+    const pagos = await pagosReporte(
+      db,
+      restauranteId,
+      desde,
+      hasta
+    );
+    const total = pagos.reduce(
+      (acc, p) => acc + Number(p.importe || 0),
+      0
+    );
 
-    res.send(renderReportes(desde, hasta, { total_caja: total }));
+    res.send(
+      renderReportes(
+        desde,
+        hasta,
+        { total_caja: total },
+        textos
+      )
+    );
   });
 
   router.get("/configuracion-reportes/export/resumen", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
     const desde = String(req.query.desde || hoyISO()).slice(0, 10);
     const hasta = String(req.query.hasta || hoyISO()).slice(0, 10);
     const pagos = await pagosReporte(db, restauranteId, desde, hasta);
@@ -1236,42 +1381,59 @@ module.exports = function cajaReportesSaasRoutes(db) {
     const totalPagos = pagos.reduce((acc, p) => acc + Number(p.importe || 0), 0);
     const unidades = productos.reduce((acc, p) => acc + Number(p.unidades || 0), 0);
 
-    sendCsv(res, "resumen_" + desde + "_" + hasta + ".csv", [{
-      desde: desde,
-      hasta: hasta,
-      total_pagos: totalPagos.toFixed(2),
-      pagos: pagos.length,
-      pedidos: pedidos.length,
-      productos_diferentes: productos.length,
-      unidades: unidades
-    }]);
+    sendCsv(
+      res,
+      "resumen_" + desde + "_" + hasta + ".csv",
+      [{
+        desde: desde,
+        hasta: hasta,
+        total_pagos: totalPagos.toFixed(2),
+        pagos: pagos.length,
+        pedidos: pedidos.length,
+        productos_diferentes: productos.length,
+        unidades: unidades
+      }],
+      textos
+    );
   });
 
   router.get("/configuracion-reportes/export/pedidos", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
     const desde = String(req.query.desde || hoyISO()).slice(0, 10);
     const hasta = String(req.query.hasta || hoyISO()).slice(0, 10);
     const rows = await pedidosReporte(db, restauranteId, desde, hasta);
 
-    sendCsv(res, "pedidos_" + desde + "_" + hasta + ".csv", rows);
+    sendCsv(res, "pedidos_" + desde + "_" + hasta + ".csv", rows, textos);
   });
 
   router.get("/configuracion-reportes/export/pagos", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
     const desde = String(req.query.desde || hoyISO()).slice(0, 10);
     const hasta = String(req.query.hasta || hoyISO()).slice(0, 10);
     const rows = await pagosReporte(db, restauranteId, desde, hasta);
 
-    sendCsv(res, "pagos_" + desde + "_" + hasta + ".csv", rows);
+    sendCsv(res, "pagos_" + desde + "_" + hasta + ".csv", rows, textos);
   });
 
   router.get("/configuracion-reportes/export/productos", requiereCaja, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosCajaRestaurante(
+      db,
+      restauranteId
+    );
     const desde = String(req.query.desde || hoyISO()).slice(0, 10);
     const hasta = String(req.query.hasta || hoyISO()).slice(0, 10);
     const rows = await ventasProductos(db, restauranteId, desde, hasta);
 
-    sendCsv(res, "ventas_producto_" + desde + "_" + hasta + ".csv", rows);
+    sendCsv(res, "ventas_producto_" + desde + "_" + hasta + ".csv", rows, textos);
   });
 
   return router;
