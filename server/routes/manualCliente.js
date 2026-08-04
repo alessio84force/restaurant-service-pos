@@ -1,4 +1,7 @@
 const express = require("express");
+const {
+  textosManualCliente
+} = require("../utils/manualClienteI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -22,14 +25,81 @@ function datos() {
   };
 }
 
-function paginaManual() {
+function textosManualReq(req) {
+  const usuario =
+    req.session && req.session.usuario
+      ? req.session.usuario
+      : {};
+
+  const idioma =
+    (req.session && req.session.idioma) ||
+    usuario.idioma ||
+    "es";
+
+  return textosManualCliente(idioma);
+}
+
+function renderPasos(lista) {
+  return (lista || [])
+    .map(function(texto) {
+      return (
+        '<div class="paso">' +
+        escapar(texto) +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function renderTarjetas(lista) {
+  return (lista || [])
+    .map(function(item) {
+      return (
+        '<div class="mini">' +
+        "<strong>" +
+        escapar(item.titulo) +
+        "</strong>" +
+        "<span>" +
+        escapar(item.texto) +
+        "</span>" +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function renderChecklist(lista) {
+  return (lista || [])
+    .map(function(texto) {
+      return (
+        '<div class="check">' +
+        escapar(texto) +
+        "</div>"
+      );
+    })
+    .join("");
+}
+
+function renderBadges(lista) {
+  return (lista || [])
+    .map(function(texto) {
+      return (
+        '<span class="badge">' +
+        escapar(texto) +
+        "</span>"
+      );
+    })
+    .join("");
+}
+
+function paginaManual(textos) {
   const d = datos();
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Manual de uso - ${escapar(d.nombre)}</title>
+  <title>${escapar(textos.tituloPagina)} - ${escapar(d.nombre)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root{
@@ -382,208 +452,158 @@ function paginaManual() {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Manual de uso</h1>
-      <p>Guía práctica para usar ${escapar(d.nombre)} en modo self-service: crear cuenta, activar trial, configurar el restaurante, trabajar con el POS, controlar caja y gestionar la suscripción.</p>
+      <h1>${escapar(textos.tituloPagina)}</h1>
+      <p>${escapar(textos.descripcionManual(d.nombre))}</p>
       <div class="hero-actions">
-        <a href="/configuracion" class="sec">Volver a configuración</a>
-        <a href="/app/v2">Abrir POS</a>
-        <a href="javascript:window.print()" class="sec">Imprimir manual</a>
+        <a href="/configuracion" class="sec">${escapar(textos.volverConfiguracion)}</a>
+        <a href="/app/v2">${escapar(textos.abrirPos)}</a>
+        <a href="javascript:window.print()" class="sec">${escapar(textos.imprimirManual)}</a>
       </div>
     </section>
 
     <div class="layout">
       <aside class="indice">
-        <h2>Índice</h2>
-        <a href="#inicio">1. Flujo self-service</a>
-        <a href="#registro">2. Crear cuenta y trial</a>
-        <a href="#fiscales">3. Datos fiscales</a>
-        <a href="#configuracion">4. Configuración inicial</a>
-        <a href="#mesas">5. Salas y mesas</a>
-        <a href="#productos">6. Productos y destinos</a>
-        <a href="#impresion">7. Impresión</a>
-        <a href="#pos">8. Trabajo diario POS</a>
-        <a href="#cobro">9. Cuenta y cobro</a>
-        <a href="#caja">10. Caja y reportes</a>
-        <a href="#usuarios">11. Usuarios y roles</a>
-        <a href="#backups">12. Backups</a>
-        <a href="#suscripcion">13. Suscripción</a>
-        <a href="#ayuda">14. Ayuda</a>
+        <h2>${escapar(textos.indice)}</h2>
+        <a href="#inicio">${escapar(textos.enlaces.inicio)}</a>
+        <a href="#registro">${escapar(textos.enlaces.registro)}</a>
+        <a href="#fiscales">${escapar(textos.enlaces.fiscales)}</a>
+        <a href="#configuracion">${escapar(textos.enlaces.configuracion)}</a>
+        <a href="#mesas">${escapar(textos.enlaces.mesas)}</a>
+        <a href="#productos">${escapar(textos.enlaces.productos)}</a>
+        <a href="#impresion">${escapar(textos.enlaces.impresion)}</a>
+        <a href="#pos">${escapar(textos.enlaces.pos)}</a>
+        <a href="#cobro">${escapar(textos.enlaces.cobro)}</a>
+        <a href="#caja">${escapar(textos.enlaces.caja)}</a>
+        <a href="#usuarios">${escapar(textos.enlaces.usuarios)}</a>
+        <a href="#backups">${escapar(textos.enlaces.backups)}</a>
+        <a href="#suscripcion">${escapar(textos.enlaces.suscripcion)}</a>
+        <a href="#ayuda">${escapar(textos.enlaces.ayuda)}</a>
       </aside>
 
       <section>
         <article id="inicio" class="card">
-          <h2>1. Flujo self-service</h2>
-          <p>Restaurant Service POS está pensado para que el propietario pueda empezar sin asistencia técnica obligatoria. El flujo normal es:</p>
+          <h2>${escapar(textos.inicio.titulo)}</h2>
+          <p>${escapar(textos.inicio.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Crear una cuenta nueva desde la página de registro.</div>
-            <div class="paso">Entrar en el periodo de prueba gratuito.</div>
-            <div class="paso">Completar datos fiscales y datos del restaurante.</div>
-            <div class="paso">Configurar salas, mesas, productos, destinos e impresión.</div>
-            <div class="paso">Usar el POS durante el servicio.</div>
-            <div class="paso">Cuando termine el trial, activar la suscripción mensual.</div>
+            ${renderPasos(textos.inicio.pasos)}
           </div>
-          <div class="tip">Recomendación: antes del primer servicio real, crear al menos una sala, una mesa, una categoría, un producto y probar una cuenta.</div>
+          <div class="tip">${escapar(textos.inicio.recomendacion)}</div>
         </article>
 
         <article id="registro" class="card">
-          <h2>2. Crear cuenta y trial</h2>
-          <p>El propietario crea la cuenta del restaurante desde <code>/registro</code>. Al registrarse, el sistema crea un restaurante propio y separa sus datos del resto de clientes.</p>
+          <h2>${escapar(textos.registro.titulo)}</h2>
+          <p>${escapar(textos.registro.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Cuenta del propietario</strong><span>Email, contraseña y datos de acceso del administrador principal.</span></div>
-            <div class="mini"><strong>Trial gratuito</strong><span>Periodo inicial para configurar y probar el sistema antes del pago.</span></div>
+            ${renderTarjetas(textos.registro.tarjetas)}
           </div>
-          <div class="alerta">El propietario debe guardar bien su email y contraseña. Desde esa cuenta podrá crear usuarios camareros o gerentes.</div>
+          <div class="alerta">${escapar(textos.registro.alerta)}</div>
         </article>
 
         <article id="fiscales" class="card">
-          <h2>3. Datos fiscales obligatorios</h2>
-          <p>Antes de activar la suscripción de pago, el restaurante debe tener completos sus datos fiscales para facturación.</p>
+          <h2>${escapar(textos.fiscales.titulo)}</h2>
+          <p>${escapar(textos.fiscales.introduccion)}</p>
           <div class="checklist">
-            <div class="check">Nombre comercial</div>
-            <div class="check">Razón social o nombre fiscal</div>
-            <div class="check">NIF, CIF o VAT</div>
-            <div class="check">Dirección fiscal completa</div>
-            <div class="check">Código postal, ciudad, provincia y país</div>
-            <div class="check">Email de facturación</div>
+            ${renderChecklist(textos.fiscales.lista)}
           </div>
-          <p>Estos datos se modifican en <strong>Configuración → Restaurante</strong>. Si faltan datos fiscales, el pago de la suscripción queda bloqueado hasta completarlos.</p>
+          <p>${escapar(textos.fiscales.cierre)}</p>
         </article>
 
         <article id="configuracion" class="card">
-          <h2>4. Configuración inicial</h2>
-          <p>Desde <strong>Configuración</strong> se accede a todas las áreas principales del sistema.</p>
+          <h2>${escapar(textos.configuracion.titulo)}</h2>
+          <p>${escapar(textos.configuracion.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Restaurante</strong><span>Datos fiscales, logo, ticket y mensaje de cuenta.</span></div>
-            <div class="mini"><strong>Productos</strong><span>Categorías, precios y disponibilidad.</span></div>
-            <div class="mini"><strong>Mesas</strong><span>Salas, zonas y numeración del local.</span></div>
-            <div class="mini"><strong>Impresoras y destinos</strong><span>Ticket, bar, cocina y otros puntos de comanda.</span></div>
+            ${renderTarjetas(textos.configuracion.tarjetas)}
           </div>
         </article>
 
         <article id="mesas" class="card">
-          <h2>5. Salas, zonas y mesas</h2>
-          <p>El restaurante puede crear sus propias zonas según su organización real: sala principal, terraza, sala inferior, privado o cualquier otra.</p>
+          <h2>${escapar(textos.mesas.titulo)}</h2>
+          <p>${escapar(textos.mesas.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración → Mesas</strong>.</div>
-            <div class="paso">Crear una zona o sala.</div>
-            <div class="paso">Crear las mesas con el número o nombre que usa el restaurante.</div>
-            <div class="paso">Guardar y volver al POS.</div>
+            ${renderPasos(textos.mesas.pasos)}
           </div>
-          <h3>Colores habituales de mesas</h3>
-          <span class="badge">Libre</span>
-          <span class="badge">Ocupada</span>
-          <span class="badge">Cuenta pedida</span>
-          <span class="badge">Reservada</span>
+          <h3>${escapar(textos.mesas.coloresTitulo)}</h3>
+          ${renderBadges(textos.mesas.colores)}
         </article>
 
         <article id="productos" class="card">
-          <h2>6. Productos, categorías y destinos</h2>
-          <p>Los productos se organizan por categorías. Cada producto tendrá precio, disponibilidad y un destino de comanda.</p>
+          <h2>${escapar(textos.productos.titulo)}</h2>
+          <p>${escapar(textos.productos.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Bar</strong><span>Bebidas, cafés, copas o productos que no pasan por cocina.</span></div>
-            <div class="mini"><strong>Cocina</strong><span>Platos, raciones o productos que debe preparar cocina.</span></div>
-            <div class="mini"><strong>Otros destinos</strong><span>Pizzeria, parrilla, barra exterior o cualquier destino personalizado.</span></div>
-            <div class="mini"><strong>Disponibilidad</strong><span>Permite ocultar productos que no se venden ese día.</span></div>
+            ${renderTarjetas(textos.productos.tarjetas)}
           </div>
         </article>
 
         <article id="impresion" class="card">
-          <h2>7. Impresión y destinos</h2>
-          <p>El sistema permite trabajar con impresión sencilla por ventana o con configuración de impresoras cuando el restaurante lo necesite.</p>
+          <h2>${escapar(textos.impresion.titulo)}</h2>
+          <p>${escapar(textos.impresion.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración → Destinos</strong> para revisar bar, cocina y destinos personalizados.</div>
-            <div class="paso">Entrar en <strong>Configuración → Impresoras</strong>.</div>
-            <div class="paso">Probar ticket, bar y cocina.</div>
-            <div class="paso">Ajustar el modo de impresión según el equipo del restaurante.</div>
+            ${renderPasos(textos.impresion.pasos)}
           </div>
-          <div class="tip">Para empezar, puede usarse la vista previa de ticket y comanda. La conexión con impresoras reales se puede preparar después.</div>
+          <div class="tip">${escapar(textos.impresion.recomendacion)}</div>
         </article>
 
         <article id="pos" class="card">
-          <h2>8. Trabajo diario en el POS</h2>
-          <p>Durante el servicio, el camarero trabaja desde el POS de sala.</p>
+          <h2>${escapar(textos.pos.titulo)}</h2>
+          <p>${escapar(textos.pos.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Abrir el POS desde <strong>Abrir POS</strong>.</div>
-            <div class="paso">Seleccionar una mesa libre.</div>
-            <div class="paso">Añadir bebidas, platos o productos.</div>
-            <div class="paso">Enviar comandas a bar, cocina u otros destinos.</div>
-            <div class="paso">Añadir más productos si el cliente pide algo nuevo.</div>
-            <div class="paso">Pedir cuenta, cobrar y cerrar la mesa.</div>
+            ${renderPasos(textos.pos.pasos)}
           </div>
         </article>
 
         <article id="cobro" class="card">
-          <h2>9. Cuenta, precuenta y cobro</h2>
-          <p>Al terminar el consumo, el sistema permite generar cuenta, imprimir vista previa y cobrar.</p>
+          <h2>${escapar(textos.cobro.titulo)}</h2>
+          <p>${escapar(textos.cobro.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Cuenta</strong><span>Genera el ticket con los datos fiscales, logo y mensaje del restaurante.</span></div>
-            <div class="mini"><strong>Pago</strong><span>Permite registrar efectivo, tarjeta u otros métodos disponibles.</span></div>
-            <div class="mini"><strong>Cierre de mesa</strong><span>Cuando el pedido queda pagado, la mesa vuelve a estar libre.</span></div>
-            <div class="mini"><strong>Pagos separados</strong><span>El restaurante puede registrar diferentes pagos para una misma mesa.</span></div>
+            ${renderTarjetas(textos.cobro.tarjetas)}
           </div>
         </article>
 
         <article id="caja" class="card">
-          <h2>10. Caja y reportes</h2>
-          <p>La caja ayuda a revisar ventas, métodos de pago y cierres diarios o mensuales.</p>
+          <h2>${escapar(textos.caja.titulo)}</h2>
+          <p>${escapar(textos.caja.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración → Caja</strong>.</div>
-            <div class="paso">Revisar ventas del día y pagos registrados.</div>
-            <div class="paso">Guardar cierre diario cuando termine el servicio.</div>
-            <div class="paso">Usar <strong>Reportes</strong> para exportar CSV de pagos, productos o pedidos.</div>
+            ${renderPasos(textos.caja.pasos)}
           </div>
         </article>
 
         <article id="usuarios" class="card">
-          <h2>11. Usuarios y roles</h2>
-          <p>El propietario puede crear usuarios para el equipo. Cada rol tiene permisos diferentes.</p>
+          <h2>${escapar(textos.usuarios.titulo)}</h2>
+          <p>${escapar(textos.usuarios.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Administrador</strong><span>Control completo: configuración, usuarios, suscripción, caja y datos fiscales.</span></div>
-            <div class="mini"><strong>Gerente</strong><span>Puede gestionar gran parte de la configuración operativa del restaurante.</span></div>
-            <div class="mini"><strong>Camarero</strong><span>Debe usar el POS para mesas, pedidos y comandas, sin modificar la configuración general.</span></div>
-            <div class="mini"><strong>Usuarios inactivos</strong><span>Se pueden desactivar usuarios cuando un trabajador deja el restaurante.</span></div>
+            ${renderTarjetas(textos.usuarios.tarjetas)}
           </div>
         </article>
 
         <article id="backups" class="card">
-          <h2>12. Backups</h2>
-          <p>Los backups permiten descargar una copia de seguridad del restaurante actual.</p>
+          <h2>${escapar(textos.backups.titulo)}</h2>
+          <p>${escapar(textos.backups.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Entrar en <strong>Configuración → Backups</strong>.</div>
-            <div class="paso">Crear un backup.</div>
-            <div class="paso">Descargar el archivo generado.</div>
-            <div class="paso">Guardar la copia en un lugar seguro.</div>
+            ${renderPasos(textos.backups.pasos)}
           </div>
-          <div class="tip">Cada backup está separado por restaurante. No mezcla datos de otros clientes.</div>
+          <div class="tip">${escapar(textos.backups.recomendacion)}</div>
         </article>
 
         <article id="suscripcion" class="card">
-          <h2>13. Suscripción</h2>
-          <p>Desde <strong>Configuración → Suscripción</strong> se revisa el estado del trial y el pago mensual.</p>
+          <h2>${escapar(textos.suscripcion.titulo)}</h2>
+          <p>${escapar(textos.suscripcion.introduccion)}</p>
           <div class="grid">
-            <div class="mini"><strong>Trial</strong><span>Periodo de prueba para configurar y comprobar el sistema.</span></div>
-            <div class="mini"><strong>Datos fiscales</strong><span>Si faltan datos fiscales, el pago queda bloqueado.</span></div>
-            <div class="mini"><strong>Pago Stripe</strong><span>Cuando Stripe esté configurado, el cliente podrá pagar desde esta pantalla.</span></div>
-            <div class="mini"><strong>Estado</strong><span>Permite ver si la suscripción está activa, pendiente o en trial.</span></div>
+            ${renderTarjetas(textos.suscripcion.tarjetas)}
           </div>
         </article>
 
         <article id="ayuda" class="card">
-          <h2>14. Ayuda y soporte</h2>
-          <p>Si algo no funciona, seguir este orden:</p>
+          <h2>${escapar(textos.ayuda.titulo)}</h2>
+          <p>${escapar(textos.ayuda.introduccion)}</p>
           <div class="pasos">
-            <div class="paso">Comprobar que el usuario ha iniciado sesión.</div>
-            <div class="paso">Revisar si los datos fiscales están completos.</div>
-            <div class="paso">Probar primero con una mesa y un producto de ejemplo.</div>
-            <div class="paso">Hacer un backup antes de cambios importantes.</div>
-            <div class="paso">Contactar con soporte si el error continúa.</div>
+            ${renderPasos(textos.ayuda.pasos)}
           </div>
-          <p><strong>Soporte:</strong> ${escapar(d.soporte)}</p>
-          <p><strong>Email:</strong> ${escapar(d.email)}</p>
+          <p><strong>${escapar(textos.ayuda.soporte)}:</strong> ${escapar(d.soporte)}</p>
+          <p><strong>${escapar(textos.ayuda.email)}:</strong> ${escapar(d.email)}</p>
         </article>
 
         <div class="footer">
-          Manual actualizado para Restaurant Service POS Self-Service SaaS.
+          ${escapar(textos.footer)}
         </div>
       </section>
     </div>
@@ -596,7 +616,11 @@ module.exports = function manualClienteRoutes() {
   const router = express.Router();
 
   router.get("/manual", function(req, res) {
-    res.send(paginaManual());
+    const textos = textosManualReq(req);
+
+    res.send(
+      paginaManual(textos)
+    );
   });
 
   router.get("/ayuda", function(req, res) {
