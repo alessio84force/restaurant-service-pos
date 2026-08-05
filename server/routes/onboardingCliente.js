@@ -1,5 +1,8 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosOnboardingCliente
+} = require("../utils/onboardingClienteI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -7,6 +10,20 @@ function escapar(valor) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function textosOnboardingReq(req) {
+  const usuario =
+    req.session && req.session.usuario
+      ? req.session.usuario
+      : {};
+
+  const idioma =
+    (req.session && req.session.idioma) ||
+    usuario.idioma ||
+    "es";
+
+  return textosOnboardingCliente(idioma);
 }
 
 function get(db, sql, params) {
@@ -87,65 +104,81 @@ function estadoPaso(ok, textoOk, textoPendiente) {
   };
 }
 
-function badge(paso) {
+function badge(paso, textos) {
   return paso.ok
-    ? '<span class="badge ok">Completado</span>'
-    : '<span class="badge pendiente">Pendiente</span>';
+    ? '<span class="badge ok">' +
+      escapar(textos.completado) +
+      "</span>"
+    : '<span class="badge pendiente">' +
+      escapar(textos.pendiente) +
+      "</span>";
 }
 
-function cardPaso(numero, titulo, estado, descripcion, acciones) {
+function cardPaso(textos, numero, titulo, estado, descripcion, acciones) {
   return `
     <article class="paso ${estado.ok ? "ok" : "pendiente"}">
       <div class="num">${numero}</div>
       <div class="contenido">
         <div class="head">
           <h2>${escapar(titulo)}</h2>
-          ${badge(estado)}
+          ${badge(estado, textos)}
         </div>
         <p class="estado-texto">${escapar(estado.texto)}</p>
-        <p>${descripcion}</p>
+        <p>${escapar(descripcion)}</p>
         <div class="acciones">${acciones}</div>
       </div>
     </article>
   `;
 }
 
-function page(estado) {
+function page(estado, textos) {
   const pasos = [
     estadoPaso(
-      estado.nombreRestaurante && estado.emailPropietario,
-      "El restaurante tiene datos básicos configurados.",
-      "Faltan datos básicos del restaurante o email del propietario."
+      estado.nombreRestaurante &&
+      estado.emailPropietario,
+      textos.estados.restauranteOk,
+      textos.estados.restaurantePendiente
     ),
     estadoPaso(
       estado.zonas > 0 && estado.mesas > 0,
-      `Tienes ${estado.zonas} zona(s) y ${estado.mesas} mesa(s) activa(s).`,
-      "Todavía faltan salas/zonas o mesas activas."
+      textos.estados.mesasOk(
+        estado.zonas,
+        estado.mesas
+      ),
+      textos.estados.mesasPendiente
     ),
     estadoPaso(
-      estado.categorias > 0 && estado.productos > 0,
-      `Tienes ${estado.categorias} categoría(s) y ${estado.productos} producto(s) activo(s).`,
-      "Todavía faltan categorías o productos activos."
+      estado.categorias > 0 &&
+      estado.productos > 0,
+      textos.estados.productosOk(
+        estado.categorias,
+        estado.productos
+      ),
+      textos.estados.productosPendiente
     ),
     estadoPaso(
       estado.destinos >= 2,
-      `Tienes ${estado.destinos} destino(s) de comanda activo(s).`,
-      "Faltan destinos de comanda. Como mínimo deberían existir bar y cocina."
+      textos.estados.destinosOk(
+        estado.destinos
+      ),
+      textos.estados.destinosPendiente
     ),
     estadoPaso(
       estado.impresionConfig,
-      "El centro de impresión tiene configuración guardada.",
-      "Todavía no se ha guardado configuración de impresión."
+      textos.estados.impresionOk,
+      textos.estados.impresionPendiente
     ),
     estadoPaso(
-      estado.mesas > 0 && estado.productos > 0 && estado.destinos >= 1,
-      "Ya puedes hacer una prueba completa con una mesa.",
-      "Antes de probar una mesa necesitas mesas, productos y destinos."
+      estado.mesas > 0 &&
+      estado.productos > 0 &&
+      estado.destinos >= 1,
+      textos.estados.pruebaOk,
+      textos.estados.pruebaPendiente
     ),
     estadoPaso(
       true,
-      "El manual queda disponible dentro de Configuración.",
-      "Manual opcional."
+      textos.estados.manualOk,
+      textos.estados.manualPendiente
     )
   ];
 
@@ -154,10 +187,10 @@ function page(estado) {
   const porcentaje = Math.round((completados / total) * 100);
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Primeros pasos - Restaurant Service POS</title>
+  <title>${escapar(textos.tituloPagina)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root{
@@ -497,133 +530,98 @@ function page(estado) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Primeros pasos del restaurante</h1>
-      <p>Completa esta guía antes de usar Restaurant Service POS en un servicio real. Cuando todos los pasos estén listos, el restaurante estará preparado para trabajar.</p>
+      <h1>${escapar(textos.titulo)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
 
       <div class="progress-box">
         <div class="progress-top">
-          <span>Progreso inicial</span>
-          <span>${completados}/${total} pasos · ${porcentaje}%</span>
+          <span>${escapar(textos.progresoInicial)}</span>
+          <span>${escapar(textos.progreso(completados, total, porcentaje))}</span>
         </div>
         <div class="bar"><div class="fill"></div></div>
       </div>
 
       <div class="hero-actions">
-        <a href="/configuracion">Configuración</a>
+        <a href="/configuracion">${escapar(textos.configuracion)}</a>
         
-        <a href="/app/v2">Abrir POS</a>
+        <a href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
-    ${cardPaso(
+    ${cardPaso(textos,
       1,
-      "Datos del restaurante",
+      textos.pasos.restaurante.titulo,
       pasos[0],
-      "Configura nombre del restaurante, propietario, email y datos principales. Estos datos se usan en tickets, cuenta y configuración general.",
-      '<a href="/configuracion">Ir a configuración</a>'
+      textos.pasos.restaurante.descripcion,
+      '<a href="/configuracion">' + escapar(textos.pasos.restaurante.accion) + "</a>"
     )}
 
-    ${cardPaso(
+    ${cardPaso(textos,
       2,
-      "Crear salas, zonas y mesas",
+      textos.pasos.mesas.titulo,
       pasos[1],
-      "Crea la distribución real del restaurante: sala, terraza, barra, comedor privado o cualquier zona que utilices.",
-      '<a href="/configuracion-mesas">Configurar mesas</a><a class="sec" href="/manual#mesas">Ver ayuda</a>'
+      textos.pasos.mesas.descripcion,
+      '<a href="/configuracion-mesas">' +
+      escapar(textos.pasos.mesas.accion) +
+      '</a><a class="sec" href="/manual#mesas">' +
+      escapar(textos.verAyuda) +
+      "</a>"
     )}
 
-    ${cardPaso(
+    ${cardPaso(textos,
       3,
-      "Crear categorías y productos",
+      textos.pasos.productos.titulo,
       pasos[2],
-      "Añade bebidas, platos, cafés, postres y precios. Organiza los productos en categorías para que el camarero trabaje rápido.",
-      '<a href="/configuracion-productos">Configurar productos</a><a class="sec" href="/manual#productos">Ver ayuda</a>'
+      textos.pasos.productos.descripcion,
+      '<a href="/configuracion-productos">' +
+      escapar(textos.pasos.productos.accion) +
+      '</a><a class="sec" href="/manual#productos">' +
+      escapar(textos.verAyuda) +
+      "</a>"
     )}
 
-    ${cardPaso(
+    ${cardPaso(textos,
       4,
-      "Configurar destinos de comanda",
+      textos.pasos.destinos.titulo,
       pasos[3],
-      "Define dónde debe ir cada comanda: bar, cocina, pizzeria u otros destinos. Esto evita errores durante el servicio.",
-      '<a href="/configuracion-destinos">Configurar destinos</a><a class="sec" href="/manual#productos">Ver ayuda</a>'
+      textos.pasos.destinos.descripcion,
+      '<a href="/configuracion-destinos">' +
+      escapar(textos.pasos.destinos.accion) +
+      '</a><a class="sec" href="/manual#productos">' +
+      escapar(textos.verAyuda) +
+      "</a>"
     )}
 
-    ${cardPaso(
+    ${cardPaso(textos,
       5,
-      "Probar impresión",
+      textos.pasos.impresion.titulo,
       pasos[4],
-      "Empieza en modo preview. Genera una prueba de ticket, bar y cocina antes de conectar impresoras reales.",
-      '<a href="/configuracion-impresoras">Centro de impresión</a><a class="sec" href="/manual#impresion">Ver ayuda</a>'
+      textos.pasos.impresion.descripcion,
+      '<a href="/configuracion-impresoras">' +
+      escapar(textos.pasos.impresion.accion) +
+      '</a><a class="sec" href="/manual#impresion">' +
+      escapar(textos.verAyuda) +
+      "</a>"
     )}
 
-    ${cardPaso(
+    ${cardPaso(textos,
       6,
-      "Probar una mesa completa",
+      textos.pasos.prueba.titulo,
       pasos[5],
-      "Antes de abrir al público, haz una prueba: abre una mesa, añade bebida y comida, envía comandas, imprime cuenta, cobra y cierra mesa.",
-      '<a href="/app/v2">Abrir POS</a><a class="sec" href="/manual#servicio">Ver flujo</a>'
-    )}
-
-    ${cardPaso(
-      7,
-      "Manual disponible en Configuración",
-      pasos[6],
-      "El manual explica el uso diario del POS, comandas, cobro, caja, móvil del camarero y preguntas frecuentes.",
-      ''
+      textos.pasos.prueba.descripcion,
+      '<a href="/app/v2">' +
+      escapar(textos.abrirPos) +
+      '</a><a class="sec" href="/manual#pos">' +
+      escapar(textos.verFlujo) +
+      "</a>"
     )}
 
     <div class="final">
-      <strong>Recomendación:</strong> antes del primer servicio real, haz una prueba con una mesa ficticia y comprueba que cada producto sale en el destino correcto.
+      <strong>${escapar(textos.recomendacion)}:</strong>
+      ${escapar(textos.recomendacionTexto)}
     </div>
   </main>
 
-<script>
-/* RS PRIMEROS PASOS SIN MANUAL AUTO COMPLETADO */
-(function(){
-  function limpiarPasoManual(){
-    try{
-      var textosClave = [
-        "leer el manual y resolver dudas",
-        "el* RS PRIMEROS PASOS SIN MANUAL AUTO COMPLETADO */
-(function(){
-  function limpiarPasoManual(){
-    try{
-      var textosClave = [
-        "leer el manual y resolver dudas",
-        "el manual explica el uso diario",
-        "manual disponible"
-      ];
-
-      document.querySelectorAll("article, .card, .paso, .step, li, tr, section, div").forEach(function(el){
-        var txt = String(el.textContent || "").toLowerCase();
-
-        var esPasoManual =
-          txt.indexOf("leer el manual y resolver dudas") >= 0 ||
-          (
-            txt.indexOf("manual disponible") >= 0 &&
-            txt.indexOf("manual") >= 0 &&
-            txt.indexOf("complet") >= 0
-          );
-
-        if(esPasoManual){
-          var contenedor = el.closest("article, .card, .paso, .step, li, tr") || el;
-          if(contenedor && contenedor.parentNode){
-            contenedor.parentNode.removeChild(contenedor);
-          }
-        }
-      });
-    }catch(e){}
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", limpiarPasoManual);
-  }else{
-    limpiarPasoManual();
-  }
-
-  setTimeout(limpiarPasoManual, 300);
-  setTimeout(limpiarPasoManual, 1000);
-})();
-</script>
 
 </body>
 </html>`;
@@ -634,8 +632,15 @@ module.exports = function onboardingClienteRoutes(db) {
 
   router.get("/primeros-pasos", async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const estado = await cargarEstado(db, restauranteId);
-    res.send(page(estado));
+    const textos = textosOnboardingReq(req);
+    const estado = await cargarEstado(
+      db,
+      restauranteId
+    );
+
+    res.send(
+      page(estado, textos)
+    );
   });
 
   router.get("/onboarding", function(req, res) {
