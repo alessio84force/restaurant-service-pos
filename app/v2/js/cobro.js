@@ -55,6 +55,7 @@ function textosCobroV2(){
             bienvenida: "Bienvenido",
             seleccionaMesaComenzar: "Selecciona una mesa para comenzar.",
             preparandoTicketFinal: "Preparando ticket final...",
+            pedidoNoEncontradoTicketFinal: "No se encontró el pedido para imprimir el ticket final.",
             noGenerarTicketFinal: "No se pudo generar el ticket final",
             popupBloqueadoTicket:
                 "El navegador ha bloqueado la ventana del ticket final. Permite las ventanas emergentes para este sitio.",
@@ -107,6 +108,7 @@ function textosCobroV2(){
             bienvenida: "Benvenuto",
             seleccionaMesaComenzar: "Seleziona un tavolo per iniziare.",
             preparandoTicketFinal: "Preparazione ticket finale...",
+            pedidoNoEncontradoTicketFinal: "Ordine non trovato per stampare il ticket finale.",
             noGenerarTicketFinal: "Impossibile generare il ticket finale",
             popupBloqueadoTicket:
                 "Il browser ha bloccato la finestra del ticket finale. Consenti le finestre popup per questo sito.",
@@ -159,6 +161,7 @@ function textosCobroV2(){
             bienvenida: "Welcome",
             seleccionaMesaComenzar: "Select a table to get started.",
             preparandoTicketFinal: "Preparing final receipt...",
+            pedidoNoEncontradoTicketFinal: "The order could not be found for printing the final receipt.",
             noGenerarTicketFinal: "The final receipt could not be generated",
             popupBloqueadoTicket:
                 "The browser blocked the final receipt window. Allow pop-up windows for this site.",
@@ -1038,7 +1041,7 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         : "es";
 
     if(!pedidoId){
-        alert("No se encontró el pedido para imprimir el ticket final.");
+        alert(textos.pedidoNoEncontradoTicketFinal);
         return;
     }
 

@@ -66,6 +66,19 @@ function textosPedidoV2(){
             lineasEnviadas: "Líneas enviadas",
             errorComandaDestino: "No se pudo enviar la comanda a",
             productoGenerico: "Producto",
+            localeFecha: "es-ES",
+            comandaEtiqueta: "Comanda",
+            mesaEtiqueta: "Mesa",
+            pedidoEtiqueta: "Pedido",
+            horaEtiqueta: "Hora",
+            notaEtiqueta: "Nota",
+            sinLineasNuevasDestino: "No hay líneas nuevas para enviar.",
+            totalLineasEtiqueta: "Total líneas",
+            imprimirPrueba: "Imprimir prueba",
+            cerrarVentana: "Cerrar",
+            popupVistaPreviaBloqueado: "El navegador bloqueó la vista previa. Permite ventanas emergentes para ver el ticket.",
+            modoDirectoInicio: "Comanda enviada. Modo ",
+            modoDirectoFin: " preparado, impresión directa en próxima fase.",
             idiomaHtmlPrecuenta: "es",
             tituloPrecuenta: "Precuenta",
             mesaPrecuenta: "Mesa",
@@ -122,6 +135,19 @@ function textosPedidoV2(){
             lineasEnviadas: "Righe inviate",
             errorComandaDestino: "Impossibile inviare la comanda a",
             productoGenerico: "Prodotto",
+            localeFecha: "it-IT",
+            comandaEtiqueta: "Comanda",
+            mesaEtiqueta: "Tavolo",
+            pedidoEtiqueta: "Ordine",
+            horaEtiqueta: "Ora",
+            notaEtiqueta: "Nota",
+            sinLineasNuevasDestino: "Nessuna nuova riga da inviare.",
+            totalLineasEtiqueta: "Totale righe",
+            imprimirPrueba: "Stampa di prova",
+            cerrarVentana: "Chiudi",
+            popupVistaPreviaBloqueado: "Il browser ha bloccato l'anteprima. Consenti le finestre popup per visualizzare il ticket.",
+            modoDirectoInicio: "Comanda inviata. Modalità ",
+            modoDirectoFin: " predisposta; la stampa diretta sarà disponibile in una fase successiva.",
             idiomaHtmlPrecuenta: "it",
             tituloPrecuenta: "Preconto",
             mesaPrecuenta: "Tavolo",
@@ -178,6 +204,19 @@ function textosPedidoV2(){
             lineasEnviadas: "Lines sent",
             errorComandaDestino: "The order could not be sent to",
             productoGenerico: "Product",
+            localeFecha: "en-GB",
+            comandaEtiqueta: "Order",
+            mesaEtiqueta: "Table",
+            pedidoEtiqueta: "Order",
+            horaEtiqueta: "Time",
+            notaEtiqueta: "Note",
+            sinLineasNuevasDestino: "No new lines to send.",
+            totalLineasEtiqueta: "Total lines",
+            imprimirPrueba: "Test print",
+            cerrarVentana: "Close",
+            popupVistaPreviaBloqueado: "The browser blocked the preview. Allow pop-up windows to view the ticket.",
+            modoDirectoInicio: "Order sent. Mode ",
+            modoDirectoFin: " prepared; direct printing will be available in a later phase.",
             idiomaHtmlPrecuenta: "en",
             tituloPrecuenta: "Bill preview",
             mesaPrecuenta: "Table",
@@ -825,7 +864,7 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     const textos = textosPedidoV2();
     const destino = String(destinoTitulo || "").toUpperCase();
     const pedido = lineas && lineas.length > 0 ? (lineas[0].pedido || lineas[0].pedido_id || "") : "";
-    const ahora = new Date().toLocaleString("es-ES");
+    const ahora = new Date().toLocaleString(textos.localeFecha);
 
     const lineasHtml = (lineas || []).map((linea)=>{
         const cantidad = Number(linea.cantidad || 0);
@@ -838,7 +877,7 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
 
                 ${nota ? `
                     <div class="nota-ticket">
-                        &gt;&gt;&gt; NOTA ${destino} &lt;&lt;&lt;<br>
+                        &gt;&gt;&gt; ${escaparHtmlComandaPreviewV2(textos.notaEtiqueta.toUpperCase())} ${destino} &lt;&lt;&lt;<br>
                         ${escaparHtmlComandaPreviewV2(nota.toUpperCase())}
                     </div>
                 ` : ""}
@@ -969,24 +1008,24 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     <div class="ticket">
         <div class="centro">
             <div class="titulo">RESTAURANT SERVICE</div>
-            <div class="subtitulo">COMANDA ${destino}</div>
-            <div class="dato">MESA: ${escaparHtmlComandaPreviewV2(numeroMesa)}</div>
-            <div class="dato">PEDIDO: ${escaparHtmlComandaPreviewV2(pedido)}</div>
-            <div class="dato">HORA: ${escaparHtmlComandaPreviewV2(ahora)}</div>
+            <div class="subtitulo">${escaparHtmlComandaPreviewV2(textos.comandaEtiqueta.toUpperCase())} ${destino}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.mesaEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(numeroMesa)}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.pedidoEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(pedido)}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.horaEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(ahora)}</div>
         </div>
 
         <div class="sep"></div>
 
-        ${lineasHtml || "<p>No hay líneas nuevas para enviar.</p>"}
+        ${lineasHtml || "<p>" + escaparHtmlComandaPreviewV2(textos.sinLineasNuevasDestino) + "</p>"}
 
         <div class="sep"></div>
 
-        <div class="centro dato">TOTAL LINEAS: ${(lineas || []).length}</div>
+        <div class="centro dato">${escaparHtmlComandaPreviewV2(textos.totalLineasEtiqueta.toUpperCase())}: ${(lineas || []).length}</div>
     </div>
 
     <div class="acciones">
-        <button class="imprimir" onclick="window.print()">Imprimir prueba</button>
-        <button class="cerrar" onclick="window.close()">Cerrar</button>
+        <button class="imprimir" onclick="window.print()">${escaparHtmlComandaPreviewV2(textos.imprimirPrueba)}</button>
+        <button class="cerrar" onclick="window.close()">${escaparHtmlComandaPreviewV2(textos.cerrarVentana)}</button>
     </div>
 </body>
 </html>
@@ -995,7 +1034,7 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     const ventana = ventanaExistente || window.open("", "_blank", "width=420,height=720");
 
     if(!ventana){
-        alert("El navegador bloqueó la vista previa. Permite ventanas emergentes para ver el ticket.");
+        alert(textos.popupVistaPreviaBloqueado);
         return;
     }
 
@@ -1099,7 +1138,7 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
     if(modo === "escpos_red" || modo === "escpos_usb"){
         if(!ventana){
-            alert("Comanda enviada. Modo " + modo + " preparado, impresión directa en próxima fase.");
+            alert(textos.modoDirectoInicio + modo + textos.modoDirectoFin);
             return;
         }
 
@@ -1110,14 +1149,14 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
             return "<div style='padding:10px 0;border-bottom:1px dashed #d1d5db;'>" +
                 "<strong>" + cantidad + " x " + nombreProducto + "</strong>" +
-                (nota ? "<div style='margin-top:6px;padding:8px;border:2px solid #111827;color:#9a3412;font-weight:900;'>&gt;&gt;&gt; NOTA " + destino + " &lt;&lt;&lt;<br>" + nota + "</div>" : "") +
+                (nota ? "<div style='margin-top:6px;padding:8px;border:2px solid #111827;color:#9a3412;font-weight:900;'>&gt;&gt;&gt; " + escaparHtmlComandaPreviewV2(textos.notaEtiqueta.toUpperCase()) + " " + destino + " &lt;&lt;&lt;<br>" + nota + "</div>" : "") +
                 "</div>";
         }).join("");
 
         ventana.document.open();
         ventana.document.write(
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Comanda " + destino + "</title></head>" +
+            "<head><meta charset='UTF-8'><title>" + escaparHtmlComandaPreviewV2(textos.comandaEtiqueta) + " " + destino + "</title></head>" +
             "<body style='font-family:Arial;padding:20px;background:#f3f4f6;color:#111827;'>" +
             "<div style='max-width:420px;margin:auto;background:white;padding:20px;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,0.12);'>" +
             "<h2 style='margin-top:0;'>Comanda " + destino + " enviada</h2>" +
@@ -1130,7 +1169,7 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
             "La comanda ya se ha registrado. El POS ha intentado enviarla por " + modo + ". Si no hay impresora conectada, revisa el Terminal del servidor." +
             "</div>" +
             lineasHtml +
-            "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>Cerrar</button>" +
+            "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>" + escaparHtmlComandaPreviewV2(textos.cerrarVentana) + "</button>" +
             "</div>" +
             "</body></html>"
         );
