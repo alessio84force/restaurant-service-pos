@@ -16,7 +16,7 @@ function requiereAdminGerente(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para esta configuración.");
+    return res.status(403).send(textosFiscalRestaurante(req.session.usuario.idioma).sinPermisosConfiguracion);
   }
 
   next();
@@ -28,7 +28,7 @@ function requiereAdmin(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin") {
-    return res.status(403).send("Solo el administrador puede gestionar la suscripción.");
+    return res.status(403).send(textosFiscalRestaurante(req.session.usuario.idioma).soloAdminSuscripcion);
   }
 
   next();
@@ -115,6 +115,8 @@ function fiscalesCompletosBody(body) {
 }
 
 function layout(titulo, contenido, idioma) {
+  const textosLayout = textosFiscalRestaurante(idioma);
+
   return `<!doctype html>
 <html lang="${escapar(idioma || "es")}">
 <head>
@@ -279,24 +281,40 @@ function layout(titulo, contenido, idioma) {
 </style>
 </head>
 <body>
-  <a href="/logout" style="position:fixed;right:16px;top:12px;z-index:9999;background:#111827;color:white;text-decoration:none;font-weight:900;border-radius:999px;padding:10px 13px;font-size:13px;">Cerrar sesión</a>
+  <a href="/logout" style="position:fixed;right:16px;top:12px;z-index:9999;background:#111827;color:white;text-decoration:none;font-weight:900;border-radius:999px;padding:10px 13px;font-size:13px;">${escapar(textosLayout.cerrarSesion)}</a>
   <main class="wrap">${contenido}</main>
   <script>
   function instalarLogoPickerRestaurantService(){
     var input = document.getElementById("logo_archivo");
     var hidden = document.getElementById("logo");
     var preview = document.getElementById("logo_preview");
+    var nombreArchivo = document.getElementById("logo_archivo_nombre");
 
     if(!input || !hidden) return;
 
     input.addEventListener("change", function(){
       var file = input.files && input.files[0];
-      if(!file) return;
+
+      if(!file){
+        if(nombreArchivo){
+          nombreArchivo.textContent = "${escapar(textosLayout.ningunArchivoSeleccionado)}";
+        }
+        return;
+      }
 
       if(!file.type || file.type.indexOf("image/") !== 0){
-        alert("El archivo elegido no es una imagen.");
+        alert("${escapar(textosLayout.archivoNoImagen)}");
         input.value = "";
+
+        if(nombreArchivo){
+          nombreArchivo.textContent = "${escapar(textosLayout.ningunArchivoSeleccionado)}";
+        }
+
         return;
+      }
+
+      if(nombreArchivo){
+        nombreArchivo.textContent = file.name;
       }
 
       var reader = new FileReader();
@@ -445,7 +463,11 @@ function renderRestaurante(config, query, textos) {
           <div>
             <label>${escapar(textos.logoTicket)}</label>
             <input type="hidden" id="logo" name="logo" value="${escapar(config.logo || "")}">
-            <input type="file" id="logo_archivo" accept="image/*">
+            <input type="file" id="logo_archivo" accept="image/*" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;">
+              <label for="logo_archivo" style="display:inline-block;border-radius:12px;padding:11px 14px;background:#0f766e;color:white;font-weight:900;cursor:pointer;font-size:14px;">${escapar(textos.seleccionarArchivo)}</label>
+              <span id="logo_archivo_nombre" style="font-size:13px;font-weight:800;color:#6b7280;">${escapar(textos.ningunArchivoSeleccionado)}</span>
+            </div>
             <small>${escapar(textos.elegirImagen)}</small>
             <div style="margin-top:10px;">
               <img id="logo_preview" src="${escapar(config.logo || "")}" style="${config.logo ? "" : "display:none;"}max-width:170px;max-height:90px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:white;">
@@ -498,20 +520,28 @@ function stripeModo() {
   return "no_configurado";
 }
 
-function stripeBloqueoLive() {
+function stripeBloqueoLive(textos) {
   const modo = stripeModo();
 
   if (modo !== "live") return "";
 
   if (String(process.env.STRIPE_LIVE_CONFIRMADO || "").trim() !== "SI") {
-    return "Stripe LIVE está configurado, pero STRIPE_LIVE_CONFIRMADO no es SI.";
+    return textos.stripeLiveNoConfirmado;
   }
 
   const base = String(process.env.APP_BASE_URL || "").trim();
 
-  if (!base.startsWith("https://")) return "En Stripe LIVE, APP_BASE_URL debe ser https.";
-  if (base.includes("localhost")) return "En Stripe LIVE, APP_BASE_URL no puede ser localhost.";
-  if (!process.env.STRIPE_WEBHOOK_SECRET) return "En Stripe LIVE, STRIPE_WEBHOOK_SECRET debe estar configurado.";
+  if (!base.startsWith("https://")) {
+    return textos.stripeLiveHttps;
+  }
+
+  if (base.includes("localhost")) {
+    return textos.stripeLiveNoLocalhost;
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    return textos.stripeLiveWebhook;
+  }
 
   return "";
 }
@@ -526,89 +556,191 @@ function diasRestantes(fecha) {
   return Math.max(0, Math.ceil((fin - Date.now()) / (1000 * 60 * 60 * 24)));
 }
 
-function estadoTexto(config) {
-  const estado = String(config.suscripcion_estado || "trial").toLowerCase();
+function estadoTexto(config, textos) {
+  const estado =
+    String(config.suscripcion_estado || "trial").toLowerCase();
 
-  if (estado === "gratis_vida") return "Gratis de por vida";
-  if (estado === "activo") return "Activa";
-  if (estado === "trial" || estado === "prueba") return "Prueba gratuita";
-  if (estado === "pendiente_pago") return "Pendiente de pago";
-  if (estado === "cancelada") return "Cancelada";
+  if (estado === "gratis_vida") {
+    return textos.estadoGratisVida;
+  }
 
-  return estado || "No definido";
+  if (estado === "activo") {
+    return textos.estadoActiva;
+  }
+
+  if (estado === "trial" || estado === "prueba") {
+    return textos.estadoPrueba;
+  }
+
+  if (estado === "pendiente_pago") {
+    return textos.estadoPendientePago;
+  }
+
+  if (estado === "cancelada") {
+    return textos.estadoCancelada;
+  }
+
+  return estado || textos.estadoNoDefinido;
 }
 
-function renderSuscripcion(config, restauranteId, query) {
+function planTexto(config, textos) {
+  const plan =
+    String(config.plan_tipo || "trial").toLowerCase();
+
+  if (plan === "stripe_mensual") {
+    return textos.planMensualStripe;
+  }
+
+  if (plan === "gratis_vida") {
+    return textos.planGratisVida;
+  }
+
+  if (plan === "trial" || plan === "prueba") {
+    return textos.planPrueba;
+  }
+
+  return config.plan_tipo || textos.planPrueba;
+}
+
+function renderSuscripcion(
+  config,
+  restauranteId,
+  query,
+  textos
+) {
   const okFiscal = fiscalesCompletos(config);
   const dias = diasRestantes(config.trial_fin);
   const modo = stripeModo();
 
-  return layout("Suscripción", `
+  return layout(textos.suscripcion, `
     <section class="hero">
-      <h1>Suscripción</h1>
-      <p>Estado de trial, pago y datos fiscales del restaurante actual.</p>
+      <h1>${escapar(textos.suscripcion)}</h1>
+      <p>${escapar(textos.descripcionSuscripcion)}</p>
+
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-restaurante">Datos fiscales</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-restaurante">${escapar(textos.datosFiscales)}</a>
       </div>
     </section>
 
     ${mensaje(query)}
-    ${query && query.stripe === "ok" ? `<div class="msg ok">Pago confirmado correctamente.</div>` : ""}
-    ${query && query.stripe === "cancelado" ? `<div class="msg error">Pago cancelado.</div>` : ""}
+
+    ${query && query.stripe === "ok"
+      ? `<div class="msg ok">${escapar(textos.pagoConfirmado)}</div>`
+      : ""
+    }
+
+    ${query && query.stripe === "cancelado"
+      ? `<div class="msg error">${escapar(textos.pagoCancelado)}</div>`
+      : ""
+    }
 
     <section class="card">
       <h2>${escapar(config.nome_ristorante || "Restaurant Service POS")}</h2>
+
       <div class="grid3">
-        <div class="dato"><span>Estado</span><strong>${escapar(estadoTexto(config))}</strong></div>
-        <div class="dato"><span>Plan</span><strong>${escapar(config.plan_tipo || "trial")}</strong></div>
-        <div class="dato"><span>Días trial</span><strong>${dias}</strong></div>
-        <div class="dato"><span>Fin trial</span><strong>${escapar(config.trial_fin || "-")}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.estado)}</span>
+          <strong>${escapar(estadoTexto(config, textos))}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.plan)}</span>
+          <strong>${escapar(planTexto(config, textos))}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.diasTrial)}</span>
+          <strong>${dias}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.finTrial)}</span>
+          <strong>${escapar(config.trial_fin || "-")}</strong>
+        </div>
 
         <div class="dato rs-promo-aplicada-visible">
-          <span>Promoción aplicada</span>
+          <span>${escapar(textos.promocionAplicada)}</span>
+
           <strong style="display:inline-flex;align-items:center;gap:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:999px;padding:8px 12px;font-weight:900;">
-            ${escapar(config.promocion_aplicada || "No aplicada")}
+            ${escapar(config.promocion_aplicada || textos.noAplicada)}
           </strong>
         </div>
 
-        <div class="dato"><span>Restaurante ID</span><strong>${restauranteId}</strong></div>
-        <div class="dato"><span>Datos fiscales</span><strong>${okFiscal ? "Completos" : "Incompletos"}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.restauranteId)}</span>
+          <strong>${restauranteId}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.datosFiscales)}</span>
+          <strong>${escapar(
+            okFiscal
+              ? textos.completos
+              : textos.incompletos
+          )}</strong>
+        </div>
       </div>
     </section>
 
     <section class="card">
-      <h2>Datos fiscales para facturas</h2>
+      <h2>${escapar(textos.datosFiscalesFacturas)}</h2>
+
       <div class="msg ${okFiscal ? "ok" : "error"}">
-        ${okFiscal ? "El restaurante tiene los datos fiscales completos para facturación." : "Faltan datos fiscales. Antes de pagar la suscripción debes completarlos."}
+        ${escapar(
+          okFiscal
+            ? textos.fiscalesFacturasCompletos
+            : textos.fiscalesFacturasFaltan
+        )}
       </div>
 
       <div class="grid3">
-        <div class="dato"><span>Razón social</span><strong>${escapar(config.razon_social || "-")}</strong></div>
-        <div class="dato"><span>NIF/CIF/VAT</span><strong>${escapar(config.partita_iva || "-")}</strong></div>
-        <div class="dato"><span>Email facturación</span><strong>${escapar(config.email_facturacion || "-")}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.razonSocial)}</span>
+          <strong>${escapar(config.razon_social || "-")}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.identificacionFiscal)}</span>
+          <strong>${escapar(config.partita_iva || "-")}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.emailFacturacion)}</span>
+          <strong>${escapar(config.email_facturacion || "-")}</strong>
+        </div>
       </div>
 
       <br>
-      <a class="btn sec" href="/configuracion-restaurante">Completar datos fiscales</a>
+
+      <a class="btn sec" href="/configuracion-restaurante">
+        ${escapar(textos.completarDatosFiscales)}
+      </a>
     </section>
 
     <section class="card">
-      <h2>Pago mensual</h2>
+      <h2>${escapar(textos.pagoMensual)}</h2>
+
       ${okFiscal
-        ? "<p>Los datos fiscales están completos. Ya se puede activar el pago cuando Stripe esté configurado.</p>"
-        : "<p><strong>El pago queda bloqueado hasta completar los datos fiscales.</strong></p>"
+        ? "<p>" + escapar(textos.pagoDisponible) + "</p>"
+        : "<p><strong>" + escapar(textos.pagoBloqueado) + "</strong></p>"
       }
 
       <form method="POST" action="/stripe/crear-checkout-suscripcion">
-        <button type="submit" ${okFiscal ? "" : "disabled"}>Pagar suscripción</button>
+        <button type="submit" ${okFiscal ? "" : "disabled"}>
+          ${escapar(textos.pagarSuscripcion)}
+        </button>
       </form>
 
       <br>
+
       <code>Stripe: ${escapar(modo)}
-PRICE_ID: ${escapar(process.env.STRIPE_PRICE_ID || "No configurado")}</code>
+PRICE_ID: ${escapar(
+        process.env.STRIPE_PRICE_ID ||
+        textos.noConfigurado
+      )}</code>
     </section>
-  `);
+  `, textos.lang);
 }
 
 async function guardarRestaurante(db, restauranteId, body, mensajePredefinito) {
@@ -853,21 +985,48 @@ module.exports = function fiscalSaasRoutes(db) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
 
-    res.send(renderSuscripcion(config, restauranteId, req.query || {}));
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
+
+    res.send(
+      renderSuscripcion(
+        config,
+        restauranteId,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/stripe/crear-checkout-suscripcion", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
 
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
+
     if (!fiscalesCompletos(config)) {
-      return res.redirect("/configuracion-restaurante?error=" + encodeURIComponent("Completa los datos fiscales antes de pagar la suscripción"));
+      return res.redirect("/configuracion-restaurante?error=" + encodeURIComponent(textos.completaDatosAntesPagar));
     }
 
-    const bloqueo = stripeBloqueoLive();
+    const bloqueo = stripeBloqueoLive(textos);
 
     if (bloqueo) return res.status(400).send("<pre>" + escapar(bloqueo) + "</pre>");
-    if (!stripeDisponible()) return res.status(500).send("Stripe no está configurado. Revisa .env.");
+    if (!stripeDisponible()) return res.status(500).send(textos.stripeNoConfiguradoEnv);
 
     try {
       const Stripe = require("stripe");
@@ -909,12 +1068,22 @@ module.exports = function fiscalSaasRoutes(db) {
       res.redirect(303, session.url);
     } catch (err) {
       console.error("[fiscalSaas] Stripe checkout:", err.message);
-      res.status(500).send("Error creando pago con Stripe: " + err.message);
+      res.status(500).send(textos.errorCreandoPago + err.message);
     }
   });
 
   router.get("/stripe/success", requiereAdmin, async function(req, res) {
-    if (!stripeDisponible()) return res.status(500).send("Stripe no está configurado.");
+    const textos = textosFiscalRestaurante(
+      req.session &&
+      req.session.usuario &&
+      req.session.usuario.idioma
+    );
+
+    if (!stripeDisponible()) {
+      return res.status(500).send(
+        textos.stripeNoConfigurado
+      );
+    }
 
     try {
       const Stripe = require("stripe");
@@ -939,7 +1108,7 @@ module.exports = function fiscalSaasRoutes(db) {
       res.redirect("/configuracion-suscripcion?stripe=pendiente");
     } catch (err) {
       console.error("[fiscalSaas] Stripe success:", err.message);
-      res.status(500).send("Error confirmando Stripe: " + err.message);
+      res.status(500).send(textos.errorConfirmandoStripe + err.message);
     }
   });
 
