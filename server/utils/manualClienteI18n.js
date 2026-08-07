@@ -119,7 +119,7 @@ function textosManualCliente(idiomaValor) {
           }
         ]
       },
-      
+
       mesas: {
         titulo: "5. Salas, zonas y mesas",
         introduccion:
@@ -450,7 +450,7 @@ function textosManualCliente(idiomaValor) {
           }
         ]
       },
-      
+
       mesas: {
         titulo: "5. Sale, zone e tavoli",
         introduccion:
@@ -781,7 +781,7 @@ function textosManualCliente(idiomaValor) {
           }
         ]
       },
-      
+
       mesas: {
         titulo: "5. Areas, sections and tables",
         introduccion:
