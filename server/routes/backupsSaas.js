@@ -2,6 +2,9 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosBackupsConfig
+} = require("../utils/copiasSeguridadI18n");
 
 function escapar(v) {
   return String(v == null ? "" : v)
@@ -11,13 +14,31 @@ function escapar(v) {
     .replace(/"/g, "&quot;");
 }
 
+function textosBackupsReq(req) {
+  const usuario =
+    req.session && req.session.usuario
+      ? req.session.usuario
+      : {};
+
+  const idioma =
+    (req.session && req.session.idioma) ||
+    usuario.idioma ||
+    "es";
+
+  return textosBackupsConfig(idioma);
+}
+
 function requiereAdminGerente(req, res, next) {
   if (!req.session || !req.session.usuario) return res.redirect("/login");
 
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para backups.");
+    const textos = textosBackupsReq(req);
+
+    return res.status(403).send(
+      textos.sinPermisos
+    );
   }
 
   next();
@@ -142,7 +163,7 @@ function listarBackups(restauranteId) {
     .sort((a, b) => b.creado - a.creado);
 }
 
-function renderBackups(backups, query) {
+function renderBackups(backups, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
 
@@ -150,21 +171,21 @@ function renderBackups(backups, query) {
     <tr>
       <td><strong>${escapar(b.nombre)}</strong></td>
       <td>${escapar((b.size / 1024).toFixed(1))} KB</td>
-      <td>${escapar(b.creado.toLocaleString("es-ES"))}</td>
+      <td>${escapar(b.creado.toLocaleString(textos.locale))}</td>
       <td>
-        <a class="btn small" href="/configuracion-backups/descargar/${encodeURIComponent(b.nombre)}">Descargar</a>
-        <form method="POST" action="/configuracion-backups/eliminar/${encodeURIComponent(b.nombre)}" onsubmit="return confirm('¿Eliminar este backup?');">
-          <button class="danger" type="submit">Eliminar</button>
+        <a class="btn small" href="/configuracion-backups/descargar/${encodeURIComponent(b.nombre)}">${escapar(textos.descargar)}</a>
+        <form method="POST" action="/configuracion-backups/eliminar/${encodeURIComponent(b.nombre)}" onsubmit="return confirm('${escapar(textos.confirmarEliminar)}');">
+          <button class="danger" type="submit">${escapar(textos.eliminar)}</button>
         </form>
       </td>
     </tr>
   `).join("");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Backups - Restaurant Service POS</title>
+  <title>${escapar(textos.backups)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -295,11 +316,11 @@ function renderBackups(backups, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Backups</h1>
-      <p>Copias de seguridad separadas solo del restaurante actual.</p>
+      <h1>${escapar(textos.backups)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-reportes">Reportes</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-reportes">${escapar(textos.reportes)}</a>
       </div>
     </section>
 
@@ -307,18 +328,18 @@ function renderBackups(backups, query) {
     ${error ? `<div class="msg error">${escapar(error)}</div>` : ""}
 
     <section class="card">
-      <h2>Crear backup</h2>
-      <p>El backup incluye datos operativos del restaurante actual, sin mezclar datos de otros restaurantes.</p>
+      <h2>${escapar(textos.crearBackup)}</h2>
+      <p>${escapar(textos.descripcionCrear)}</p>
       <form method="POST" action="/configuracion-backups/crear">
-        <button type="submit">Crear backup ahora</button>
+        <button type="submit">${escapar(textos.crearAhora)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Backups disponibles</h2>
+      <h2>${escapar(textos.backupsDisponibles)}</h2>
       <table>
-        <thead><tr><th>Archivo</th><th>Tamaño</th><th>Fecha</th><th>Acciones</th></tr></thead>
-        <tbody>${filas || `<tr><td colspan="4">Todavía no hay backups.</td></tr>`}</tbody>
+        <thead><tr><th>${escapar(textos.archivo)}</th><th>${escapar(textos.tamano)}</th><th>${escapar(textos.fecha)}</th><th>${escapar(textos.acciones)}</th></tr></thead>
+        <tbody>${filas || `<tr><td colspan="4">${escapar(textos.sinBackups)}</td></tr>`}</tbody>
       </table>
     </section>
   </main>
@@ -331,48 +352,104 @@ module.exports = function backupsSaasRoutes(db) {
 
   router.get("/configuracion-backups", requiereAdminGerente, function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosBackupsReq(req);
     const backups = listarBackups(restauranteId);
 
-    res.send(renderBackups(backups, req.query || {}));
+    res.send(
+      renderBackups(
+        backups,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-backups/crear", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosBackupsReq(req);
 
     try {
-      const nombre = await crearBackupRestaurante(db, restauranteId, req.session.usuario);
-      res.redirect("/configuracion-backups?ok=" + encodeURIComponent("Backup creado: " + nombre));
+      const nombre = await crearBackupRestaurante(
+        db,
+        restauranteId,
+        req.session.usuario
+      );
+
+      res.redirect(
+        "/configuracion-backups?ok=" +
+        encodeURIComponent(
+          textos.backupCreado + " " + nombre
+        )
+      );
     } catch (err) {
-      res.redirect("/configuracion-backups?error=" + encodeURIComponent(err.message));
+      console.error(
+        "[backupsSaas] Creazione backup:",
+        err.message
+      );
+
+      res.redirect(
+        "/configuracion-backups?error=" +
+        encodeURIComponent(textos.errorCrear)
+      );
     }
   });
 
   router.get("/configuracion-backups/descargar/:nombre", requiereAdminGerente, function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const nombre = nombreSeguro(req.params.nombre, restauranteId);
+    const textos = textosBackupsReq(req);
+    const nombre = nombreSeguro(
+      req.params.nombre,
+      restauranteId
+    );
 
-    if (!nombre) return res.status(400).send("Backup no válido.");
+    if (!nombre) {
+      return res.status(400).send(
+        textos.backupNoValido
+      );
+    }
 
-    const ruta = path.join(carpetaBackups(restauranteId), nombre);
+    const ruta = path.join(
+      carpetaBackups(restauranteId),
+      nombre
+    );
 
-    if (!fs.existsSync(ruta)) return res.status(404).send("Backup no encontrado.");
+    if (!fs.existsSync(ruta)) {
+      return res.status(404).send(
+        textos.backupNoEncontrado
+      );
+    }
 
     res.download(ruta, nombre);
   });
 
   router.post("/configuracion-backups/eliminar/:nombre", requiereAdminGerente, function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const nombre = nombreSeguro(req.params.nombre, restauranteId);
+    const textos = textosBackupsReq(req);
+    const nombre = nombreSeguro(
+      req.params.nombre,
+      restauranteId
+    );
 
     if (!nombre) {
-      return res.redirect("/configuracion-backups?error=" + encodeURIComponent("Nombre de backup no válido."));
+      return res.redirect(
+        "/configuracion-backups?error=" +
+        encodeURIComponent(textos.nombreNoValido)
+      );
     }
 
-    const ruta = path.join(carpetaBackups(restauranteId), nombre);
+    const ruta = path.join(
+      carpetaBackups(restauranteId),
+      nombre
+    );
 
-    if (fs.existsSync(ruta)) fs.unlinkSync(ruta);
+    if (fs.existsSync(ruta)) {
+      fs.unlinkSync(ruta);
+    }
 
-    res.redirect("/configuracion-backups?ok=" + encodeURIComponent("Backup eliminado."));
+    res.redirect(
+      "/configuracion-backups?ok=" +
+      encodeURIComponent(textos.backupEliminado)
+    );
   });
 
   return router;

@@ -24,13 +24,13 @@
 
         <h1>Restaurant Service POS</h1>
 
-        <span>Versión 2</span>
+        <span data-pos-i18n="version">Versión 2</span>
 
     </div>
 
     <div id="usuario-topbar-v2" class="usuario usuario-acciones-v2">
 
-        <span>Cargando usuario...</span>
+        <span data-pos-i18n="cargando_usuario">Cargando usuario...</span>
 
     </div>
 
@@ -40,7 +40,7 @@
 
     <aside class="columna izquierda">
 
-        <h2>Mesas</h2>
+        <h2 data-pos-i18n="mesas">Mesas</h2>
 
         <div id="lista-mesas"></div>
 
@@ -52,9 +52,9 @@
 
             <div class="bienvenida">
 
-                <h2>Bienvenido</h2>
+                <h2 data-pos-i18n="bienvenida">Bienvenido</h2>
 
-                <p>Selecciona una mesa para comenzar.</p>
+                <p data-pos-i18n="seleccionar_mesa">Selecciona una mesa para comenzar.</p>
 
             </div>
 
@@ -64,7 +64,7 @@
 
     <aside class="columna derecha">
 
-        <h2>Menú</h2>
+        <h2 data-pos-i18n="menu">Menú</h2>
 
         <div id="lista-categorias"></div>
 
@@ -82,10 +82,11 @@ Restaurant Service POS · V2
 
 <script src="js/api.js?v=281g"></script>
 <script src="js/mesas.js"></script>
-<script src="js/pedido.js"></script>
-<script src="js/menu.js"></script>
-<script src="js/cobro.js"></script>
-<script src="js/app.js?v=250g"></script>
+<script src="js/pedido.js?v=290b"></script>
+<script src="js/menu.js?v=290b"></script>
+<script src="js/cobro.js?v=290b"></script>
+<script src="js/app.js?v=290b"></script>
+<script src="js/pos-i18n.js?v=290b"></script>
 
 <style>
 .rs-pos-logout{
@@ -104,7 +105,7 @@ Restaurant Service POS · V2
   box-shadow:0 10px 24px rgba(0,0,0,.22);
 }
 </style>
-<a class="rs-pos-logout" href="/logout">Cerrar sesión</a>
+<a class="rs-pos-logout" href="/logout" data-pos-i18n="cerrar_sesion">Cerrar sesión</a>
 </body>
 
 </html>

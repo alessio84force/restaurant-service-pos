@@ -1,4 +1,5 @@
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { normalizarIdioma } = require("../utils/i18n");
 
 function obtenerConfigTrial(db, restauranteId, callback) {
   db.get(
@@ -31,14 +32,83 @@ function calcularDiasRestantes(fecha) {
   return Math.max(0, Math.ceil((fin - Date.now()) / (1000 * 60 * 60 * 24)));
 }
 
-function formatearFecha(fecha) {
+function formatearFecha(fecha, idiomaValor) {
   if (!fecha) return "-";
 
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const locales = {
+    es: "es-ES",
+    it: "it-IT",
+    en: "en-GB"
+  };
+
   try {
-    return new Date(fecha).toLocaleDateString("es-ES");
+    return new Date(fecha).toLocaleDateString(locales[idioma] || "es-ES");
   } catch (err) {
     return fecha;
   }
+}
+
+function idiomaDesdeReq(req) {
+  return normalizarIdioma(
+    req &&
+    req.session &&
+    (
+      req.session.idioma ||
+      (
+        req.session.usuario &&
+        req.session.usuario.idioma
+      )
+    )
+  );
+}
+
+function textosTrialBienvenida(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      badge: "Prueba gratuita activa",
+      titulo: "Tu restaurante está en prueba",
+      descripcion: "Puedes configurar mesas, productos, comandas, caja y usuarios durante el periodo de prueba.",
+      finaliza: "Finaliza el",
+      quedan: "Quedan",
+      diaSingular: "día",
+      diaPlural: "días",
+      entendido: "Entendido",
+      suscripcion: "Ver suscripción"
+    },
+
+    it: {
+      badge: "Prova gratuita attiva",
+      titulo: "Il tuo ristorante è in prova",
+      descripcion: "Durante il periodo di prova puoi configurare tavoli, prodotti, comande, cassa e utenti.",
+      finaliza: "Termina il",
+      quedan: "Restano",
+      diaSingular: "giorno",
+      diaPlural: "giorni",
+      entendido: "Ho capito",
+      suscripcion: "Vedi abbonamento"
+    },
+
+    en: {
+      badge: "Free trial active",
+      titulo: "Your restaurant is on a free trial",
+      descripcion: "During the trial period you can configure tables, products, orders, cash management and users.",
+      finaliza: "Ends on",
+      quedan: "Remaining",
+      diaSingular: "day",
+      diaPlural: "days",
+      entendido: "Got it",
+      suscripcion: "View subscription"
+    }
+  };
+
+  return Object.assign(
+    { idioma: idioma },
+    textos[idioma] || textos.es
+  );
 }
 
 function rutaExcluida(ruta) {
@@ -71,9 +141,11 @@ function insertarAntesBody(html, extra) {
   return html.slice(0, idx) + extra + html.slice(idx);
 }
 
-function renderModalTrial(config) {
-  const fechaFin = formatearFecha(config.trial_fin);
+function renderModalTrial(config, idiomaValor) {
+  const t = textosTrialBienvenida(idiomaValor);
+  const fechaFin = formatearFecha(config.trial_fin, t.idioma);
   const dias = calcularDiasRestantes(config.trial_fin);
+  const palabraDias = dias === 1 ? t.diaSingular : t.diaPlural;
 
   return `
 <style id="rs-trial-bienvenida-css">
@@ -89,26 +161,42 @@ function renderModalTrial(config) {
   .rs-trial-btn{background:#111827;color:white;}
   .rs-trial-link{background:#e5e7eb;color:#111827;}
 </style>
+
 <div class="rs-trial-overlay" id="rsTrialBienvenida">
   <div class="rs-trial-card">
-    <div class="rs-trial-badge">Prueba gratuita activa</div>
-    <h1>Tu restaurante está en prueba</h1>
-    <p>Puedes configurar mesas, productos, comandas, caja y usuarios durante el periodo de prueba.</p>
+    <div class="rs-trial-badge">${t.badge}</div>
+
+    <h1>${t.titulo}</h1>
+
+    <p>${t.descripcion}</p>
+
     <div class="rs-trial-box">
-      <span>Finaliza el</span>
+      <span>${t.finaliza}</span>
       <strong>${fechaFin}</strong>
-      <span>Quedan ${dias} día(s).</span>
+      <span>${t.quedan} ${dias} ${palabraDias}.</span>
     </div>
+
     <div class="rs-trial-actions">
-      <button class="rs-trial-btn" type="button" onclick="rsCerrarBienvenidaTrial()">Entendido</button>
-      <a class="rs-trial-link" href="/configuracion-suscripcion">Ver suscripción</a>
+      <button
+        class="rs-trial-btn"
+        type="button"
+        onclick="rsCerrarBienvenidaTrial()"
+      >${t.entendido}</button>
+
+      <a
+        class="rs-trial-link"
+        href="/configuracion-suscripcion"
+      >${t.suscripcion}</a>
     </div>
   </div>
 </div>
+
 <script>
 function rsCerrarBienvenidaTrial(){
   fetch("/trial-bienvenida-vista", { method: "POST" }).catch(function(){});
+
   var modal = document.getElementById("rsTrialBienvenida");
+
   if(modal) modal.remove();
 }
 </script>`;
@@ -121,6 +209,7 @@ module.exports = function trialBienvenidaMiddleware(db) {
     if (!req.session || !req.session.usuario) return next();
 
     const restauranteId = restauranteIdFromReq(req);
+    const idioma = idiomaDesdeReq(req);
 
     if (ruta === "/trial-bienvenida-vista" && req.method === "POST") {
       db.run(
@@ -156,7 +245,12 @@ module.exports = function trialBienvenidaMiddleware(db) {
           return originalSend(body);
         }
 
-        return originalSend(insertarAntesBody(texto, renderModalTrial(config)));
+        return originalSend(
+          insertarAntesBody(
+            texto,
+            renderModalTrial(config, idioma)
+          )
+        );
       });
     };
 

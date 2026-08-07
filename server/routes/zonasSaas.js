@@ -1,5 +1,9 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosZonasConfig,
+  estadoMesaTraducido
+} = require("../utils/zonasConfigI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -17,7 +21,11 @@ function requiereAdmin(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para configurar mesas.");
+    const textos = textosZonasConfig(
+      req.session.usuario.idioma
+    );
+
+    return res.status(403).send(textos.sinPermisos);
   }
 
   return next();
@@ -49,6 +57,18 @@ function get(db, sql, params) {
   });
 }
 
+async function textosZonasRestaurante(db, restauranteId) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=?",
+    [restauranteId]
+  );
+
+  return textosZonasConfig(
+    restaurante && restaurante.idioma
+  );
+}
+
 function run(db, sql, params) {
   return new Promise((resolve) => {
     db.run(sql, params || [], function(err) {
@@ -62,7 +82,7 @@ function run(db, sql, params) {
   });
 }
 
-function renderPage(zonas, mesas, query) {
+function renderPage(zonas, mesas, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
 
@@ -83,28 +103,28 @@ function renderPage(zonas, mesas, query) {
               <select name="zona_id" required>
                 ${zonas.map((zz) => `<option value="${zz.id}" ${Number(zz.id) === Number(m.zona_id) ? "selected" : ""}>${escapar(zz.nombre)}</option>`).join("")}
               </select>
-              <button type="submit">Guardar</button>
+              <button type="submit">${escapar(textos.guardar)}</button>
             </form>
 
             <form method="POST" action="/configuracion-mesas/mesas/${m.id}/toggle">
-              <button class="sec" type="submit">${Number(m.activo) === 1 ? "Ocultar" : "Activar"}</button>
+              <button class="sec" type="submit">${escapar(Number(m.activo) === 1 ? textos.ocultar : textos.activar)}</button>
             </form>
 
-            <small>Estado: ${escapar(m.estado)}</small>
+            <small>${escapar(textos.estado)}: ${escapar(estadoMesaTraducido(m.estado, textos))}</small>
           </div>
         `).join("")
-        : `<div class="empty">Esta sala todavía no tiene mesas.</div>`;
+        : `<div class="empty">${escapar(textos.sinMesasSala)}</div>`;
 
       return `
         <section class="zona-card ${Number(z.activo) === 1 ? "" : "apagada"}">
           <div class="zona-head">
             <form method="POST" action="/configuracion-mesas/zonas/${z.id}" class="zona-form">
               <input name="nombre" value="${escapar(z.nombre)}" required>
-              <button type="submit">Guardar sala</button>
+              <button type="submit">${escapar(textos.guardarSala)}</button>
             </form>
 
             <form method="POST" action="/configuracion-mesas/zonas/${z.id}/toggle">
-              <button class="sec" type="submit">${Number(z.activo) === 1 ? "Ocultar sala" : "Activar sala"}</button>
+              <button class="sec" type="submit">${escapar(Number(z.activo) === 1 ? textos.ocultarSala : textos.activarSala)}</button>
             </form>
           </div>
 
@@ -114,13 +134,13 @@ function renderPage(zonas, mesas, query) {
         </section>
       `;
     }).join("")
-    : `<section class="card"><p class="empty">Todavía no hay salas. Crea la primera sala para empezar.</p></section>`;
+    : `<section class="card"><p class="empty">${escapar(textos.sinSalas)}</p></section>`;
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Configuración de mesas - Restaurant Service POS</title>
+  <title>${escapar(textos.configuracionSalasMesas)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -275,12 +295,12 @@ function renderPage(zonas, mesas, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Configuración de salas y mesas</h1>
-      <p>Crea las salas, zonas y mesas de este restaurante. Cada restaurante solo ve sus propias mesas.</p>
+      <h1>${escapar(textos.configuracionSalasMesas)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
       <div class="hero-actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/primeros-pasos">Primeros pasos</a>
-        <a class="btn sec" href="/app/v2">Abrir POS</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/primeros-pasos">${escapar(textos.primerosPasos)}</a>
+        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
@@ -289,26 +309,26 @@ function renderPage(zonas, mesas, query) {
 
     <section class="forms">
       <div class="form-box">
-        <h2>Nueva sala/zona</h2>
+        <h2>${escapar(textos.nuevaSalaZona)}</h2>
         <form method="POST" action="/configuracion-mesas/zonas">
-          <label>Nombre</label>
+          <label>${escapar(textos.nombre)}</label>
           <div class="line">
-            <input name="nombre" placeholder="Sala principal, Terraza, Barra..." required>
-            <button type="submit">Crear sala</button>
+            <input name="nombre" placeholder="${escapar(textos.placeholderSala)}" required>
+            <button type="submit">${escapar(textos.crearSala)}</button>
           </div>
         </form>
       </div>
 
       <div class="form-box">
-        <h2>Nueva mesa</h2>
+        <h2>${escapar(textos.nuevaMesa)}</h2>
         <form method="POST" action="/configuracion-mesas/mesas">
-          <label>Número o nombre</label>
-          <input name="numero" placeholder="1, 2, VIP..." required style="margin-bottom:10px;">
-          <label>Sala/zona</label>
+          <label>${escapar(textos.numeroNombre)}</label>
+          <input name="numero" placeholder="${escapar(textos.placeholderMesa)}" required style="margin-bottom:10px;">
+          <label>${escapar(textos.salaZona)}</label>
           <select name="zona_id" required style="margin-bottom:10px;">
-            ${opcionesZonas || '<option value="">Primero crea una sala</option>'}
+            ${opcionesZonas || `<option value="">${escapar(textos.primeroSala)}</option>`}
           </select>
-          <button type="submit">Crear mesa</button>
+          <button type="submit">${escapar(textos.crearMesa)}</button>
         </form>
       </div>
     </section>
@@ -324,6 +344,10 @@ module.exports = function zonasSaasRoutes(db) {
 
   router.get("/configuracion-mesas", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(
+      db,
+      restauranteId
+    );
 
     const zonas = await all(
       db,
@@ -346,15 +370,23 @@ module.exports = function zonasSaasRoutes(db) {
       [restauranteId]
     );
 
-    res.send(renderPage(zonas, mesas, req.query || {}));
+    res.send(
+      renderPage(
+        zonas,
+        mesas,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-mesas/zonas", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const nombre = String((req.body || {}).nombre || "").trim();
 
     if (!nombre) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Nombre de sala obligatorio"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.nombreSalaObligatorio));
     }
 
     await run(
@@ -363,16 +395,17 @@ module.exports = function zonasSaasRoutes(db) {
       [nombre, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Sala creada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.salaCreada));
   });
 
   router.post("/configuracion-mesas/zonas/:id", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const id = Number(req.params.id || 0);
     const nombre = String((req.body || {}).nombre || "").trim();
 
     if (!id || !nombre) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Datos de sala incompletos"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.datosSalaIncompletos));
     }
 
     await run(
@@ -381,11 +414,12 @@ module.exports = function zonasSaasRoutes(db) {
       [nombre, id, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Sala actualizada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.salaActualizada));
   });
 
   router.post("/configuracion-mesas/zonas/:id/toggle", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const id = Number(req.params.id || 0);
 
     const zona = await get(
@@ -395,7 +429,7 @@ module.exports = function zonasSaasRoutes(db) {
     );
 
     if (!zona) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Sala no encontrada"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.salaNoEncontrada));
     }
 
     const nuevo = Number(zona.activo) === 1 ? 0 : 1;
@@ -412,7 +446,7 @@ module.exports = function zonasSaasRoutes(db) {
       );
 
       if (ocupadas && Number(ocupadas.n || 0) > 0) {
-        return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("No puedes ocultar una sala con mesas ocupadas, reservadas o en cuenta"));
+        return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.noOcultarSalaOcupadas));
       }
     }
 
@@ -422,16 +456,17 @@ module.exports = function zonasSaasRoutes(db) {
       [nuevo, id, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Sala actualizada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.salaActualizada));
   });
 
   router.post("/configuracion-mesas/mesas", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const numero = String((req.body || {}).numero || "").trim();
     const zonaId = Number((req.body || {}).zona_id || 0);
 
     if (!numero || !zonaId) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Datos de mesa incompletos"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.datosMesaIncompletos));
     }
 
     const zona = await get(
@@ -441,7 +476,7 @@ module.exports = function zonasSaasRoutes(db) {
     );
 
     if (!zona) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Sala no encontrada para este restaurante"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.salaNoEncontradaRestaurante));
     }
 
     await run(
@@ -450,17 +485,18 @@ module.exports = function zonasSaasRoutes(db) {
       [numero, zonaId, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Mesa creada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.mesaCreada));
   });
 
   router.post("/configuracion-mesas/mesas/:id", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const id = Number(req.params.id || 0);
     const numero = String((req.body || {}).numero || "").trim();
     const zonaId = Number((req.body || {}).zona_id || 0);
 
     if (!id || !numero || !zonaId) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Datos de mesa incompletos"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.datosMesaIncompletos));
     }
 
     const zona = await get(
@@ -470,7 +506,7 @@ module.exports = function zonasSaasRoutes(db) {
     );
 
     if (!zona) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Sala no encontrada para este restaurante"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.salaNoEncontradaRestaurante));
     }
 
     const mesa = await get(
@@ -480,7 +516,7 @@ module.exports = function zonasSaasRoutes(db) {
     );
 
     if (!mesa) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Mesa no encontrada"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.mesaNoEncontrada));
     }
 
     await run(
@@ -489,11 +525,12 @@ module.exports = function zonasSaasRoutes(db) {
       [numero, zonaId, id, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Mesa actualizada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.mesaActualizada));
   });
 
   router.post("/configuracion-mesas/mesas/:id/toggle", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosZonasRestaurante(db, restauranteId);
     const id = Number(req.params.id || 0);
 
     const mesa = await get(
@@ -503,11 +540,11 @@ module.exports = function zonasSaasRoutes(db) {
     );
 
     if (!mesa) {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Mesa no encontrada"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.mesaNoEncontrada));
     }
 
     if (Number(mesa.activo) === 1 && String(mesa.estado) !== "libre") {
-      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent("Solo puedes ocultar mesas libres"));
+      return res.redirect("/configuracion-mesas?error=" + encodeURIComponent(textos.soloOcultarMesasLibres));
     }
 
     const nuevo = Number(mesa.activo) === 1 ? 0 : 1;
@@ -518,7 +555,7 @@ module.exports = function zonasSaasRoutes(db) {
       [nuevo, id, restauranteId]
     );
 
-    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent("Visibilidad de mesa actualizada correctamente"));
+    res.redirect("/configuracion-mesas?ok=" + encodeURIComponent(textos.visibilidadMesaActualizada));
   });
 
   return router;

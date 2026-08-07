@@ -32,17 +32,82 @@ function escaparHTMLTopbarV2(valor){
 
 }
 
-function formatearRolTopbarV2(rol){
+function textosTopbarV2(idioma){
 
-    const mapa = {
-        admin: "Administrador",
-        gerente: "Gerente",
-        camarero: "Camarero",
-        cocina: "Cocina",
-        bar: "Bar"
+    const lingua = ["es","it","en"].includes(String(idioma || "").toLowerCase())
+        ? String(idioma).toLowerCase()
+        : "es";
+
+    const textos = {
+        es: {
+            admin: "Administrador",
+            gerente: "Gerente",
+            camarero: "Camarero",
+            cocina: "Cocina",
+            bar: "Bar",
+            usuario: "Usuario",
+            sinSesion: "Sin sesión",
+            iniciarSesion: "Iniciar sesión",
+            configuracion: "Configuración",
+            salir: "Salir"
+        },
+
+        it: {
+            admin: "Amministratore",
+            gerente: "Responsabile",
+            camarero: "Cameriere",
+            cocina: "Cucina",
+            bar: "Bar",
+            usuario: "Utente",
+            sinSesion: "Sessione non attiva",
+            iniciarSesion: "Accedi",
+            configuracion: "Configurazione",
+            salir: "Esci"
+        },
+
+        en: {
+            admin: "Administrator",
+            gerente: "Manager",
+            camarero: "Waiter",
+            cocina: "Kitchen",
+            bar: "Bar",
+            usuario: "User",
+            sinSesion: "Not signed in",
+            iniciarSesion: "Sign in",
+            configuracion: "Settings",
+            salir: "Sign out"
+        }
     };
 
-    return mapa[rol] || rol || "Usuario";
+    return textos[lingua];
+}
+
+function obtenerIdiomaInicialTopbarV2(){
+
+    const parametroIdioma =
+        new URLSearchParams(
+            window.location.search
+        ).get("idioma");
+
+    const idiomaDocumento =
+        document.documentElement.lang;
+
+    const candidato = String(
+        parametroIdioma ||
+        idiomaDocumento ||
+        "es"
+    ).trim().toLowerCase();
+
+    return ["es","it","en"].includes(candidato)
+        ? candidato
+        : "es";
+}
+
+function formatearRolTopbarV2(rol, idioma){
+
+    const textos = textosTopbarV2(idioma);
+
+    return textos[rol] || rol || textos.usuario;
 
 }
 
@@ -62,13 +127,23 @@ async function cargarUsuarioTopbarV2(){
 
         const usuario = await respuesta.json();
 
+        const idioma = ["es","it","en"].includes(
+            String(usuario.idioma || "").toLowerCase()
+        )
+            ? String(usuario.idioma).toLowerCase()
+            : "es";
+
+        document.documentElement.lang = idioma;
+
+        const textosTopbar = textosTopbarV2(idioma);
+
         if(!usuario.autenticado){
 
             contenedor.innerHTML = `
-                <span>Sin sesión</span>
+                <span>${textosTopbar.sinSesion}</span>
 
-                <a class="btn-login-v2" href="${API}/login">
-                    Iniciar sesión
+                <a class="btn-login-v2" href="${API}/login?idioma=${idioma}">
+                    ${textosTopbar.iniciarSesion}
                 </a>
             `;
 
@@ -80,7 +155,7 @@ async function cargarUsuarioTopbarV2(){
 
         contenedor.innerHTML = `
             <span>
-                ${escaparHTMLTopbarV2(usuario.nombre)} · ${formatearRolTopbarV2(rol)}
+                ${escaparHTMLTopbarV2(usuario.nombre)} · ${formatearRolTopbarV2(rol, idioma)}
             </span>
 
             ${puedeConfigurar ? `
@@ -88,12 +163,12 @@ async function cargarUsuarioTopbarV2(){
                     class="btn-configuracion-v2" 
                     href="${API}/configuracion"
                 >
-                    ⚙️ Configuración
+                    ⚙️ ${textosTopbar.configuracion}
                 </a>
             ` : ""}
 
             <a class="btn-salir-v2" href="${API}/logout">
-                Salir
+                ${textosTopbar.salir}
             </a>
         `;
 
@@ -101,11 +176,22 @@ async function cargarUsuarioTopbarV2(){
 
         console.error("Error cargando usuario:", error);
 
-        contenedor.innerHTML = `
-            <span>Sin sesión</span>
+        const idioma =
+            obtenerIdiomaInicialTopbarV2();
 
-            <a class="btn-login-v2" href="${API}/login">
-                Iniciar sesión
+        const textosTopbar =
+            textosTopbarV2(idioma);
+
+        document.documentElement.lang = idioma;
+
+        contenedor.innerHTML = `
+            <span>${textosTopbar.sinSesion}</span>
+
+            <a
+                class="btn-login-v2"
+                href="${API}/login?idioma=${idioma}"
+            >
+                ${textosTopbar.iniciarSesion}
             </a>
         `;
 

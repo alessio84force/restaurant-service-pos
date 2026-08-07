@@ -36,6 +36,8 @@ const { validarCodigoPromocional } = require("./promoCodes");
 const express = require('express');
 const seoLocalesRoutes = require("./routes/seoLocales");
 const marketingPublicoRoutes = require("./routes/marketingPublico");
+const marketingMultilinguaRoutes = require("./routes/marketingMultilingua");
+const { normalizarIdioma } = require("./utils/i18n");
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const cors = require('cors');
@@ -80,6 +82,7 @@ const app = express();
 
 app.use(seoLocalesRoutes());
 app.use(marketingPublicoRoutes());
+app.use(marketingMultilinguaRoutes());
 app.use(session({
 secret: "restaurant-service-secret",
 resave: false,
@@ -272,295 +275,170 @@ app.get('/', (req, res) => {
   res.redirect('/login');
 });
 
+function renderLoginPagina(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      htmlLang: "es",
+      title: "Restaurant Service POS - Acceso",
+      acceso: "Acceso",
+      subtitulo: "Entra con tu usuario para continuar.",
+      email: "Email",
+      emailPlaceholder: "tu@email.com",
+      password: "Contraseña",
+      passwordPlaceholder: "Contraseña",
+      entrar: "Entrar al POS",
+      crear: "Crear cuenta nueva",
+      gestion: "Gestiona tu restaurante",
+      descripcion: "Un POS pensado para restaurantes reales: mesas, comandas, tickets, pagos y caja desde una sola herramienta.",
+      mesas: "Mesas y salas",
+      comandas: "Comandas",
+      tickets: "Tickets",
+      caja: "Caja diaria",
+      prueba: "Prueba gratuita durante 7 días. Si tienes un código promocional, podrás introducirlo durante el registro.",
+      legal: "Todos los derechos reservados.",
+      aviso: "Aviso legal",
+      privacidad: "Privacidad",
+      cookies: "Cookies",
+      terminos: "Términos"
+    },
+
+    it: {
+      htmlLang: "it",
+      title: "Restaurant Service POS - Accesso",
+      acceso: "Accesso",
+      subtitulo: "Accedi con il tuo account per continuare.",
+      email: "Email",
+      emailPlaceholder: "tua@email.it",
+      password: "Password",
+      passwordPlaceholder: "Password",
+      entrar: "Accedi al POS",
+      crear: "Crea un nuovo account",
+      gestion: "Gestisci il tuo ristorante",
+      descripcion: "Un POS pensato per ristoranti reali: tavoli, comande, ricevute, pagamenti e cassa in un unico strumento.",
+      mesas: "Tavoli e sale",
+      comandas: "Comande",
+      tickets: "Ricevute",
+      caja: "Cassa giornaliera",
+      prueba: "Prova gratuita per 7 giorni. Se hai un codice promozionale, potrai inserirlo durante la registrazione.",
+      legal: "Tutti i diritti riservati.",
+      aviso: "Note legali",
+      privacidad: "Privacy",
+      cookies: "Cookie",
+      terminos: "Termini"
+    },
+
+    en: {
+      htmlLang: "en",
+      title: "Restaurant Service POS - Login",
+      acceso: "Login",
+      subtitulo: "Sign in with your account to continue.",
+      email: "Email",
+      emailPlaceholder: "you@email.com",
+      password: "Password",
+      passwordPlaceholder: "Password",
+      entrar: "Sign in to POS",
+      crear: "Create a new account",
+      gestion: "Manage your restaurant",
+      descripcion: "A POS built for real restaurants: tables, orders, receipts, payments and daily cash management in one tool.",
+      mesas: "Tables and areas",
+      comandas: "Orders",
+      tickets: "Receipts",
+      caja: "Daily cash",
+      prueba: "Free trial for 7 days. If you have a promotional code, you can enter it during registration.",
+      legal: "All rights reserved.",
+      aviso: "Legal notice",
+      privacidad: "Privacy",
+      cookies: "Cookies",
+      terminos: "Terms"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
+  return [
+    '<!DOCTYPE html>',
+    '<html lang="' + t.htmlLang + '">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>' + t.title + '</title>',
+    '<style>',
+    '*{box-sizing:border-box;}',
+    'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:white;}',
+    '.pagina{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) 460px;}',
+    '.zona-foto{min-height:100vh;background:#0f172a;display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden;}',
+    '.zona-foto img{width:108%;height:108%;max-height:none;object-fit:contain;object-position:center center;display:block;}',
+    '.panel-derecho{min-height:100vh;background:#0f172a;padding:32px;display:flex;flex-direction:column;justify-content:center;gap:18px;box-shadow:-18px 0 45px rgba(0,0,0,.25);}',
+    '.login-card,.publicidad-card{background:rgba(255,255,255,.96);color:#111827;border-radius:24px;padding:24px;box-shadow:0 20px 55px rgba(0,0,0,.28);}',
+    '.top-login{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}',
+    '.logo-mini{display:inline-flex;align-items:center;gap:8px;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;}',
+    '.lang{display:flex;gap:6px;}',
+    '.lang a{border:1px solid #cbd5e1;border-radius:999px;padding:6px 9px;color:#475569;text-decoration:none;font-size:12px;font-weight:900;}',
+    '.lang a.active{background:#f97316;color:#111827;border-color:#f97316;}',
+    '.login-card h2,.publicidad-card h2{margin:0;font-size:28px;letter-spacing:-.5px;}',
+    '.login-card .subtitulo,.publicidad-card p{margin:8px 0 18px 0;color:#64748b;font-weight:700;line-height:1.42;}',
+    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
+    'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:13px;font-size:15px;background:white;margin-bottom:13px;}',
+    'button{width:100%;border:none;border-radius:15px;padding:14px;font-weight:900;font-size:15px;cursor:pointer;background:#16a34a;color:white;box-shadow:0 10px 22px rgba(22,163,74,.25);}',
+    'button:hover{background:#15803d;}',
+    '.crear{display:block;text-align:center;margin-top:12px;padding:13px;border-radius:15px;background:#111827;color:white;text-decoration:none;font-weight:900;}',
+    '.crear:hover{background:#000;}',
+    '.lista{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}',
+    '.item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;font-weight:900;font-size:14px;color:#111827;}',
+    '.prueba{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:13px;color:#166534;font-weight:900;font-size:14px;line-height:1.4;margin-top:16px;}',
+    '@media(max-width:950px){.pagina{grid-template-columns:1fr;}.zona-foto{display:none;}.panel-derecho{padding:20px;}.login-card,.publicidad-card{border-radius:20px;}.lista{grid-template-columns:1fr;}}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<div class="pagina">',
+    '<div class="zona-foto">',
+    '<img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS">',
+    '</div>',
+    '<div class="panel-derecho">',
+    '<section class="login-card">',
+    '<div class="top-login">',
+    '<div class="logo-mini">🍽️ Restaurant Service POS</div>',
+    '<div class="lang">',
+    '<a href="/login?idioma=es" class="' + (idioma === "es" ? "active" : "") + '">ES</a>',
+    '<a href="/login?idioma=it" class="' + (idioma === "it" ? "active" : "") + '">IT</a>',
+    '<a href="/login?idioma=en" class="' + (idioma === "en" ? "active" : "") + '">EN</a>',
+    '</div>',
+    '</div>',
+    '<h2>' + t.acceso + '</h2>',
+    '<p class="subtitulo">' + t.subtitulo + '</p>',
+    '<form method="POST" action="/login">',
+    '<input type="hidden" name="idioma" value="' + idioma + '">',
+    '<label>' + t.email + '</label>',
+    '<input name="email" type="email" placeholder="' + t.emailPlaceholder + '" required>',
+    '<label>' + t.password + '</label>',
+    '<input name="password" type="password" placeholder="' + t.passwordPlaceholder + '" required>',
+    '<button type="submit">' + t.entrar + '</button>',
+    '</form>',
+    '<a class="crear" href="/registro?idioma=' + idioma + '">' + t.crear + '</a>',
+    '</section>',
+    '<section class="publicidad-card">',
+    '<h2>' + t.gestion + '</h2>',
+    '<p>' + t.descripcion + '</p>',
+    '<div class="lista">',
+    '<div class="item">✅ ' + t.mesas + '</div>',
+    '<div class="item">✅ ' + t.comandas + '</div>',
+    '<div class="item">✅ ' + t.tickets + '</div>',
+    '<div class="item">✅ ' + t.caja + '</div>',
+    '</div>',
+    '<div class="prueba">' + t.prueba + '</div>',
+    '</section>',
+    '</div>',
+    '</div>',
+    '</body>',
+    '</html>'
+  ].join("\n");
+}
+
 app.get('/login', (req, res) => {
-  res.send(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Restaurant Service POS - Acceso</title>
-<style>
-*{
-box-sizing:border-box;
-}
-
-body{
-margin:0;
-min-height:100vh;
-font-family:Arial,sans-serif;
-background:#0f172a;
-color:white;
-}
-
-.pagina{
-min-height:100vh;
-display:grid;
-grid-template-columns:minmax(0,1fr) 460px;
-}
-
-.zona-foto{
-min-height:100vh;
-background:#0f172a;
-display:flex;
-align-items:center;
-justify-content:center;
-padding:6px;
-overflow:hidden;
-}
-
-.zona-foto img{
-width:108%;
-height:108%;
-max-height:none;
-object-fit:contain;
-object-position:center center;
-display:block;
-}
-
-.panel-derecho{
-min-height:100vh;
-background:#0f172a;
-padding:32px;
-display:flex;
-flex-direction:column;
-justify-content:center;
-gap:18px;
-box-shadow:-18px 0 45px rgba(0,0,0,.25);
-}
-
-.login-card,
-.publicidad-card{
-background:rgba(255,255,255,.96);
-color:#111827;
-border-radius:24px;
-padding:24px;
-box-shadow:0 20px 55px rgba(0,0,0,.28);
-}
-
-.logo-mini{
-display:inline-flex;
-align-items:center;
-gap:8px;
-background:#eff6ff;
-color:#1d4ed8;
-border-radius:999px;
-padding:8px 12px;
-font-weight:900;
-font-size:13px;
-margin-bottom:14px;
-}
-
-.login-card h2,
-.publicidad-card h2{
-margin:0;
-font-size:28px;
-letter-spacing:-.5px;
-}
-
-.login-card .subtitulo,
-.publicidad-card p{
-margin:8px 0 18px 0;
-color:#64748b;
-font-weight:700;
-line-height:1.42;
-}
-
-label{
-display:block;
-font-size:13px;
-font-weight:900;
-color:#475569;
-margin-bottom:7px;
-}
-
-input{
-width:100%;
-border:1px solid #cbd5e1;
-border-radius:14px;
-padding:13px;
-font-size:15px;
-background:white;
-margin-bottom:13px;
-}
-
-button{
-width:100%;
-border:none;
-border-radius:15px;
-padding:14px;
-font-weight:900;
-font-size:15px;
-cursor:pointer;
-background:#16a34a;
-color:white;
-box-shadow:0 10px 22px rgba(22,163,74,.25);
-}
-
-button:hover{
-background:#15803d;
-}
-
-.crear{
-display:block;
-text-align:center;
-margin-top:12px;
-padding:13px;
-border-radius:15px;
-background:#111827;
-color:white;
-text-decoration:none;
-font-weight:900;
-}
-
-.crear:hover{
-background:#000;
-}
-
-.lista{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-margin-top:16px;
-}
-
-.item{
-background:#f8fafc;
-border:1px solid #e2e8f0;
-border-radius:14px;
-padding:12px;
-font-weight:900;
-font-size:14px;
-color:#111827;
-}
-
-.prueba{
-background:#ecfdf5;
-border:1px solid #bbf7d0;
-border-radius:16px;
-padding:13px;
-color:#166534;
-font-weight:900;
-font-size:14px;
-line-height:1.4;
-margin-top:16px;
-}
-
-.footer-mini{
-font-size:12px;
-font-weight:800;
-color:#94a3b8;
-text-align:center;
-margin-top:4px;
-line-height:1.55;
-}
-
-.footer-mini a{
-color:#cbd5e1;
-text-decoration:none;
-}
-
-.footer-mini a:hover{
-color:white;
-text-decoration:underline;
-}
-
-@media(max-width:950px){
-.pagina{
-grid-template-columns:1fr;
-}
-
-.zona-foto{
-display:none;
-}
-
-.panel-derecho{
-padding:20px;
-}
-
-.login-card,
-.publicidad-card{
-border-radius:20px;
-}
-
-.lista{
-grid-template-columns:1fr;
-}
-}
-</style>
-</head>
-
-<body>
-
-<div class="pagina">
-
-<div class="zona-foto">
-<img src="/app/assets/login-restaurant-service.png" alt="Restaurant Service POS">
-</div>
-
-<div class="panel-derecho">
-
-<section class="login-card">
-
-<div class="logo-mini">🍽️ Restaurant Service POS</div>
-
-<h2>Acceso</h2>
-<p class="subtitulo">
-Entra con tu usuario para continuar.
-</p>
-
-<form method="POST" action="/login">
-
-<label>Email</label>
-<input name="email" type="email" placeholder="tu@email.com" required>
-
-<label>Contraseña</label>
-<input name="password" type="password" placeholder="Contraseña" required>
-
-<button type="submit">Entrar al POS</button>
-
-</form>
-
-<a class="crear" href="/registro">Crear cuenta nueva</a>
-
-</section>
-
-<section class="publicidad-card">
-
-<h2>Gestiona tu restaurante</h2>
-
-<p>
-Un POS pensado para restaurantes reales: mesas, comandas, tickets, pagos y caja desde una sola herramienta.
-</p>
-
-<div class="lista">
-<div class="item">✅ Mesas y salas</div>
-<div class="item">✅ Comandas</div>
-<div class="item">✅ Tickets</div>
-<div class="item">✅ Caja diaria</div>
-</div>
-
-<div class="prueba">
-Prueba gratuita durante 7 días. Si tienes un código promocional, podrás introducirlo durante el registro.
-</div>
-
-</section>
-
-<div class="footer-mini">
-© 2026 Restaurant Service POS™. Todos los derechos reservados.
-<br>
-<a href="/aviso-legal">Aviso legal</a> ·
-<a href="/privacidad">Privacidad</a> ·
-<a href="/cookies">Cookies</a> ·
-<a href="/terminos">Términos</a>
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
-  `);
+  const idioma = normalizarIdioma(req.query.idioma);
+  res.send(renderLoginPagina(idioma));
 });
 
 
@@ -575,26 +453,142 @@ function escapeHtmlRegistro(valor) {
 
 function renderRegistroPropietario(error, valores) {
   const v = valores || {};
+  const idioma = normalizarIdioma(v.idioma);
+
+  const textos = {
+    es: {
+      htmlLang: "es",
+      title: "Crear cuenta - Restaurant Service POS",
+      heading: "Crear cuenta del restaurante",
+      intro: "Registra el restaurante y crea el usuario propietario. La cuenta empezará con prueba gratuita.",
+      restaurante: "Nombre del restaurante",
+      propietario: "Nombre del propietario",
+      telefono: "Teléfono",
+      email: "Email de acceso",
+      password: "Contraseña",
+      promo: "Código promocional opcional",
+      trial: "La prueba gratuita se activará automáticamente al crear la cuenta.",
+      fiscalTitle: "Datos fiscales para facturación",
+      fiscalIntro: "Estos datos se usarán para emitir facturas cuando se active la suscripción.",
+      razon: "Razón social / nombre fiscal",
+      nif: "NIF / CIF / VAT",
+      direccion: "Dirección fiscal",
+      cp: "Código postal",
+      ciudad: "Ciudad",
+      provincia: "Provincia",
+      pais: "País",
+      emailFactura: "Email de facturación",
+      crear: "Crear cuenta y activar prueba",
+      volver: "Volver al login",
+      paisValue: "España",
+      razonPlaceholder: "Ej: Restaurante La Alameda SL",
+      nifPlaceholder: "Ej: B12345678",
+      direccionPlaceholder: "Calle, número, local",
+      cpPlaceholder: "Ej: 28001",
+      ciudadPlaceholder: "Ej: Madrid",
+      provinciaPlaceholder: "Ej: Madrid",
+      paisPlaceholder: "España",
+      facturaPlaceholder: "facturacion@restaurante.com"
+    },
+
+    it: {
+      htmlLang: "it",
+      title: "Crea account - Restaurant Service POS",
+      heading: "Crea l'account del ristorante",
+      intro: "Registra il ristorante e crea l'utente proprietario. L'account inizierà con una prova gratuita.",
+      restaurante: "Nome del ristorante",
+      propietario: "Nome del proprietario",
+      telefono: "Telefono",
+      email: "Email di accesso",
+      password: "Password",
+      promo: "Codice promozionale opzionale",
+      trial: "La prova gratuita verrà attivata automaticamente alla creazione dell'account.",
+      fiscalTitle: "Dati fiscali per la fatturazione",
+      fiscalIntro: "Questi dati verranno utilizzati per emettere le fatture quando verrà attivato l'abbonamento.",
+      razon: "Ragione sociale / nome fiscale",
+      nif: "Partita IVA / Codice fiscale / VAT",
+      direccion: "Indirizzo fiscale",
+      cp: "CAP",
+      ciudad: "Città",
+      provincia: "Provincia",
+      pais: "Paese",
+      emailFactura: "Email di fatturazione",
+      crear: "Crea account e attiva la prova",
+      volver: "Torna al login",
+      paisValue: "Italia",
+      razonPlaceholder: "Es: Ristorante La Piazza SRL",
+      nifPlaceholder: "Partita IVA / Codice fiscale",
+      direccionPlaceholder: "Via, numero civico, locale",
+      cpPlaceholder: "Es: 00100",
+      ciudadPlaceholder: "Es: Roma",
+      provinciaPlaceholder: "Es: Roma",
+      paisPlaceholder: "Italia",
+      facturaPlaceholder: "fatturazione@ristorante.it"
+    },
+
+    en: {
+      htmlLang: "en",
+      title: "Create account - Restaurant Service POS",
+      heading: "Create your restaurant account",
+      intro: "Register your restaurant and create the owner account. Your free trial will start immediately.",
+      restaurante: "Restaurant name",
+      propietario: "Owner name",
+      telefono: "Phone",
+      email: "Login email",
+      password: "Password",
+      promo: "Optional promotional code",
+      trial: "The free trial will be activated automatically when you create the account.",
+      fiscalTitle: "Billing details",
+      fiscalIntro: "These details will be used for invoicing when the subscription is activated.",
+      razon: "Legal business name",
+      nif: "Tax ID / VAT number",
+      direccion: "Billing address",
+      cp: "Postal code",
+      ciudad: "City",
+      provincia: "State / Province",
+      pais: "Country",
+      emailFactura: "Billing email",
+      crear: "Create account and start free trial",
+      volver: "Back to login",
+      paisValue: "",
+      razonPlaceholder: "Example: The Restaurant Ltd",
+      nifPlaceholder: "Tax ID / VAT number",
+      direccionPlaceholder: "Street, number, unit",
+      cpPlaceholder: "Postal code",
+      ciudadPlaceholder: "City",
+      provinciaPlaceholder: "State / Province",
+      paisPlaceholder: "Country",
+      facturaPlaceholder: "billing@restaurant.com"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
   const errorHtml = error
     ? '<div class="error">' + escapeHtmlRegistro(error) + '</div>'
     : '';
 
   return [
     '<!DOCTYPE html>',
-    '<html lang="es">',
+    '<html lang="' + t.htmlLang + '">',
     '<head>',
     '<meta charset="UTF-8">',
-    '<title>Crear cuenta - Restaurant Service POS</title>',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    '<title>' + t.title + '</title>',
     '<style>',
     '*{box-sizing:border-box;}',
     'body{margin:0;min-height:100vh;font-family:Arial,sans-serif;background:#0f172a;color:#111827;padding:28px;}',
     '.card{max-width:720px;margin:35px auto;background:white;border-radius:26px;padding:32px;box-shadow:0 22px 60px rgba(0,0,0,.28);}',
-    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;margin-bottom:16px;}',
+    '.top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}',
+    '.marca{display:inline-flex;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:8px 12px;font-weight:900;font-size:13px;}',
+    '.lang{display:flex;gap:6px;}',
+    '.lang a{border:1px solid #cbd5e1;border-radius:999px;padding:6px 9px;color:#475569;text-decoration:none;font-size:12px;font-weight:900;}',
+    '.lang a.active{background:#f97316;color:#111827;border-color:#f97316;}',
     'h1{margin:0;font-size:34px;letter-spacing:-.7px;}',
     '.intro{color:#64748b;font-size:16px;line-height:1.5;margin:10px 0 24px 0;font-weight:700;}',
     '.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}',
     '.full{grid-column:1 / -1;}',
-    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin-bottom:7px;}',
+    'label{display:block;font-size:13px;font-weight:900;color:#475569;margin:14px 0 7px;}',
     'input{width:100%;border:1px solid #cbd5e1;border-radius:14px;padding:14px;font-size:15px;background:white;}',
     '.nota{background:#ecfdf5;border:1px solid #bbf7d0;border-radius:16px;padding:14px;color:#166534;font-weight:900;line-height:1.45;margin:18px 0;}',
     '.error{background:#fef2f2;border:1px solid #fecaca;border-radius:16px;padding:14px;color:#991b1b;font-weight:900;margin:0 0 18px 0;}',
@@ -607,60 +601,68 @@ function renderRegistroPropietario(error, valores) {
     '</head>',
     '<body>',
     '<div class="card">',
+    '<div class="top">',
     '<div class="marca">Restaurant Service POS</div>',
-    '<h1>Crear cuenta del restaurante</h1>',
-    '<p class="intro">Registra el restaurante y crea el usuario propietario. La cuenta empezará con prueba gratuita.</p>',
+    '<div class="lang">',
+    '<a href="/registro?idioma=es" class="' + (idioma === "es" ? "active" : "") + '">ES</a>',
+    '<a href="/registro?idioma=it" class="' + (idioma === "it" ? "active" : "") + '">IT</a>',
+    '<a href="/registro?idioma=en" class="' + (idioma === "en" ? "active" : "") + '">EN</a>',
+    '</div>',
+    '</div>',
+    '<h1>' + t.heading + '</h1>',
+    '<p class="intro">' + t.intro + '</p>',
     errorHtml,
     '<form method="POST" action="/registro">',
+    '<input type="hidden" name="idioma" value="' + escapeHtmlRegistro(idioma) + '">',
     '<div class="grid">',
     '<div class="full">',
-    '<label>Nombre del restaurante</label>',
+    '<label>' + t.restaurante + '</label>',
     '<input name="nombre_restaurante" value="' + escapeHtmlRegistro(v.nombre_restaurante) + '" required>',
     '</div>',
     '<div>',
-    '<label>Nombre del propietario</label>',
+    '<label>' + t.propietario + '</label>',
     '<input name="nombre_propietario" value="' + escapeHtmlRegistro(v.nombre_propietario) + '" required>',
     '</div>',
     '<div>',
-    '<label>Teléfono</label>',
+    '<label>' + t.telefono + '</label>',
     '<input name="telefono" value="' + escapeHtmlRegistro(v.telefono) + '">',
     '</div>',
     '<div>',
-    '<label>Email de acceso</label>',
+    '<label>' + t.email + '</label>',
     '<input name="email" type="email" value="' + escapeHtmlRegistro(v.email) + '" required>',
     '</div>',
     '<div>',
-    '<label>Contraseña</label>',
+    '<label>' + t.password + '</label>',
     '<input name="password" type="password" required>',
     '</div>',
     '<div class="full">',
-    '<label>Código promocional opcional</label>',
+    '<label>' + t.promo + '</label>',
     '<input name="codigo_promocional" value="">',
     '</div>',
     '</div>',
-    '<div class="nota">La prueba gratuita se activará automáticamente al crear la cuenta.</div>',
-    '<h2>Datos fiscales para facturación</h2>',
-    '<p class="intro">Estos datos se usarán para emitir facturas cuando se active la suscripción.</p>',
-    '<label>Razón social / nombre fiscal</label>',
-    '<input name="razon_social" placeholder="Ej: Restaurante La Alameda SL" required>',
-    '<label>NIF / CIF / VAT</label>',
-    '<input name="nif" placeholder="Ej: B12345678" required>',
-    '<label>Dirección fiscal</label>',
-    '<input name="direccion" placeholder="Calle, número, local" required>',
-    '<label>Código postal</label>',
-    '<input name="codigo_postal" placeholder="Ej: 28001" required>',
-    '<label>Ciudad</label>',
-    '<input name="ciudad" placeholder="Ej: Madrid" required>',
-    '<label>Provincia</label>',
-    '<input name="provincia" placeholder="Ej: Madrid" required>',
-    '<label>País</label>',
-    '<input name="pais" value="España" required>',
-    '<label>Email de facturación</label>',
-    '<input type="email" name="email_facturacion" placeholder="facturacion@restaurante.com" required>',
-    '<button type="submit">Crear cuenta y activar prueba</button>',
+    '<div class="nota">' + t.trial + '</div>',
+    '<h2>' + t.fiscalTitle + '</h2>',
+    '<p class="intro">' + t.fiscalIntro + '</p>',
+    '<label>' + t.razon + '</label>',
+    '<input name="razon_social" placeholder="' + t.razonPlaceholder + '" required>',
+    '<label>' + t.nif + '</label>',
+    '<input name="nif" placeholder="' + t.nifPlaceholder + '" required>',
+    '<label>' + t.direccion + '</label>',
+    '<input name="direccion" placeholder="' + t.direccionPlaceholder + '" required>',
+    '<label>' + t.cp + '</label>',
+    '<input name="codigo_postal" placeholder="' + t.cpPlaceholder + '" required>',
+    '<label>' + t.ciudad + '</label>',
+    '<input name="ciudad" placeholder="' + t.ciudadPlaceholder + '" required>',
+    '<label>' + t.provincia + '</label>',
+    '<input name="provincia" placeholder="' + t.provinciaPlaceholder + '" required>',
+    '<label>' + t.pais + '</label>',
+    '<input name="pais" value="' + t.paisValue + '" placeholder="' + t.paisPlaceholder + '" required>',
+    '<label>' + t.emailFactura + '</label>',
+    '<input type="email" name="email_facturacion" placeholder="' + t.facturaPlaceholder + '" required>',
+    '<button type="submit">' + t.crear + '</button>',
     '</form>',
-    '<a class="volver" href="/login">Volver al login</a>',
-    '<div class="legal">© 2026 Restaurant Service POS™. Todos los derechos reservados.</div>',
+    '<a class="volver" href="/login?idioma=' + idioma + '">' + t.volver + '</a>',
+    '<div class="legal">© 2026 Restaurant Service POS™</div>',
     '</div>',
     '</body>',
     '</html>'
@@ -868,7 +870,8 @@ app.use(function(req, res, next) {
 });
 
 app.get('/registro', (req, res) => {
-  res.send(renderRegistroPropietario(null, {}));
+  const idioma = normalizarIdioma(req.query.idioma);
+  res.send(renderRegistroPropietario(null, { idioma }));
 });
 
 app.post('/registro', (req, res) => {
@@ -878,7 +881,8 @@ app.post('/registro', (req, res) => {
     telefono: String(req.body.telefono || "").trim(),
     email: String(req.body.email || "").trim().toLowerCase(),
     password: String(req.body.password || ""),
-    codigo_promocional: String(req.body.codigo_promocional || "").trim()
+    codigo_promocional: String(req.body.codigo_promocional || "").trim(),
+    idioma: normalizarIdioma(req.body.idioma)
   };
 
   if (!datos.nombre_restaurante || !datos.nombre_propietario || !datos.email || !datos.password) {
@@ -1025,13 +1029,133 @@ app.get('/pago-online-pendiente', (req, res) => {
   res.send(renderPagoOnlinePendiente());
 });
 
+function renderLoginError(idiomaValor, tipo) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      lang: "es",
+      title: "Login incorrecto",
+      usuarioTitulo: "Login incorrecto",
+      usuarioTexto: "Email o contraseña incorrectos, o usuario desactivado.",
+      passwordTitulo: "Contraseña incorrecta",
+      passwordTexto: "Revisa el email y la contraseña.",
+      volver: "Volver a iniciar sesión"
+    },
+
+    it: {
+      lang: "it",
+      title: "Accesso non riuscito",
+      usuarioTitulo: "Accesso non riuscito",
+      usuarioTexto: "Email o password non corretti, oppure utente disattivato.",
+      passwordTitulo: "Password non corretta",
+      passwordTexto: "Controlla l'email e la password.",
+      volver: "Torna al login"
+    },
+
+    en: {
+      lang: "en",
+      title: "Login failed",
+      usuarioTitulo: "Login failed",
+      usuarioTexto: "Incorrect email or password, or the user has been disabled.",
+      passwordTitulo: "Incorrect password",
+      passwordTexto: "Check your email and password.",
+      volver: "Back to login"
+    }
+  };
+
+  const t = textos[idioma] || textos.es;
+
+  const titulo =
+    tipo === "password"
+      ? t.passwordTitulo
+      : t.usuarioTitulo;
+
+  const mensaje =
+    tipo === "password"
+      ? t.passwordTexto
+      : t.usuarioTexto;
+
+  return `<!DOCTYPE html>
+<html lang="${t.lang}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${t.title}</title>
+
+  <style>
+    body{
+      font-family:Arial,sans-serif;
+      background:#eef2f7;
+      margin:0;
+      padding:40px;
+      color:#111827;
+    }
+
+    .card{
+      max-width:420px;
+      margin:60px auto;
+      background:white;
+      border-radius:18px;
+      padding:26px;
+      box-shadow:0 12px 28px rgba(15,23,42,.12);
+      text-align:center;
+    }
+
+    h1{
+      margin-top:0;
+    }
+
+    p{
+      color:#475569;
+      line-height:1.5;
+    }
+
+    a{
+      display:inline-flex;
+      margin-top:12px;
+      background:#2563eb;
+      color:white;
+      padding:12px 16px;
+      border-radius:12px;
+      text-decoration:none;
+      font-weight:900;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>${titulo}</h1>
+    <p>${mensaje}</p>
+    <a href="/login?idioma=${idioma}">${t.volver}</a>
+  </div>
+</body>
+</html>`;
+}
+
+
 app.post('/login', (req, res) => {
 
   const email = req.body.email;
   const password = req.body.password;
+  const idiomaFormulario = normalizarIdioma(req.body && req.body.idioma);
 
   db.get(
-    'SELECT id, nombre, email, password, rol FROM usuarios WHERE email=? AND activo=1',
+    `
+      SELECT
+        u.id,
+        u.nombre,
+        u.email,
+        u.password,
+        u.rol,
+        COALESCE(u.restaurante_id, 1) AS restaurante_id,
+        COALESCE(r.idioma, 'es') AS idioma
+      FROM usuarios u
+      LEFT JOIN restaurantes r
+        ON r.id = COALESCE(u.restaurante_id, 1)
+      WHERE u.email=? AND u.activo=1
+    `,
     [email],
     (err, usuario) => {
 
@@ -1040,88 +1164,40 @@ app.post('/login', (req, res) => {
       }
 
       if (!usuario) {
-        return res.status(401).send(`
-          <!DOCTYPE html>
-          <html lang="es">
-          <head>
-            <meta charset="UTF-8">
-            <title>Login incorrecto</title>
-            <style>
-              body{
-                font-family:Arial,sans-serif;
-                background:#eef2f7;
-                padding:40px;
-                color:#111827;
-              }
-
-              .card{
-                max-width:420px;
-                margin:60px auto;
-                background:white;
-                border-radius:18px;
-                padding:26px;
-                box-shadow:0 12px 28px rgba(15,23,42,.12);
-              }
-
-              h1{
-                margin-top:0;
-              }
-
-              a{
-                display:inline-flex;
-                margin-top:12px;
-                background:#2563eb;
-                color:white;
-                padding:12px 16px;
-                border-radius:12px;
-                text-decoration:none;
-                font-weight:900;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="card">
-              <h1>Login incorrecto</h1>
-              <p>Email o contraseña incorrectos, o usuario desactivado.</p>
-              <a href="/login">Volver a iniciar sesión</a>
-            </div>
-          </body>
-          </html>
-        `);
+        return res
+          .status(401)
+          .send(renderLoginError(idiomaFormulario, "usuario"));
       }
 
-      
-      if(!passwords.verificarPassword(password, usuario.password)){
-        return res.send(`
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <title>Login incorrecto</title>
-              <style>
-                body{font-family:Arial;background:#f3f4f6;margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;}
-                .box{background:#fff;padding:30px;border-radius:18px;box-shadow:0 12px 30px rgba(0,0,0,.12);max-width:420px;text-align:center;}
-                a{display:inline-block;margin-top:18px;background:#111827;color:white;text-decoration:none;padding:12px 18px;border-radius:12px;}
-              </style>
-            </head>
-            <body>
-              <div class="box">
-                <h2>Contraseña incorrecta</h2>
-                <p>Revisa el email y la contraseña.</p>
-                <a href="/login">Volver al login</a>
-              </div>
-            </body>
-          </html>
-        `);
+      if (!passwords.verificarPassword(password, usuario.password)) {
+        return res
+          .status(401)
+          .send(renderLoginError(idiomaFormulario, "password"));
       }
 
-      if(passwords.necesitaRehash(usuario.password)){
+      if (passwords.necesitaRehash(usuario.password)) {
         const nuevoHash = passwords.hashPassword(password);
-        db.run("UPDATE usuarios SET password=? WHERE id=?", [nuevoHash, usuario.id]);
+
+        db.run(
+          "UPDATE usuarios SET password=? WHERE id=?",
+          [nuevoHash, usuario.id]
+        );
       }
+
+      const idiomaRestaurante = normalizarIdioma(
+        usuario.idioma || idiomaFormulario
+      );
 
       delete usuario.password;
 
+      usuario.restaurante_id =
+        Number(usuario.restaurante_id || 1);
+
+      usuario.idioma = idiomaRestaurante;
+
       req.session.usuario = usuario;
+      req.session.restaurante_id = usuario.restaurante_id;
+      req.session.idioma = idiomaRestaurante;
 
       if (usuario.rol === "admin" || usuario.rol === "gerente") {
         return res.redirect("/configuracion");
@@ -1147,8 +1223,19 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
+  const idioma = normalizarIdioma(
+    req.session &&
+    (
+      req.session.idioma ||
+      (
+        req.session.usuario &&
+        req.session.usuario.idioma
+      )
+    )
+  );
+
   req.session.destroy(() => {
-    res.redirect('/login');
+    res.redirect('/login?idioma=' + idioma);
   });
 });
 

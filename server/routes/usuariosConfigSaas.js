@@ -1,5 +1,9 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosUsuariosConfig,
+  rolUsuarioVisible
+} = require("../utils/usuariosConfigI18n");
 
 function escapar(valor) {
   return String(valor == null ? "" : valor)
@@ -21,6 +25,20 @@ function usuarioActualId(req) {
     : 0;
 }
 
+function textosUsuariosReq(req) {
+  const usuario =
+    req.session && req.session.usuario
+      ? req.session.usuario
+      : {};
+
+  const idioma =
+    (req.session && req.session.idioma) ||
+    usuario.idioma ||
+    "es";
+
+  return textosUsuariosConfig(idioma);
+}
+
 function requiereAdminGerente(req, res, next) {
   if (!req.session || !req.session.usuario) {
     return res.redirect("/login");
@@ -29,7 +47,11 @@ function requiereAdminGerente(req, res, next) {
   const rol = rolActual(req);
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para acceder a esta configuración.");
+    const textos = textosUsuariosReq(req);
+
+    return res.status(403).send(
+      textos.sinPermisos
+    );
   }
 
   return next();
@@ -38,9 +60,11 @@ function requiereAdminGerente(req, res, next) {
 function requiereLoginJson(req, res, next) {
   if (req.session && req.session.usuario) return next();
 
+  const textos = textosUsuariosReq(req);
+
   res.status(401).json({
     ok: false,
-    error: "No autenticado"
+    error: textos.noAutenticado
   });
 }
 
@@ -207,7 +231,7 @@ async function crearHashPassword(passwordPlano) {
     const bcrypt = require("bcrypt");
     return await bcrypt.hash(password, 10);
   } catch (err) {
-    throw new Error("No se pudo preparar la contraseña.");
+    throw new Error("PASSWORD_HASH_ERROR");
   }
 }
 
@@ -225,9 +249,12 @@ function rolValido(rol) {
   return rolesDisponibles().some((r) => r.id === String(rol || "").toLowerCase());
 }
 
-function renderLayout(titulo, contenido) {
+function renderLayout(titulo, contenido, textos) {
+  const idioma =
+    textos && textos.lang ? textos.lang : "es";
+
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(idioma)}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)} - Restaurant Service POS</title>
@@ -497,14 +524,15 @@ function renderPrincipal(config, req) {
   `);
 }
 
-function opcionesRolHtml(actual) {
+function opcionesRolHtml(actual, textos) {
   return rolesDisponibles().map((r) => `
-    <option value="${escapar(r.id)}" ${String(actual || "") === r.id ? "selected" : ""}>${escapar(r.nombre)}</option>
+    <option value="${escapar(r.id)}" ${String(actual || "") === r.id ? "selected" : ""}>${escapar(rolUsuarioVisible(r.id, textos))}</option>
   `).join("");
 }
 
 function renderUsuarios(usuarios, query, req) {
   const actualId = usuarioActualId(req);
+  const textos = textosUsuariosReq(req);
 
   const filas = usuarios.map((u) => `
     <tr>
@@ -512,93 +540,93 @@ function renderUsuarios(usuarios, query, req) {
         <strong>${escapar(u.nombre)}</strong>
         <small>${escapar(u.email)}</small>
       </td>
-      <td><span class="badge">${escapar(u.rol)}</span></td>
-      <td>${Number(u.activo) === 1 ? `<span class="badge">Activo</span>` : `<span class="badge off">Desactivado</span>`}</td>
+      <td><span class="badge">${escapar(rolUsuarioVisible(u.rol, textos))}</span></td>
+      <td>${Number(u.activo) === 1 ? `<span class="badge">${escapar(textos.activo)}</span>` : `<span class="badge off">${escapar(textos.desactivado)}</span>`}</td>
       <td>
         <form method="POST" action="/configuracion-usuarios/usuarios/${u.id}" class="card">
           <div class="grid">
             <div>
-              <label>Nombre</label>
+              <label>${escapar(textos.nombre)}</label>
               <input name="nombre" value="${escapar(u.nombre)}" required>
             </div>
             <div>
-              <label>Email</label>
+              <label>${escapar(textos.email)}</label>
               <input type="email" name="email" value="${escapar(u.email)}" required>
             </div>
             <div>
-              <label>Rol</label>
-              <select name="rol">${opcionesRolHtml(u.rol)}</select>
+              <label>${escapar(textos.rol)}</label>
+              <select name="rol">${opcionesRolHtml(u.rol, textos)}</select>
             </div>
             <div>
-              <label>Nueva contraseña</label>
-              <input type="password" name="password" placeholder="Dejar vacío para no cambiar">
+              <label>${escapar(textos.nuevaContrasena)}</label>
+              <input type="password" name="password" placeholder="${escapar(textos.placeholderContrasena)}">
             </div>
           </div>
           <br>
-          <button type="submit">Guardar</button>
+          <button type="submit">${escapar(textos.guardar)}</button>
         </form>
 
         <form class="inline" method="POST" action="/configuracion-usuarios/usuarios/${u.id}/toggle">
-          <button type="submit" class="sec">${Number(u.activo) === 1 ? "Desactivar" : "Activar"}</button>
+          <button type="submit" class="sec">${Number(u.activo) === 1 ? escapar(textos.desactivar) : escapar(textos.activar)}</button>
         </form>
 
         ${Number(u.id) !== Number(actualId) ? `
-          <form class="inline" method="POST" action="/configuracion-usuarios/usuarios/${u.id}/eliminar" onsubmit="return confirm('¿Eliminar este usuario?');">
-            <button type="submit" class="danger">Eliminar</button>
+          <form class="inline" method="POST" action="/configuracion-usuarios/usuarios/${u.id}/eliminar" onsubmit="return confirm('${escapar(textos.confirmarEliminar)}');">
+            <button type="submit" class="danger">${escapar(textos.eliminar)}</button>
           </form>
-        ` : `<small>No puedes eliminar tu propio usuario.</small>`}
+        ` : `<small>${escapar(textos.noEliminarPropio)}</small>`}
       </td>
     </tr>
   `).join("");
 
-  return renderLayout("Usuarios", `
+  return renderLayout(textos.usuarios, `
     <section class="hero">
-      <h1>Usuarios</h1>
-      <p>Crea y gestiona usuarios solo para este restaurante.</p>
+      <h1>${escapar(textos.usuarios)}</h1>
+      <p>${escapar(textos.descripcionUsuarios)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/app/v2">Abrir POS</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
     ${mensajeHtml(query)}
 
     <section class="card">
-      <h2>Crear usuario</h2>
+      <h2>${escapar(textos.crearUsuario)}</h2>
       <form method="POST" action="/configuracion-usuarios/usuarios">
         <div class="grid">
           <div>
-            <label>Nombre</label>
+            <label>${escapar(textos.nombre)}</label>
             <input name="nombre" required>
           </div>
           <div>
-            <label>Email</label>
+            <label>${escapar(textos.email)}</label>
             <input type="email" name="email" required>
           </div>
           <div>
-            <label>Contraseña</label>
+            <label>${escapar(textos.contrasena)}</label>
             <input type="password" name="password" required>
           </div>
           <div>
-            <label>Rol</label>
-            <select name="rol">${opcionesRolHtml("camarero")}</select>
+            <label>${escapar(textos.rol)}</label>
+            <select name="rol">${opcionesRolHtml("camarero", textos)}</select>
           </div>
         </div>
         <br>
-        <button type="submit">Crear usuario</button>
+        <button type="submit">${escapar(textos.crearUsuario)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Usuarios del restaurante</h2>
+      <h2>${escapar(textos.usuariosRestaurante)}</h2>
       <table>
         <thead>
-          <tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Editar</th></tr>
+          <tr><th>${escapar(textos.usuario)}</th><th>${escapar(textos.rol)}</th><th>${escapar(textos.estado)}</th><th>${escapar(textos.editar)}</th></tr>
         </thead>
-        <tbody>${filas || `<tr><td colspan="4">No hay usuarios todavía.</td></tr>`}</tbody>
+        <tbody>${filas || `<tr><td colspan="4">${escapar(textos.sinUsuarios)}</td></tr>`}</tbody>
       </table>
     </section>
-  `);
+  `, textos);
 }
 
 function renderRestaurante(config, query) {
@@ -779,6 +807,16 @@ module.exports = function usuariosConfigSaasRoutes(db) {
     const usuario = req.session.usuario || {};
     const restauranteId = restauranteIdFromReq(req);
 
+    const idiomaSesion = String(
+      req.session.idioma ||
+      usuario.idioma ||
+      "es"
+    ).toLowerCase();
+
+    const idioma = ["es", "it", "en"].includes(idiomaSesion)
+      ? idiomaSesion
+      : "es";
+
     res.json({
       ok: true,
       autenticado: true,
@@ -787,12 +825,14 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       email: usuario.email,
       rol: usuario.rol,
       restaurante_id: restauranteId,
+      idioma: idioma,
       usuario: {
         id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
-        restaurante_id: restauranteId
+        restaurante_id: restauranteId,
+        idioma: idioma
       }
     });
   });
@@ -900,6 +940,7 @@ module.exports = function usuariosConfigSaasRoutes(db) {
 
   router.post("/configuracion-usuarios/usuarios", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosUsuariosReq(req);
     const body = req.body || {};
     const nombre = String(body.nombre || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
@@ -907,13 +948,13 @@ module.exports = function usuariosConfigSaasRoutes(db) {
     const rol = String(body.rol || "camarero").toLowerCase();
 
     if (!nombre || !email || !password || !rolValido(rol)) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Faltan datos obligatorios"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.faltanDatos));
     }
 
     const existe = await existeEmailGlobal(db, email, 0);
 
     if (existe) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Ya existe un usuario con ese email"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.emailExistente));
     }
 
     let hash;
@@ -921,7 +962,7 @@ module.exports = function usuariosConfigSaasRoutes(db) {
     try {
       hash = await crearHashPassword(password);
     } catch (err) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(err.message));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.noPrepararContrasena));
     }
 
     await run(
@@ -931,11 +972,12 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       [nombre, email, hash, rol, restauranteId]
     );
 
-    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent("Usuario creado correctamente"));
+    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent(textos.usuarioCreado));
   });
 
   router.post("/configuracion-usuarios/usuarios/:id", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosUsuariosReq(req);
     const id = Number(req.params.id || 0);
     const body = req.body || {};
     const nombre = String(body.nombre || "").trim();
@@ -944,26 +986,26 @@ module.exports = function usuariosConfigSaasRoutes(db) {
     const rol = String(body.rol || "camarero").toLowerCase();
 
     if (!id || !nombre || !email || !rolValido(rol)) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Faltan datos obligatorios"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.faltanDatos));
     }
 
     const usuario = await usuarioPropio(db, restauranteId, id);
 
     if (!usuario) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Usuario no encontrado para este restaurante"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.usuarioNoRestaurante));
     }
 
     const existe = await existeEmailGlobal(db, email, id);
 
     if (existe) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Ya existe otro usuario con ese email"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.otroEmailExistente));
     }
 
     if (usuario.activo === 1 && (usuario.rol === "admin" || usuario.rol === "gerente") && rol !== "admin" && rol !== "gerente") {
       const quedaOtro = await quedanAdminsActivos(db, restauranteId, id);
 
       if (!quedaOtro) {
-        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Debe quedar al menos un admin o gerente activo"));
+        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.necesitaAdminActivo));
       }
     }
 
@@ -973,7 +1015,7 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       try {
         hash = await crearHashPassword(password);
       } catch (err) {
-        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(err.message));
+        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.noPrepararContrasena));
       }
 
       await run(
@@ -1003,28 +1045,29 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       req.session.restaurante_id = restauranteId;
     }
 
-    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent("Usuario actualizado correctamente"));
+    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent(textos.usuarioActualizado));
   });
 
   router.post("/configuracion-usuarios/usuarios/:id/toggle", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosUsuariosReq(req);
     const id = Number(req.params.id || 0);
 
     const usuario = await usuarioPropio(db, restauranteId, id);
 
     if (!usuario) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Usuario no encontrado"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.usuarioNoEncontrado));
     }
 
     if (Number(id) === usuarioActualId(req)) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("No puedes desactivar tu propio usuario mientras estás dentro"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.noDesactivarPropio));
     }
 
     if (Number(usuario.activo) === 1 && (usuario.rol === "admin" || usuario.rol === "gerente")) {
       const quedaOtro = await quedanAdminsActivos(db, restauranteId, id);
 
       if (!quedaOtro) {
-        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Debe quedar al menos un admin o gerente activo"));
+        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.necesitaAdminActivo));
       }
     }
 
@@ -1039,28 +1082,29 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       [nuevoEstado, id, restauranteId]
     );
 
-    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent("Estado del usuario actualizado correctamente"));
+    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent(textos.estadoActualizado));
   });
 
   router.post("/configuracion-usuarios/usuarios/:id/eliminar", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = textosUsuariosReq(req);
     const id = Number(req.params.id || 0);
 
     const usuario = await usuarioPropio(db, restauranteId, id);
 
     if (!usuario) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Usuario no encontrado"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.usuarioNoEncontrado));
     }
 
     if (Number(id) === usuarioActualId(req)) {
-      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("No puedes eliminar tu propio usuario mientras estás dentro"));
+      return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.noEliminarPropioSesion));
     }
 
     if (Number(usuario.activo) === 1 && (usuario.rol === "admin" || usuario.rol === "gerente")) {
       const quedaOtro = await quedanAdminsActivos(db, restauranteId, id);
 
       if (!quedaOtro) {
-        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent("Debe quedar al menos un admin o gerente activo"));
+        return res.redirect("/configuracion-usuarios?error=" + encodeURIComponent(textos.necesitaAdminActivo));
       }
     }
 
@@ -1072,7 +1116,7 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       [id, restauranteId]
     );
 
-    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent("Usuario eliminado definitivamente"));
+    res.redirect("/configuracion-usuarios?ok=" + encodeURIComponent(textos.usuarioEliminado));
   });
 
   return router;

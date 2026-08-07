@@ -1,5 +1,6 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { textosFiscalRestaurante } = require("../utils/fiscalRestauranteI18n");
 
 function escapar(v) {
   return String(v == null ? "" : v)
@@ -15,7 +16,7 @@ function requiereAdminGerente(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para esta configuración.");
+    return res.status(403).send(textosFiscalRestaurante(req.session.usuario.idioma).sinPermisosConfiguracion);
   }
 
   next();
@@ -27,7 +28,7 @@ function requiereAdmin(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin") {
-    return res.status(403).send("Solo el administrador puede gestionar la suscripción.");
+    return res.status(403).send(textosFiscalRestaurante(req.session.usuario.idioma).soloAdminSuscripcion);
   }
 
   next();
@@ -113,9 +114,11 @@ function fiscalesCompletosBody(body) {
   );
 }
 
-function layout(titulo, contenido) {
+function layout(titulo, contenido, idioma) {
+  const textosLayout = textosFiscalRestaurante(idioma);
+
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(idioma || "es")}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)} - Restaurant Service POS</title>
@@ -278,24 +281,40 @@ function layout(titulo, contenido) {
 </style>
 </head>
 <body>
-  <a href="/logout" style="position:fixed;right:16px;top:12px;z-index:9999;background:#111827;color:white;text-decoration:none;font-weight:900;border-radius:999px;padding:10px 13px;font-size:13px;">Cerrar sesión</a>
+  <a href="/logout" style="position:fixed;right:16px;top:12px;z-index:9999;background:#111827;color:white;text-decoration:none;font-weight:900;border-radius:999px;padding:10px 13px;font-size:13px;">${escapar(textosLayout.cerrarSesion)}</a>
   <main class="wrap">${contenido}</main>
   <script>
   function instalarLogoPickerRestaurantService(){
     var input = document.getElementById("logo_archivo");
     var hidden = document.getElementById("logo");
     var preview = document.getElementById("logo_preview");
+    var nombreArchivo = document.getElementById("logo_archivo_nombre");
 
     if(!input || !hidden) return;
 
     input.addEventListener("change", function(){
       var file = input.files && input.files[0];
-      if(!file) return;
+
+      if(!file){
+        if(nombreArchivo){
+          nombreArchivo.textContent = "${escapar(textosLayout.ningunArchivoSeleccionado)}";
+        }
+        return;
+      }
 
       if(!file.type || file.type.indexOf("image/") !== 0){
-        alert("El archivo elegido no es una imagen.");
+        alert("${escapar(textosLayout.archivoNoImagen)}");
         input.value = "";
+
+        if(nombreArchivo){
+          nombreArchivo.textContent = "${escapar(textosLayout.ningunArchivoSeleccionado)}";
+        }
+
         return;
+      }
+
+      if(nombreArchivo){
+        nombreArchivo.textContent = file.name;
       }
 
       var reader = new FileReader();
@@ -349,103 +368,107 @@ function mensaje(query) {
   return ok + error;
 }
 
-function renderRestaurante(config, query) {
+function renderRestaurante(config, query, textos) {
   const okFiscal = fiscalesCompletos(config);
 
-  return layout("Datos del restaurante", `
+  return layout(textos.datosRestaurante, `
     <section class="hero">
-      <h1>Datos del restaurante</h1>
-      <p>Datos generales, fiscales y de ticket del restaurante actual.</p>
+      <h1>${escapar(textos.datosRestaurante)}</h1>
+      <p>${escapar(textos.descripcion)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-suscripcion">Suscripción</a>
-        <a class="btn sec" target="_blank" href="/configuracion-restaurante/preview-ticket">Vista previa ticket</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-suscripcion">${escapar(textos.suscripcion)}</a>
+        <a class="btn sec" target="_blank" href="/configuracion-restaurante/preview-ticket">${escapar(textos.vistaPreviaTicket)}</a>
       </div>
     </section>
 
     ${mensaje(query)}
 
     <div class="msg ${okFiscal ? "ok" : "error"}">
-      ${okFiscal ? "Datos fiscales completos para facturación." : "Faltan datos fiscales. Antes de pagar la suscripción deben estar completos."}
+      ${escapar(okFiscal ? textos.fiscalesCompletos : textos.fiscalesFaltan)}
     </div>
 
     <section class="card">
-      <h2>Datos fiscales para facturación</h2>
-      <p>Estos datos se usarán para facturas de suscripción cuando el restaurante empiece a pagar.</p>
+      <h2>${escapar(textos.datosFiscalesFacturacion)}</h2>
+      <p>${escapar(textos.datosFiscalesDescripcion)}</p>
 
       <form method="POST" action="/configuracion-restaurante">
         <div class="grid">
           <div>
-            <label>Nombre comercial</label>
+            <label>${escapar(textos.nombreComercial)}</label>
             <input name="nome_ristorante" value="${escapar(config.nome_ristorante || "")}" required>
           </div>
           <div>
-            <label>Razón social / nombre fiscal</label>
+            <label>${escapar(textos.razonSocial)}</label>
             <input name="razon_social" value="${escapar(config.razon_social || config.nome_ristorante || "")}" required>
           </div>
           <div>
-            <label>NIF / CIF / VAT</label>
+            <label>${escapar(textos.identificacionFiscal)}</label>
             <input name="partita_iva" value="${escapar(config.partita_iva || "")}" required>
           </div>
           <div>
-            <label>Email de facturación</label>
+            <label>${escapar(textos.emailFacturacion)}</label>
             <input type="email" name="email_facturacion" value="${escapar(config.email_facturacion || config.email || config.propietario_email || "")}" required>
           </div>
           <div>
-            <label>Dirección fiscal</label>
+            <label>${escapar(textos.direccionFiscal)}</label>
             <input name="indirizzo" value="${escapar(config.indirizzo || "")}" required>
           </div>
           <div>
-            <label>Código postal</label>
+            <label>${escapar(textos.codigoPostal)}</label>
             <input name="codigo_postal" value="${escapar(config.codigo_postal || "")}" required>
           </div>
           <div>
-            <label>Ciudad</label>
+            <label>${escapar(textos.ciudad)}</label>
             <input name="ciudad" value="${escapar(config.ciudad || "")}" required>
           </div>
           <div>
-            <label>Provincia</label>
+            <label>${escapar(textos.provincia)}</label>
             <input name="provincia" value="${escapar(config.provincia || "")}" required>
           </div>
           <div>
-            <label>País</label>
+            <label>${escapar(textos.pais)}</label>
             <input name="pais" value="${escapar(config.pais || "España")}" required>
           </div>
           <div>
-            <label>IVA por defecto (%)</label>
+            <label>${escapar(textos.ivaDefecto)}</label>
             <input type="number" step="0.01" name="iva" value="${escapar(config.iva || 10)}">
           </div>
         </div>
 
         <br>
 
-        <h2>Contacto y ticket</h2>
+        <h2>${escapar(textos.contactoTicket)}</h2>
         <div class="grid">
           <div>
-            <label>Teléfono restaurante</label>
+            <label>${escapar(textos.telefonoRestaurante)}</label>
             <input name="telefono" value="${escapar(config.telefono || "")}">
           </div>
           <div>
-            <label>Email restaurante</label>
+            <label>${escapar(textos.emailRestaurante)}</label>
             <input type="email" name="email" value="${escapar(config.email || "")}">
           </div>
           <div>
-            <label>Nombre propietario</label>
+            <label>${escapar(textos.nombrePropietario)}</label>
             <input name="propietario_nombre" value="${escapar(config.propietario_nombre || "")}">
           </div>
           <div>
-            <label>Email propietario</label>
+            <label>${escapar(textos.emailPropietario)}</label>
             <input type="email" name="propietario_email" value="${escapar(config.propietario_email || "")}">
           </div>
           <div>
-            <label>Teléfono propietario</label>
+            <label>${escapar(textos.telefonoPropietario)}</label>
             <input name="propietario_telefono" value="${escapar(config.propietario_telefono || "")}">
           </div>
           <div>
-            <label>Logo ticket</label>
+            <label>${escapar(textos.logoTicket)}</label>
             <input type="hidden" id="logo" name="logo" value="${escapar(config.logo || "")}">
-            <input type="file" id="logo_archivo" accept="image/*">
-            <small>Haz clic para elegir una imagen del ordenador.</small>
+            <input type="file" id="logo_archivo" accept="image/*" style="display:none;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;">
+              <label for="logo_archivo" style="display:inline-block;border-radius:12px;padding:11px 14px;background:#0f766e;color:white;font-weight:900;cursor:pointer;font-size:14px;">${escapar(textos.seleccionarArchivo)}</label>
+              <span id="logo_archivo_nombre" style="font-size:13px;font-weight:800;color:#6b7280;">${escapar(textos.ningunArchivoSeleccionado)}</span>
+            </div>
+            <small>${escapar(textos.elegirImagen)}</small>
             <div style="margin-top:10px;">
               <img id="logo_preview" src="${escapar(config.logo || "")}" style="${config.logo ? "" : "display:none;"}max-width:170px;max-height:90px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;padding:8px;background:white;">
             </div>
@@ -454,17 +477,17 @@ function renderRestaurante(config, query) {
 
         <br>
 
-        <label>Mensaje del ticket</label>
-        <textarea name="mensaje_ticket">${escapar(config.mensaje_ticket || "Gracias por su visita")}</textarea>
+        <label>${escapar(textos.mensajeTicket)}</label>
+        <textarea name="mensaje_ticket">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</textarea>
 
         <br><br>
 
-        <button type="submit">Guardar datos del restaurante</button>
+        <button type="submit">${escapar(textos.guardarDatos)}</button>
       </form>
     </section>
 
     <section class="card">
-      <h2>Vista previa rápida del ticket</h2>
+      <h2>${escapar(textos.vistaPreviaRapida)}</h2>
       <div class="ticket-preview">
         ${config.logo ? `<div style="text-align:center;margin-bottom:10px;"><img src="${escapar(config.logo)}" style="max-width:160px;max-height:80px;object-fit:contain;"></div>` : ""}
         <div style="text-align:center;">
@@ -475,13 +498,13 @@ function renderRestaurante(config, query) {
           <small>${escapar(config.telefono || "")}</small>
         </div>
         <hr>
-        <p>1 x Producto ejemplo · 10.00 €</p>
+        <p>1 x ${escapar(textos.productoEjemplo)} · 10.00 €</p>
         <hr>
-        <p><strong>Total: 10.00 €</strong></p>
-        <p style="text-align:center;">${escapar(config.mensaje_ticket || "Gracias por su visita")}</p>
+        <p><strong>${escapar(textos.total)}: 10.00 €</strong></p>
+        <p style="text-align:center;">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</p>
       </div>
     </section>
-  `);
+  `, textos.lang);
 }
 
 function stripeDisponible() {
@@ -497,20 +520,28 @@ function stripeModo() {
   return "no_configurado";
 }
 
-function stripeBloqueoLive() {
+function stripeBloqueoLive(textos) {
   const modo = stripeModo();
 
   if (modo !== "live") return "";
 
   if (String(process.env.STRIPE_LIVE_CONFIRMADO || "").trim() !== "SI") {
-    return "Stripe LIVE está configurado, pero STRIPE_LIVE_CONFIRMADO no es SI.";
+    return textos.stripeLiveNoConfirmado;
   }
 
   const base = String(process.env.APP_BASE_URL || "").trim();
 
-  if (!base.startsWith("https://")) return "En Stripe LIVE, APP_BASE_URL debe ser https.";
-  if (base.includes("localhost")) return "En Stripe LIVE, APP_BASE_URL no puede ser localhost.";
-  if (!process.env.STRIPE_WEBHOOK_SECRET) return "En Stripe LIVE, STRIPE_WEBHOOK_SECRET debe estar configurado.";
+  if (!base.startsWith("https://")) {
+    return textos.stripeLiveHttps;
+  }
+
+  if (base.includes("localhost")) {
+    return textos.stripeLiveNoLocalhost;
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    return textos.stripeLiveWebhook;
+  }
 
   return "";
 }
@@ -525,92 +556,194 @@ function diasRestantes(fecha) {
   return Math.max(0, Math.ceil((fin - Date.now()) / (1000 * 60 * 60 * 24)));
 }
 
-function estadoTexto(config) {
-  const estado = String(config.suscripcion_estado || "trial").toLowerCase();
+function estadoTexto(config, textos) {
+  const estado =
+    String(config.suscripcion_estado || "trial").toLowerCase();
 
-  if (estado === "gratis_vida") return "Gratis de por vida";
-  if (estado === "activo") return "Activa";
-  if (estado === "trial" || estado === "prueba") return "Prueba gratuita";
-  if (estado === "pendiente_pago") return "Pendiente de pago";
-  if (estado === "cancelada") return "Cancelada";
+  if (estado === "gratis_vida") {
+    return textos.estadoGratisVida;
+  }
 
-  return estado || "No definido";
+  if (estado === "activo") {
+    return textos.estadoActiva;
+  }
+
+  if (estado === "trial" || estado === "prueba") {
+    return textos.estadoPrueba;
+  }
+
+  if (estado === "pendiente_pago") {
+    return textos.estadoPendientePago;
+  }
+
+  if (estado === "cancelada") {
+    return textos.estadoCancelada;
+  }
+
+  return estado || textos.estadoNoDefinido;
 }
 
-function renderSuscripcion(config, restauranteId, query) {
+function planTexto(config, textos) {
+  const plan =
+    String(config.plan_tipo || "trial").toLowerCase();
+
+  if (plan === "stripe_mensual") {
+    return textos.planMensualStripe;
+  }
+
+  if (plan === "gratis_vida") {
+    return textos.planGratisVida;
+  }
+
+  if (plan === "trial" || plan === "prueba") {
+    return textos.planPrueba;
+  }
+
+  return config.plan_tipo || textos.planPrueba;
+}
+
+function renderSuscripcion(
+  config,
+  restauranteId,
+  query,
+  textos
+) {
   const okFiscal = fiscalesCompletos(config);
   const dias = diasRestantes(config.trial_fin);
   const modo = stripeModo();
 
-  return layout("Suscripción", `
+  return layout(textos.suscripcion, `
     <section class="hero">
-      <h1>Suscripción</h1>
-      <p>Estado de trial, pago y datos fiscales del restaurante actual.</p>
+      <h1>${escapar(textos.suscripcion)}</h1>
+      <p>${escapar(textos.descripcionSuscripcion)}</p>
+
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-restaurante">Datos fiscales</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-restaurante">${escapar(textos.datosFiscales)}</a>
       </div>
     </section>
 
     ${mensaje(query)}
-    ${query && query.stripe === "ok" ? `<div class="msg ok">Pago confirmado correctamente.</div>` : ""}
-    ${query && query.stripe === "cancelado" ? `<div class="msg error">Pago cancelado.</div>` : ""}
+
+    ${query && query.stripe === "ok"
+      ? `<div class="msg ok">${escapar(textos.pagoConfirmado)}</div>`
+      : ""
+    }
+
+    ${query && query.stripe === "cancelado"
+      ? `<div class="msg error">${escapar(textos.pagoCancelado)}</div>`
+      : ""
+    }
 
     <section class="card">
       <h2>${escapar(config.nome_ristorante || "Restaurant Service POS")}</h2>
+
       <div class="grid3">
-        <div class="dato"><span>Estado</span><strong>${escapar(estadoTexto(config))}</strong></div>
-        <div class="dato"><span>Plan</span><strong>${escapar(config.plan_tipo || "trial")}</strong></div>
-        <div class="dato"><span>Días trial</span><strong>${dias}</strong></div>
-        <div class="dato"><span>Fin trial</span><strong>${escapar(config.trial_fin || "-")}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.estado)}</span>
+          <strong>${escapar(estadoTexto(config, textos))}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.plan)}</span>
+          <strong>${escapar(planTexto(config, textos))}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.diasTrial)}</span>
+          <strong>${dias}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.finTrial)}</span>
+          <strong>${escapar(config.trial_fin || "-")}</strong>
+        </div>
 
         <div class="dato rs-promo-aplicada-visible">
-          <span>Promoción aplicada</span>
+          <span>${escapar(textos.promocionAplicada)}</span>
+
           <strong style="display:inline-flex;align-items:center;gap:6px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;border-radius:999px;padding:8px 12px;font-weight:900;">
-            ${escapar(config.promocion_aplicada || "No aplicada")}
+            ${escapar(config.promocion_aplicada || textos.noAplicada)}
           </strong>
         </div>
 
-        <div class="dato"><span>Restaurante ID</span><strong>${restauranteId}</strong></div>
-        <div class="dato"><span>Datos fiscales</span><strong>${okFiscal ? "Completos" : "Incompletos"}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.restauranteId)}</span>
+          <strong>${restauranteId}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.datosFiscales)}</span>
+          <strong>${escapar(
+            okFiscal
+              ? textos.completos
+              : textos.incompletos
+          )}</strong>
+        </div>
       </div>
     </section>
 
     <section class="card">
-      <h2>Datos fiscales para facturas</h2>
+      <h2>${escapar(textos.datosFiscalesFacturas)}</h2>
+
       <div class="msg ${okFiscal ? "ok" : "error"}">
-        ${okFiscal ? "El restaurante tiene los datos fiscales completos para facturación." : "Faltan datos fiscales. Antes de pagar la suscripción debes completarlos."}
+        ${escapar(
+          okFiscal
+            ? textos.fiscalesFacturasCompletos
+            : textos.fiscalesFacturasFaltan
+        )}
       </div>
 
       <div class="grid3">
-        <div class="dato"><span>Razón social</span><strong>${escapar(config.razon_social || "-")}</strong></div>
-        <div class="dato"><span>NIF/CIF/VAT</span><strong>${escapar(config.partita_iva || "-")}</strong></div>
-        <div class="dato"><span>Email facturación</span><strong>${escapar(config.email_facturacion || "-")}</strong></div>
+        <div class="dato">
+          <span>${escapar(textos.razonSocial)}</span>
+          <strong>${escapar(config.razon_social || "-")}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.identificacionFiscal)}</span>
+          <strong>${escapar(config.partita_iva || "-")}</strong>
+        </div>
+
+        <div class="dato">
+          <span>${escapar(textos.emailFacturacion)}</span>
+          <strong>${escapar(config.email_facturacion || "-")}</strong>
+        </div>
       </div>
 
       <br>
-      <a class="btn sec" href="/configuracion-restaurante">Completar datos fiscales</a>
+
+      <a class="btn sec" href="/configuracion-restaurante">
+        ${escapar(textos.completarDatosFiscales)}
+      </a>
     </section>
 
     <section class="card">
-      <h2>Pago mensual</h2>
+      <h2>${escapar(textos.pagoMensual)}</h2>
+
       ${okFiscal
-        ? "<p>Los datos fiscales están completos. Ya se puede activar el pago cuando Stripe esté configurado.</p>"
-        : "<p><strong>El pago queda bloqueado hasta completar los datos fiscales.</strong></p>"
+        ? "<p>" + escapar(textos.pagoDisponible) + "</p>"
+        : "<p><strong>" + escapar(textos.pagoBloqueado) + "</strong></p>"
       }
 
       <form method="POST" action="/stripe/crear-checkout-suscripcion">
-        <button type="submit" ${okFiscal ? "" : "disabled"}>Pagar suscripción</button>
+        <button type="submit" ${okFiscal ? "" : "disabled"}>
+          ${escapar(textos.pagarSuscripcion)}
+        </button>
       </form>
 
       <br>
+
       <code>Stripe: ${escapar(modo)}
-PRICE_ID: ${escapar(process.env.STRIPE_PRICE_ID || "No configurado")}</code>
+PRICE_ID: ${escapar(
+        process.env.STRIPE_PRICE_ID ||
+        textos.noConfigurado
+      )}</code>
     </section>
-  `);
+  `, textos.lang);
 }
 
-async function guardarRestaurante(db, restauranteId, body) {
+async function guardarRestaurante(db, restauranteId, body, mensajePredefinito) {
   const b = body || {};
   const completo = fiscalesCompletosBody(b) ? 1 : 0;
 
@@ -652,7 +785,7 @@ async function guardarRestaurante(db, restauranteId, body) {
       String(b.email || "").trim(),
       Number(b.iva || 10),
       String(b.logo || "").trim(),
-      String(b.mensaje_ticket || "Gracias por su visita").trim(),
+      String(b.mensaje_ticket || mensajePredefinito || "Gracias por su visita").trim(),
       String(b.propietario_nombre || "").trim(),
       String(b.propietario_email || "").trim(),
       String(b.propietario_telefono || "").trim(),
@@ -746,27 +879,65 @@ module.exports = function fiscalSaasRoutes(db) {
   router.get("/configuracion-restaurante", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
-    res.send(renderRestaurante(config, req.query || {}));
+    res.send(
+      renderRestaurante(
+        config,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-restaurante", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
-    await guardarRestaurante(db, restauranteId, req.body || {});
+    await guardarRestaurante(
+      db,
+      restauranteId,
+      req.body || {},
+      textos.mensajeVisita
+    );
 
-    res.redirect("/configuracion-restaurante?ok=" + encodeURIComponent("Datos del restaurante guardados correctamente"));
+    res.redirect(
+      "/configuracion-restaurante?ok=" +
+      encodeURIComponent(textos.guardadoCorrecto)
+    );
   });
 
   router.get("/configuracion-restaurante/preview-ticket", requiereAdminGerente, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
 
     res.send(`<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Vista previa ticket</title>
+  <title>${escapar(textos.vistaPreviaTicket)}</title>
   <style>
     body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;margin:0;padding:30px;}
     .ticket{max-width:360px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;padding:18px;color:#111827;}
@@ -781,7 +952,7 @@ module.exports = function fiscalSaasRoutes(db) {
   </style>
 </head>
 <body>
-  <button onclick="window.print()">Imprimir prueba</button>
+  <button onclick="window.print()">${escapar(textos.imprimirPrueba)}</button>
   <div class="ticket">
     <div class="center">
       ${config.logo ? `<img src="${escapar(config.logo)}">` : ""}
@@ -794,17 +965,17 @@ module.exports = function fiscalSaasRoutes(db) {
       <div>${escapar(config.email || "")}</div>
     </div>
     <hr>
-    <div>Mesa: 1</div>
-    <div>Fecha: ${new Date().toLocaleString("es-ES")}</div>
+    <div>${escapar(textos.mesa)}: 1</div>
+    <div>${escapar(textos.fecha)}: ${new Date().toLocaleString(textos.localeFecha)}</div>
     <hr>
     <table>
-      <tr><td>1 x Café</td><td style="text-align:right;">1.50 €</td></tr>
-      <tr><td>2 x Menú</td><td style="text-align:right;">20.00 €</td></tr>
+      <tr><td>1 x ${escapar(textos.cafeEjemplo)}</td><td style="text-align:right;">1.50 €</td></tr>
+      <tr><td>2 x ${escapar(textos.menuEjemplo)}</td><td style="text-align:right;">20.00 €</td></tr>
     </table>
     <hr>
-    <div class="total">Total: 21.50 €</div>
+    <div class="total">${escapar(textos.total)}: 21.50 €</div>
     <hr>
-    <div class="center">${escapar(config.mensaje_ticket || "Gracias por su visita")}</div>
+    <div class="center">${escapar(config.mensaje_ticket || textos.mensajeVisita)}</div>
   </div>
 </body>
 </html>`);
@@ -814,21 +985,48 @@ module.exports = function fiscalSaasRoutes(db) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
 
-    res.send(renderSuscripcion(config, restauranteId, req.query || {}));
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
+
+    res.send(
+      renderSuscripcion(
+        config,
+        restauranteId,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/stripe/crear-checkout-suscripcion", requiereAdmin, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const config = await configActual(db, restauranteId);
 
+    const restaurante = await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=?",
+      [restauranteId]
+    );
+
+    const textos = textosFiscalRestaurante(
+      restaurante && restaurante.idioma
+    );
+
     if (!fiscalesCompletos(config)) {
-      return res.redirect("/configuracion-restaurante?error=" + encodeURIComponent("Completa los datos fiscales antes de pagar la suscripción"));
+      return res.redirect("/configuracion-restaurante?error=" + encodeURIComponent(textos.completaDatosAntesPagar));
     }
 
-    const bloqueo = stripeBloqueoLive();
+    const bloqueo = stripeBloqueoLive(textos);
 
     if (bloqueo) return res.status(400).send("<pre>" + escapar(bloqueo) + "</pre>");
-    if (!stripeDisponible()) return res.status(500).send("Stripe no está configurado. Revisa .env.");
+    if (!stripeDisponible()) return res.status(500).send(textos.stripeNoConfiguradoEnv);
 
     try {
       const Stripe = require("stripe");
@@ -870,12 +1068,22 @@ module.exports = function fiscalSaasRoutes(db) {
       res.redirect(303, session.url);
     } catch (err) {
       console.error("[fiscalSaas] Stripe checkout:", err.message);
-      res.status(500).send("Error creando pago con Stripe: " + err.message);
+      res.status(500).send(textos.errorCreandoPago + err.message);
     }
   });
 
   router.get("/stripe/success", requiereAdmin, async function(req, res) {
-    if (!stripeDisponible()) return res.status(500).send("Stripe no está configurado.");
+    const textos = textosFiscalRestaurante(
+      req.session &&
+      req.session.usuario &&
+      req.session.usuario.idioma
+    );
+
+    if (!stripeDisponible()) {
+      return res.status(500).send(
+        textos.stripeNoConfigurado
+      );
+    }
 
     try {
       const Stripe = require("stripe");
@@ -900,7 +1108,7 @@ module.exports = function fiscalSaasRoutes(db) {
       res.redirect("/configuracion-suscripcion?stripe=pendiente");
     } catch (err) {
       console.error("[fiscalSaas] Stripe success:", err.message);
-      res.status(500).send("Error confirmando Stripe: " + err.message);
+      res.status(500).send(textos.errorConfirmandoStripe + err.message);
     }
   });
 

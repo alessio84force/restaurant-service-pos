@@ -1,5 +1,10 @@
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosConfiguracion,
+  estadoSuscripcionTraducido,
+  rolConfiguracionTraducido
+} = require("../utils/configuracionI18n");
 
 function escapar(v) {
   return String(v == null ? "" : v)
@@ -121,45 +126,54 @@ function card(titulo, texto, href, etiqueta, clase, numero) {
 function render(datos, usuario, restauranteId) {
   const config = datos.config || {};
   const restaurante = datos.restaurante || {};
+  const textos = textosConfiguracion(restaurante.idioma);
   const nombre = config.nome_ristorante || restaurante.nombre || "Restaurant Service POS";
   const fiscalOk = datosFiscalesOk(config);
-  const estado = estadoSuscripcion(config, restaurante);
+  const estado = estadoSuscripcionTraducido(
+    config,
+    restaurante,
+    textos
+  );
   const rol = String(usuario.rol || "").toLowerCase();
+  const rolVisible = rolConfiguracionTraducido(
+    rol,
+    textos
+  );
 
   const cardsPrincipales = [
-    card("Abrir POS", "Entrar en sala, mesas, pedidos y cobros.", "/app/v2", "Servicio", "gold", "01"),
-    card("Restaurante", "Datos fiscales, logo, ticket y facturación.", "/configuracion-restaurante", fiscalOk ? "Completo" : "Pendiente", fiscalOk ? "ok" : "warn", "02"),
-    card("Productos", "Categorías, precios y productos disponibles.", "/configuracion-productos", "Menú", "", "03"),
-    card("Mesas", "Salas, zonas y numeración de mesas.", "/configuracion-mesas", "Sala", "", "04"),
-    card("Destinos", "Bar, cocina y destinos personalizados.", "/configuracion-destinos", "Comandas", "", "05"),
-    card("Impresoras", "Ticket, bar, cocina y pruebas de impresión.", "/configuracion-impresoras", "Impresión", "", "06"),
-    card("Caja", "Cierres diarios, mensuales y pagos.", "/configuracion-caja", "Control", "", "07"),
-    card("Reportes", "Exportaciones CSV y análisis del restaurante.", "/configuracion-reportes", "Datos", "", "08"),
-    card("Backups", "Copias de seguridad del restaurante actual.", "/configuracion-backups", "Seguro", "", "09")
+    card(textos.abrirPos, textos.abrirPosTexto, "/app/v2", textos.servicio, "gold", "01"),
+    card(textos.restaurante, textos.restauranteTexto, "/configuracion-restaurante", fiscalOk ? textos.completo : textos.pendiente, fiscalOk ? "ok" : "warn", "02"),
+    card(textos.productos, textos.productosTexto, "/configuracion-productos", textos.menu, "", "03"),
+    card(textos.mesas, textos.mesasTexto, "/configuracion-mesas", textos.sala, "", "04"),
+    card(textos.destinos, textos.destinosTexto, "/configuracion-destinos", textos.comandas, "", "05"),
+    card(textos.impresoras, textos.impresorasTexto, "/configuracion-impresoras", textos.impresion, "", "06"),
+    card(textos.caja, textos.cajaTexto, "/configuracion-caja", textos.control, "", "07"),
+    card(textos.reportes, textos.reportesTexto, "/configuracion-reportes", textos.datos, "", "08"),
+    card(textos.backups, textos.backupsTexto, "/configuracion-backups", textos.seguro, "", "09")
   ];
 
   if (rol === "admin" || rol === "gerente") {
     cardsPrincipales.push(
-      card("Usuarios", "Crear camareros, gerentes y accesos.", "/configuracion-usuarios", "Equipo", "", "10")
+      card(textos.usuarios, textos.usuariosTexto, "/configuracion-usuarios", textos.equipo, "", "10")
     );
   }
 
   if (rol === "admin") {
     cardsPrincipales.push(
-      card("Suscripción", "Trial, pago mensual y estado fiscal.", "/configuracion-suscripcion", estado, fiscalOk ? "ok" : "warn", "11")
+      card(textos.suscripcion, textos.suscripcionTexto, "/configuracion-suscripcion", estado, fiscalOk ? "ok" : "warn", "11")
     );
   }
 
   cardsPrincipales.push(
-    card("Primeros pasos", "Guía rápida para dejar el restaurante listo.", "/primeros-pasos", "Guía", "", "12"),
-    card("Manual", "Ayuda de uso para el cliente.", "/manual", "Ayuda", "", "13")
+    card(textos.primerosPasos, textos.primerosPasosTexto, "/primeros-pasos", textos.guia, "", "12"),
+    card(textos.manual, textos.manualTexto, "/manual", textos.ayuda, "", "13")
   );
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${textos.lang}">
 <head>
   <meta charset="utf-8">
-  <title>Configuración - Restaurant Service POS</title>
+  <title>${escapar(textos.configuracion)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -475,40 +489,40 @@ function render(datos, usuario, restauranteId) {
         <div class="logo-mark">RS</div>
         <div>
           <strong>${escapar(nombre)}</strong>
-          <span>Restaurant Service POS · Configuración</span>
+          <span>Restaurant Service POS · ${escapar(textos.configuracion)}</span>
         </div>
       </div>
       <div class="top-actions">
-        <a class="pill-link" href="/app/v2">Abrir POS</a>
-        <a class="pill-link" href="/logout">Cerrar sesión</a>
+        <a class="pill-link" href="/app/v2">${escapar(textos.abrirPos)}</a>
+        <a class="pill-link" href="/logout">${escapar(textos.cerrarSesion)}</a>
       </div>
     </div>
 
     <section class="hero">
       <div class="hero-content">
         <div>
-          <h1>Configuración</h1>
-          <p>Panel compacto para preparar el restaurante, revisar la facturación, configurar el servicio y controlar las herramientas principales.</p>
+          <h1>${escapar(textos.configuracion)}</h1>
+          <p>${escapar(textos.panelDescripcion)}</p>
         </div>
         <div class="hero-status">
-          <span>Estado</span>
+          <span>${escapar(textos.estado)}</span>
           <strong>${escapar(estado)}</strong>
-          <span style="margin-top:8px;">Datos fiscales</span>
-          <strong>${fiscalOk ? "Completos" : "Pendientes"}</strong>
+          <span style="margin-top:8px;">${escapar(textos.datosFiscales)}</span>
+          <strong>${fiscalOk ? escapar(textos.completos) : escapar(textos.pendientes)}</strong>
         </div>
       </div>
     </section>
 
     <section class="stats">
-      <div class="stat"><span>Mesas</span><strong>${datos.mesas}</strong></div>
-      <div class="stat"><span>Productos</span><strong>${datos.productos}</strong></div>
-      <div class="stat"><span>Usuarios</span><strong>${datos.usuarios}</strong></div>
-      <div class="stat"><span>Pedidos abiertos</span><strong>${datos.pedidosAbiertos}</strong></div>
+      <div class="stat"><span>${escapar(textos.mesas)}</span><strong>${datos.mesas}</strong></div>
+      <div class="stat"><span>${escapar(textos.productos)}</span><strong>${datos.productos}</strong></div>
+      <div class="stat"><span>${escapar(textos.usuarios)}</span><strong>${datos.usuarios}</strong></div>
+      <div class="stat"><span>${escapar(textos.pedidosAbiertos)}</span><strong>${datos.pedidosAbiertos}</strong></div>
     </section>
 
     <div class="section-title">
-      <h2>Herramientas del restaurante</h2>
-      <p>Todo en una vista compacta</p>
+      <h2>${escapar(textos.herramientas)}</h2>
+      <p>${escapar(textos.vistaCompacta)}</p>
     </div>
 
     <section class="cards">
@@ -516,8 +530,8 @@ function render(datos, usuario, restauranteId) {
     </section>
 
     <div class="foot">
-      <span>Restaurante ID ${restauranteId}</span>
-      <span>Usuario: ${escapar(usuario.nombre || usuario.email || "")} · ${escapar(usuario.rol || "")}</span>
+      <span>${escapar(textos.restauranteId)} ${restauranteId}</span>
+      <span>${escapar(textos.usuario)}: ${escapar(usuario.nombre || usuario.email || "")} · ${escapar(rolVisible)}</span>
     </div>
   </main>
 

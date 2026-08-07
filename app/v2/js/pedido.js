@@ -11,7 +11,247 @@ function escaparHtmlPedidoV2(texto){
         .replace(/'/g, "&#039;");
 }
 
+function textosPedidoV2(){
+
+    const idiomaDocumento = String(
+        document.documentElement.lang || "es"
+    ).toLowerCase();
+
+    const idioma = ["es","it","en"].includes(idiomaDocumento)
+        ? idiomaDocumento
+        : "es";
+
+    const textos = {
+        es: {
+            mesa: "Mesa",
+            noPedido: "No hay pedido abierto.",
+            abrirMesa: "Abrir mesa",
+            ayudaAbrir: "Abre la mesa para empezar un nuevo pedido.",
+            pedido: "Pedido",
+            abierto: "abierto",
+            cuenta: "cuenta",
+            pedidoAbierto: "Pedido abierto.",
+            anadirProductos: "Añade productos desde el menú.",
+            cantidad: "Cantidad",
+            unidad: "unidad",
+            editarNota: "Editar nota",
+            anadirNota: "Añadir nota",
+            enviarComandas: "ENVIAR COMANDAS",
+            cuentaBoton: "CUENTA",
+            cobrar: "COBRAR",
+            abriendo: "Abriendo mesa...",
+            errorAbrir: "No se pudo abrir la mesa.",
+            reintentar: "Intentar de nuevo",
+            errorCantidad: "No se pudo modificar la cantidad del producto.",
+            notaGuardada: "Nota guardada.",
+            notaEliminada: "Nota eliminada.",
+            errorGuardarNota: "No se pudo guardar la nota.",
+            tituloNota: "Nota del producto",
+            instruccionNota: "Escribe la petición exacta del cliente.",
+            placeholderNota: "Ej. Sin cebolla, salsa aparte, alergia frutos secos...",
+            maxCaracteres: "Máximo 180 caracteres",
+            cancelar: "Cancelar",
+            quitarNota: "Quitar nota",
+            guardarNota: "Guardar nota",
+            sinMesa: "No hay mesa seleccionada.",
+            enviandoComandas: "Enviando comandas...",
+            comandasEnviadas: "Comandas enviadas",
+            sinProductosNuevos: "No hay productos nuevos para enviar.",
+            errorComandas: "No se pudieron enviar las comandas.",
+            destinoBar: "Bar",
+            destinoCocina: "Cocina",
+            enviandoComandaA: "Enviando comanda a",
+            sinProductosDestino: "No hay productos nuevos para enviar a",
+            comandaEnviadaA: "Comanda enviada a",
+            lineasEnviadas: "Líneas enviadas",
+            errorComandaDestino: "No se pudo enviar la comanda a",
+            productoGenerico: "Producto",
+            localeFecha: "es-ES",
+            comandaEtiqueta: "Comanda",
+            mesaEtiqueta: "Mesa",
+            pedidoEtiqueta: "Pedido",
+            horaEtiqueta: "Hora",
+            notaEtiqueta: "Nota",
+            sinLineasNuevasDestino: "No hay líneas nuevas para enviar.",
+            totalLineasEtiqueta: "Total líneas",
+            imprimirPrueba: "Imprimir prueba",
+            cerrarVentana: "Cerrar",
+            popupVistaPreviaBloqueado: "El navegador bloqueó la vista previa. Permite ventanas emergentes para ver el ticket.",
+            modoDirectoInicio: "Comanda enviada. Modo ",
+            modoDirectoFin: " preparado, impresión directa en próxima fase.",
+            idiomaHtmlPrecuenta: "es",
+            tituloPrecuenta: "Precuenta",
+            mesaPrecuenta: "Mesa",
+            preparandoPrecuenta: "Preparando precuenta...",
+            generandoPrecuenta: "Generando precuenta...",
+            precuentaGenerada: "Precuenta generada correctamente.",
+            errorTituloPrecuenta: "Error de precuenta",
+            noImprimirPrecuenta: "No se pudo imprimir la precuenta",
+            revisarServidorPrecuenta: "Revisa que el servidor esté funcionando.",
+            noGenerarPrecuenta: "No se pudo generar la precuenta."
+        },
+
+        it: {
+            mesa: "Tavolo",
+            noPedido: "Nessun ordine aperto.",
+            abrirMesa: "Apri tavolo",
+            ayudaAbrir: "Apri il tavolo per iniziare un nuovo ordine.",
+            pedido: "Ordine",
+            abierto: "aperto",
+            cuenta: "conto richiesto",
+            pedidoAbierto: "Ordine aperto.",
+            anadirProductos: "Aggiungi prodotti dal menu.",
+            cantidad: "Quantità",
+            unidad: "unità",
+            editarNota: "Modifica nota",
+            anadirNota: "Aggiungi nota",
+            enviarComandas: "INVIA COMANDE",
+            cuentaBoton: "CONTO",
+            cobrar: "INCASSA",
+            abriendo: "Apertura tavolo...",
+            errorAbrir: "Impossibile aprire il tavolo.",
+            reintentar: "Riprova",
+            errorCantidad: "Impossibile modificare la quantità del prodotto.",
+            notaGuardada: "Nota salvata.",
+            notaEliminada: "Nota eliminata.",
+            errorGuardarNota: "Impossibile salvare la nota.",
+            tituloNota: "Nota del prodotto",
+            instruccionNota: "Scrivi la richiesta esatta del cliente.",
+            placeholderNota: "Es. Senza cipolla, salsa a parte, allergia alla frutta secca...",
+            maxCaracteres: "Massimo 180 caratteri",
+            cancelar: "Annulla",
+            quitarNota: "Rimuovi nota",
+            guardarNota: "Salva nota",
+            sinMesa: "Nessun tavolo selezionato.",
+            enviandoComandas: "Invio comande...",
+            comandasEnviadas: "Comande inviate",
+            sinProductosNuevos: "Nessun nuovo prodotto da inviare.",
+            errorComandas: "Impossibile inviare le comande.",
+            destinoBar: "Bar",
+            destinoCocina: "Cucina",
+            enviandoComandaA: "Invio comanda a",
+            sinProductosDestino: "Nessun nuovo prodotto da inviare a",
+            comandaEnviadaA: "Comanda inviata a",
+            lineasEnviadas: "Righe inviate",
+            errorComandaDestino: "Impossibile inviare la comanda a",
+            productoGenerico: "Prodotto",
+            localeFecha: "it-IT",
+            comandaEtiqueta: "Comanda",
+            mesaEtiqueta: "Tavolo",
+            pedidoEtiqueta: "Ordine",
+            horaEtiqueta: "Ora",
+            notaEtiqueta: "Nota",
+            sinLineasNuevasDestino: "Nessuna nuova riga da inviare.",
+            totalLineasEtiqueta: "Totale righe",
+            imprimirPrueba: "Stampa di prova",
+            cerrarVentana: "Chiudi",
+            popupVistaPreviaBloqueado: "Il browser ha bloccato l'anteprima. Consenti le finestre popup per visualizzare il ticket.",
+            modoDirectoInicio: "Comanda inviata. Modalità ",
+            modoDirectoFin: " predisposta; la stampa diretta sarà disponibile in una fase successiva.",
+            idiomaHtmlPrecuenta: "it",
+            tituloPrecuenta: "Preconto",
+            mesaPrecuenta: "Tavolo",
+            preparandoPrecuenta: "Preparazione preconto...",
+            generandoPrecuenta: "Generazione preconto...",
+            precuentaGenerada: "Preconto generato correttamente.",
+            errorTituloPrecuenta: "Errore preconto",
+            noImprimirPrecuenta: "Impossibile generare il preconto",
+            revisarServidorPrecuenta: "Controlla che il server sia in funzione.",
+            noGenerarPrecuenta: "Impossibile generare il preconto."
+        },
+
+        en: {
+            mesa: "Table",
+            noPedido: "There is no open order.",
+            abrirMesa: "Open table",
+            ayudaAbrir: "Open the table to start a new order.",
+            pedido: "Order",
+            abierto: "open",
+            cuenta: "bill requested",
+            pedidoAbierto: "Order open.",
+            anadirProductos: "Add products from the menu.",
+            cantidad: "Quantity",
+            unidad: "unit",
+            editarNota: "Edit note",
+            anadirNota: "Add note",
+            enviarComandas: "SEND ORDERS",
+            cuentaBoton: "BILL",
+            cobrar: "PAY",
+            abriendo: "Opening table...",
+            errorAbrir: "The table could not be opened.",
+            reintentar: "Try again",
+            errorCantidad: "The product quantity could not be changed.",
+            notaGuardada: "Note saved.",
+            notaEliminada: "Note removed.",
+            errorGuardarNota: "The note could not be saved.",
+            tituloNota: "Product note",
+            instruccionNota: "Enter the customer's exact request.",
+            placeholderNota: "E.g. No onion, sauce on the side, nut allergy...",
+            maxCaracteres: "Maximum 180 characters",
+            cancelar: "Cancel",
+            quitarNota: "Remove note",
+            guardarNota: "Save note",
+            sinMesa: "No table selected.",
+            enviandoComandas: "Sending orders...",
+            comandasEnviadas: "Orders sent",
+            sinProductosNuevos: "No new products to send.",
+            errorComandas: "The orders could not be sent.",
+            destinoBar: "Bar",
+            destinoCocina: "Kitchen",
+            enviandoComandaA: "Sending order to",
+            sinProductosDestino: "No new products to send to",
+            comandaEnviadaA: "Order sent to",
+            lineasEnviadas: "Lines sent",
+            errorComandaDestino: "The order could not be sent to",
+            productoGenerico: "Product",
+            localeFecha: "en-GB",
+            comandaEtiqueta: "Order",
+            mesaEtiqueta: "Table",
+            pedidoEtiqueta: "Order",
+            horaEtiqueta: "Time",
+            notaEtiqueta: "Note",
+            sinLineasNuevasDestino: "No new lines to send.",
+            totalLineasEtiqueta: "Total lines",
+            imprimirPrueba: "Test print",
+            cerrarVentana: "Close",
+            popupVistaPreviaBloqueado: "The browser blocked the preview. Allow pop-up windows to view the ticket.",
+            modoDirectoInicio: "Order sent. Mode ",
+            modoDirectoFin: " prepared; direct printing will be available in a later phase.",
+            idiomaHtmlPrecuenta: "en",
+            tituloPrecuenta: "Bill preview",
+            mesaPrecuenta: "Table",
+            preparandoPrecuenta: "Preparing bill preview...",
+            generandoPrecuenta: "Generating bill preview...",
+            precuentaGenerada: "Bill preview generated successfully.",
+            errorTituloPrecuenta: "Bill preview error",
+            noImprimirPrecuenta: "The bill preview could not be generated",
+            revisarServidorPrecuenta: "Check that the server is running.",
+            noGenerarPrecuenta: "The bill preview could not be generated."
+        }
+    };
+
+    return textos[idioma];
+}
+
+function traducirEstadoPedidoV2(estado){
+
+    const textos = textosPedidoV2();
+    const valor = String(estado || "abierto").toLowerCase();
+
+    if(valor === "cuenta"){
+        return textos.cuenta;
+    }
+
+    if(valor === "abierto"){
+        return textos.abierto;
+    }
+
+    return estado || textos.abierto;
+}
+
 async function cargarPedidoV2(numeroMesa){
+
+    const textos = textosPedidoV2();
 
     const data = await apiGet("/pedido/" + numeroMesa);
 
@@ -23,19 +263,19 @@ async function cargarPedidoV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>No hay pedido abierto.</p>
+                <p>${textos.noPedido}</p>
 
                 <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
-                    Abrir mesa
+                    ${textos.abrirMesa}
 
                 </button>
 
                 <p class="texto-ayuda-mesa-v2">
 
-                    Abre la mesa para empezar un nuevo pedido.
+                    ${textos.ayudaAbrir}
 
                 </p>
 
@@ -55,15 +295,15 @@ async function cargarPedidoV2(numeroMesa){
 
             <div>
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>Pedido ${data.pedido}</p>
+                <p>${textos.pedido} ${data.pedido}</p>
 
             </div>
 
             <div class="pedido-estado-v2">
 
-                ${data.estado || "abierto"}
+                ${traducirEstadoPedidoV2(data.estado || data.pedido_estado)}
 
             </div>
 
@@ -79,9 +319,9 @@ async function cargarPedidoV2(numeroMesa){
 
         <div class="pedido-vacio">
 
-            <p>Pedido abierto.</p>
+            <p>${textos.pedidoAbierto}</p>
 
-            <p>Añade productos desde el menú.</p>
+            <p>${textos.anadirProductos}</p>
 
         </div>
 
@@ -109,14 +349,14 @@ async function cargarPedidoV2(numeroMesa){
 
                     <strong>${p.nombre}</strong>
 
-                    <span>Cantidad: ${p.cantidad}</span>
+                    <span>${textos.cantidad}: ${p.cantidad}</span>
 
-                    <small>${precioLinea.toFixed(2)} € / unidad</small>
+                    <small>${precioLinea.toFixed(2)} € / ${textos.unidad}</small>
 
                     ${p.nota ? '<small class="linea-nota-v2">' + escaparHtmlPedidoV2(p.nota) + '</small>' : ''}
 
                     <button class="btn-nota-linea-v2" onclick="editarNotaLineaV2(${p.id}, ${mesaArgV2(numeroMesa)}, '${encodeURIComponent(p.nota || "")}')">
-                        📝 ${p.nota ? "Editar nota" : "Añadir nota"}
+                        📝 ${p.nota ? textos.editarNota : textos.anadirNota}
                     </button>
 
                 </div>
@@ -171,19 +411,19 @@ async function cargarPedidoV2(numeroMesa){
 
             <button onclick="enviarTodasComandasV2(${mesaArgV2(numeroMesa)})">
 
-                📤 ENVIAR COMANDAS
+                📤 ${textos.enviarComandas}
 
             </button>
 
             <button onclick="generarPrecuenta(${mesaArgV2(numeroMesa)})">
 
-                🧾 CUENTA
+                🧾 ${textos.cuentaBoton}
 
             </button>
 
             <button onclick="abrirCobro(${data.pedido},${data.total})">
 
-                💰 COBRAR
+                💰 ${textos.cobrar}
 
             </button>
 
@@ -197,6 +437,8 @@ async function cargarPedidoV2(numeroMesa){
 
 async function abrirMesaV2(numeroMesa){
 
+    const textos = textosPedidoV2();
+
     const panel = document.getElementById("panel-central");
 
     try{
@@ -205,9 +447,9 @@ async function abrirMesaV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>Abriendo mesa...</p>
+                <p>${textos.abriendo}</p>
 
             </div>
 
@@ -229,13 +471,13 @@ async function abrirMesaV2(numeroMesa){
 
             <div class="bienvenida">
 
-                <h2>Mesa ${numeroMesa}</h2>
+                <h2>${textos.mesa} ${numeroMesa}</h2>
 
-                <p>No se pudo abrir la mesa.</p>
+                <p>${textos.errorAbrir}</p>
 
                 <button class="btn-abrir-mesa-v2" onclick="abrirMesaV2(${mesaArgV2(numeroMesa)})">
 
-                    Intentar de nuevo
+                    ${textos.reintentar}
 
                 </button>
 
@@ -248,6 +490,8 @@ async function abrirMesaV2(numeroMesa){
 }
 
 async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
+
+    const textos = textosPedidoV2();
 
     try{
 
@@ -269,7 +513,7 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
         console.error("Error cambiando cantidad:", error);
 
-        mostrarToastPedidoV2("No se pudo modificar la cantidad del producto.", "error");
+        mostrarToastPedidoV2(textos.errorCantidad, "error");
 
     }
 
@@ -278,6 +522,7 @@ async function cambiarCantidadLineaV2(lineaId, cambio, numeroMesa){
 
 async function editarNotaLineaV2(lineaId, numeroMesa, notaCodificada){
 
+    const textos = textosPedidoV2();
     const notaActual = decodeURIComponent(notaCodificada || "");
     const nuevaNota = await abrirModalNotaLineaV2(notaActual);
 
@@ -295,21 +540,23 @@ async function editarNotaLineaV2(lineaId, numeroMesa, notaCodificada){
         await cargarMesasV2();
 
         if(nuevaNota.trim()){
-            mostrarToastPedidoV2("Nota guardada.", "correcto");
+            mostrarToastPedidoV2(textos.notaGuardada, "correcto");
         }else{
-            mostrarToastPedidoV2("Nota eliminada.", "correcto");
+            mostrarToastPedidoV2(textos.notaEliminada, "correcto");
         }
 
     }catch(error){
 
         console.error("Error guardando nota:", error);
-        mostrarToastPedidoV2("No se pudo guardar la nota.", "error");
+        mostrarToastPedidoV2(textos.errorGuardarNota, "error");
 
     }
 
 }
 
 function abrirModalNotaLineaV2(notaActual){
+
+    const textos = textosPedidoV2();
 
     return new Promise((resolve)=>{
 
@@ -318,19 +565,19 @@ function abrirModalNotaLineaV2(notaActual){
 
         overlay.innerHTML = `
             <div class="modal-nota-card-v2">
-                <h3>Nota del producto</h3>
-                <p>Escribe la petición exacta del cliente.</p>
+                <h3>${textos.tituloNota}</h3>
+                <p>${textos.instruccionNota}</p>
 
-                <textarea id="textarea-nota-linea-v2" maxlength="180" placeholder="Ej. Sin cebolla, salsa aparte, alergia frutos secos...">${escaparHtmlPedidoV2(notaActual)}</textarea>
+                <textarea id="textarea-nota-linea-v2" maxlength="180" placeholder="${textos.placeholderNota}">${escaparHtmlPedidoV2(notaActual)}</textarea>
 
                 <div class="modal-nota-contador-v2">
-                    Máximo 180 caracteres
+                    ${textos.maxCaracteres}
                 </div>
 
                 <div class="modal-nota-acciones-v2">
-                    <button type="button" class="nota-cancelar-v2">Cancelar</button>
-                    <button type="button" class="nota-eliminar-v2">Quitar nota</button>
-                    <button type="button" class="nota-guardar-v2">Guardar nota</button>
+                    <button type="button" class="nota-cancelar-v2">${textos.cancelar}</button>
+                    <button type="button" class="nota-eliminar-v2">${textos.quitarNota}</button>
+                    <button type="button" class="nota-guardar-v2">${textos.guardarNota}</button>
                 </div>
             </div>
         `;
@@ -482,18 +729,21 @@ function bloquearAccionesPedidoV2(bloquear){
 
 
 async function enviarTodasComandasV2(numeroMesa){
+
+    const textos = textosPedidoV2();
+
     if(!numeroMesa){
-        mostrarToastPedidoV2("No hay mesa seleccionada.", "error");
+        mostrarToastPedidoV2(textos.sinMesa, "error");
         return;
     }
 
     try{
-        mostrarToastPedidoV2("Enviando comandas...", "info");
+        mostrarToastPedidoV2(textos.enviandoComandas, "info");
 
         const respuesta = await apiPost("/saas/comandas/enviar-todas/" + encodeURIComponent(numeroMesa), {});
 
         if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
-            mostrarToastPedidoV2("Comandas enviadas: " + respuesta.enviados.join(", ") + ".", "correcto");
+            mostrarToastPedidoV2(textos.comandasEnviadas + ": " + respuesta.enviados.join(", ") + ".", "correcto");
 
             if(typeof cargarPedidoV2 === "function"){
                 await cargarPedidoV2(numeroMesa);
@@ -505,10 +755,10 @@ async function enviarTodasComandasV2(numeroMesa){
         }
 
         console.log("DEBUG enviarTodasComandasV2:", respuesta);
-        mostrarToastPedidoV2("No hay productos nuevos para enviar.", "aviso");
+        mostrarToastPedidoV2(textos.sinProductosNuevos, "aviso");
     }catch(error){
         console.error("Error enviando comandas:", error);
-        mostrarToastPedidoV2("No se pudieron enviar las comandas.", "error");
+        mostrarToastPedidoV2(textos.errorComandas, "error");
     }
 }
 
@@ -526,15 +776,25 @@ async function enviarCocina(numeroMesa){
 
 async function enviarComandaV2(numeroMesa, destino){
 
-    const destinoTexto = destino === "bar" ? "bar" : "cocina";
-    const destinoTitulo = destino === "bar" ? "Bar" : "Cocina";
+    const textos = textosPedidoV2();
+    const destinoCodigo = destino === "bar" ? "bar" : "cocina";
+
+    /*
+      Il valore tecnico rimane Bar/Cocina per individuare
+      correttamente la configurazione della stampante.
+    */
+    const destinoTitulo = destinoCodigo === "bar" ? "Bar" : "Cocina";
+
+    const destinoVisible = destinoCodigo === "bar"
+        ? textos.destinoBar
+        : textos.destinoCocina;
     const endpoint = "/saas/comandas/enviar/" + encodeURIComponent(destino) + "/" + encodeURIComponent(numeroMesa);
 
     try{
 
         bloquearAccionesPedidoV2(true);
 
-        mostrarToastPedidoV2("Enviando comanda a " + destinoTitulo + "...", "info");
+        mostrarToastPedidoV2(textos.enviandoComandaA + " " + destinoVisible + "...", "info");
 
         const ventanaPreviewComandaV2 = window.open("", "_blank", "width=420,height=720");
 
@@ -561,7 +821,7 @@ async function enviarComandaV2(numeroMesa, destino){
 
         if(lineas.length === 0){
 
-            mostrarToastPedidoV2("No hay productos nuevos para enviar a " + destinoTexto + ".", "aviso");
+            mostrarToastPedidoV2(textos.sinProductosDestino + " " + destinoVisible + ".", "aviso");
 
             return;
 
@@ -575,15 +835,15 @@ async function enviarComandaV2(numeroMesa, destino){
             configDestinoImpresionV2
         );
 
-        mostrarToastPedidoV2("Comanda enviada a " + destinoTitulo + ". Líneas enviadas: " + lineas.length + ".", "correcto");
+        mostrarToastPedidoV2(textos.comandaEnviadaA + " " + destinoVisible + ". " + textos.lineasEnviadas + ": " + lineas.length + ".", "correcto");
 
     }catch(error){
 
-        console.error("Error enviando comanda a " + destinoTexto + ":", error);
+        console.error("Error enviando comanda a " + destinoCodigo + ":", error);
 
         bloquearAccionesPedidoV2(false);
 
-        mostrarToastPedidoV2("No se pudo enviar la comanda a " + destinoTexto + ".", "error");
+        mostrarToastPedidoV2(textos.errorComandaDestino + " " + destinoVisible + ".", "error");
 
     }
 
@@ -601,13 +861,14 @@ function escaparHtmlComandaPreviewV2(texto){
 
 function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaExistente){
 
+    const textos = textosPedidoV2();
     const destino = String(destinoTitulo || "").toUpperCase();
     const pedido = lineas && lineas.length > 0 ? (lineas[0].pedido || lineas[0].pedido_id || "") : "";
-    const ahora = new Date().toLocaleString("es-ES");
+    const ahora = new Date().toLocaleString(textos.localeFecha);
 
     const lineasHtml = (lineas || []).map((linea)=>{
         const cantidad = Number(linea.cantidad || 0);
-        const nombre = escaparHtmlComandaPreviewV2(linea.nombre || linea.producto || "Producto");
+        const nombre = escaparHtmlComandaPreviewV2(linea.nombre || linea.producto || textos.productoGenerico);
         const nota = String(linea.nota || "").trim();
 
         return `
@@ -616,7 +877,7 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
 
                 ${nota ? `
                     <div class="nota-ticket">
-                        &gt;&gt;&gt; NOTA ${destino} &lt;&lt;&lt;<br>
+                        &gt;&gt;&gt; ${escaparHtmlComandaPreviewV2(textos.notaEtiqueta.toUpperCase())} ${destino} &lt;&lt;&lt;<br>
                         ${escaparHtmlComandaPreviewV2(nota.toUpperCase())}
                     </div>
                 ` : ""}
@@ -747,24 +1008,24 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     <div class="ticket">
         <div class="centro">
             <div class="titulo">RESTAURANT SERVICE</div>
-            <div class="subtitulo">COMANDA ${destino}</div>
-            <div class="dato">MESA: ${escaparHtmlComandaPreviewV2(numeroMesa)}</div>
-            <div class="dato">PEDIDO: ${escaparHtmlComandaPreviewV2(pedido)}</div>
-            <div class="dato">HORA: ${escaparHtmlComandaPreviewV2(ahora)}</div>
+            <div class="subtitulo">${escaparHtmlComandaPreviewV2(textos.comandaEtiqueta.toUpperCase())} ${destino}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.mesaEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(numeroMesa)}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.pedidoEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(pedido)}</div>
+            <div class="dato">${escaparHtmlComandaPreviewV2(textos.horaEtiqueta.toUpperCase())}: ${escaparHtmlComandaPreviewV2(ahora)}</div>
         </div>
 
         <div class="sep"></div>
 
-        ${lineasHtml || "<p>No hay líneas nuevas para enviar.</p>"}
+        ${lineasHtml || "<p>" + escaparHtmlComandaPreviewV2(textos.sinLineasNuevasDestino) + "</p>"}
 
         <div class="sep"></div>
 
-        <div class="centro dato">TOTAL LINEAS: ${(lineas || []).length}</div>
+        <div class="centro dato">${escaparHtmlComandaPreviewV2(textos.totalLineasEtiqueta.toUpperCase())}: ${(lineas || []).length}</div>
     </div>
 
     <div class="acciones">
-        <button class="imprimir" onclick="window.print()">Imprimir prueba</button>
-        <button class="cerrar" onclick="window.close()">Cerrar</button>
+        <button class="imprimir" onclick="window.print()">${escaparHtmlComandaPreviewV2(textos.imprimirPrueba)}</button>
+        <button class="cerrar" onclick="window.close()">${escaparHtmlComandaPreviewV2(textos.cerrarVentana)}</button>
     </div>
 </body>
 </html>
@@ -773,7 +1034,7 @@ function mostrarVistaPreviaComandaV2(destinoTitulo, numeroMesa, lineas, ventanaE
     const ventana = ventanaExistente || window.open("", "_blank", "width=420,height=720");
 
     if(!ventana){
-        alert("El navegador bloqueó la vista previa. Permite ventanas emergentes para ver el ticket.");
+        alert(textos.popupVistaPreviaBloqueado);
         return;
     }
 
@@ -840,6 +1101,7 @@ function escribirVentanaPreparandoComandaV2(ventana, destinoTitulo, modo){
 }
 
 function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, lineas, ventana, configDestino){
+    const textos = textosPedidoV2();
     const modo = String((configDestino && configDestino.modo) || "preview");
     const nombre = String((configDestino && configDestino.nombre) || "");
     const ip = String((configDestino && configDestino.ip) || "");
@@ -876,25 +1138,25 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
     if(modo === "escpos_red" || modo === "escpos_usb"){
         if(!ventana){
-            alert("Comanda enviada. Modo " + modo + " preparado, impresión directa en próxima fase.");
+            alert(textos.modoDirectoInicio + modo + textos.modoDirectoFin);
             return;
         }
 
         const lineasHtml = lineas.map(function(linea){
             const cantidad = Number(linea.cantidad || 0);
-            const nombreProducto = String(linea.nombre || linea.producto || "Producto").toUpperCase();
+            const nombreProducto = String(linea.nombre || linea.producto || textos.productoGenerico).toUpperCase();
             const nota = String(linea.nota || "").trim().toUpperCase();
 
             return "<div style='padding:10px 0;border-bottom:1px dashed #d1d5db;'>" +
                 "<strong>" + cantidad + " x " + nombreProducto + "</strong>" +
-                (nota ? "<div style='margin-top:6px;padding:8px;border:2px solid #111827;color:#9a3412;font-weight:900;'>&gt;&gt;&gt; NOTA " + destino + " &lt;&lt;&lt;<br>" + nota + "</div>" : "") +
+                (nota ? "<div style='margin-top:6px;padding:8px;border:2px solid #111827;color:#9a3412;font-weight:900;'>&gt;&gt;&gt; " + escaparHtmlComandaPreviewV2(textos.notaEtiqueta.toUpperCase()) + " " + destino + " &lt;&lt;&lt;<br>" + nota + "</div>" : "") +
                 "</div>";
         }).join("");
 
         ventana.document.open();
         ventana.document.write(
             "<html>" +
-            "<head><meta charset='UTF-8'><title>Comanda " + destino + "</title></head>" +
+            "<head><meta charset='UTF-8'><title>" + escaparHtmlComandaPreviewV2(textos.comandaEtiqueta) + " " + destino + "</title></head>" +
             "<body style='font-family:Arial;padding:20px;background:#f3f4f6;color:#111827;'>" +
             "<div style='max-width:420px;margin:auto;background:white;padding:20px;border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,0.12);'>" +
             "<h2 style='margin-top:0;'>Comanda " + destino + " enviada</h2>" +
@@ -907,7 +1169,7 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
             "La comanda ya se ha registrado. El POS ha intentado enviarla por " + modo + ". Si no hay impresora conectada, revisa el Terminal del servidor." +
             "</div>" +
             lineasHtml +
-            "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>Cerrar</button>" +
+            "<button onclick='window.close()' style='margin-top:16px;width:100%;height:44px;border:0;border-radius:12px;background:#111827;color:white;font-weight:900;'>" + escaparHtmlComandaPreviewV2(textos.cerrarVentana) + "</button>" +
             "</div>" +
             "</body></html>"
         );
@@ -921,9 +1183,14 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 
 async function generarPrecuenta(numeroMesa){
 
+    const textos = textosPedidoV2();
     const panel = document.getElementById("panel-central");
 
-    const ventanaTicket = window.open("", "_blank", "width=420,height=700");
+    const ventanaTicket = window.open(
+        "",
+        "_blank",
+        "width=420,height=700"
+    );
 
     if(ventanaTicket){
 
@@ -931,10 +1198,11 @@ async function generarPrecuenta(numeroMesa){
 
         ventanaTicket.document.write(`
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="${textos.idiomaHtmlPrecuenta}">
             <head>
                 <meta charset="UTF-8">
-                <title>Precuenta Mesa ${numeroMesa}</title>
+                <title>${textos.tituloPrecuenta} - ${textos.mesaPrecuenta} ${numeroMesa}</title>
+
                 <style>
                     body{
                         font-family:Arial,sans-serif;
@@ -942,9 +1210,11 @@ async function generarPrecuenta(numeroMesa){
                         text-align:center;
                         color:#1f2937;
                     }
+
                     .cargando{
                         margin-top:80px;
                     }
+
                     .spinner{
                         width:42px;
                         height:42px;
@@ -954,46 +1224,61 @@ async function generarPrecuenta(numeroMesa){
                         margin:0 auto 20px auto;
                         animation:girar 1s linear infinite;
                     }
+
                     @keyframes girar{
                         from{transform:rotate(0deg);}
                         to{transform:rotate(360deg);}
                     }
                 </style>
             </head>
+
             <body>
                 <div class="cargando">
                     <div class="spinner"></div>
-                    <h2>Preparando precuenta...</h2>
-                    <p>Mesa ${numeroMesa}</p>
+                    <h2>${textos.preparandoPrecuenta}</h2>
+                    <p>${textos.mesaPrecuenta} ${numeroMesa}</p>
                 </div>
             </body>
             </html>
         `);
 
         ventanaTicket.document.close();
-
     }
 
     try{
 
-        mostrarToastPedidoV2("Generando precuenta...", "info");
+        mostrarToastPedidoV2(
+            textos.generandoPrecuenta,
+            "info"
+        );
 
         try{
 
-            await apiPost("/mesa/" + numeroMesa + "/cuenta", {});
+            await apiPost(
+                "/mesa/" + numeroMesa + "/cuenta",
+                {}
+            );
 
         }catch(errorCuenta){
 
-            console.warn("La mesa puede estar ya en cuenta:", errorCuenta);
-
+            console.warn(
+                "La mesa puede estar ya en cuenta:",
+                errorCuenta
+            );
         }
 
-        const respuestaTicket = await fetch(API + "/saas/ticket/" + numeroMesa);
+        const respuestaTicket = await fetch(
+            API + "/saas/ticket/" + numeroMesa,
+            {
+                credentials: "same-origin"
+            }
+        );
 
         if(!respuestaTicket.ok){
 
-            throw new Error("No se pudo generar el ticket");
-
+            throw new Error(
+                textos.noGenerarPrecuenta
+            );
         }
 
         const htmlTicket = await respuestaTicket.text();
@@ -1004,7 +1289,7 @@ async function generarPrecuenta(numeroMesa){
             <script>
                 window.addEventListener("load", function(){
                     setTimeout(function(){
-                        
+
                     }, 400);
                 });
             </script>
@@ -1015,26 +1300,31 @@ async function generarPrecuenta(numeroMesa){
         if(ventanaTicket){
 
             ventanaTicket.document.open();
-
             ventanaTicket.document.write(htmlConImpresion);
-
             ventanaTicket.document.close();
 
         }else{
 
-            window.open(API + "/saas/ticket/" + numeroMesa, "_blank");
-
+            window.open(
+                API + "/saas/ticket/" + numeroMesa,
+                "_blank"
+            );
         }
 
         await cargarMesasV2();
-
         await cargarPedidoV2(numeroMesa);
 
-        mostrarToastPedidoV2("Precuenta generada correctamente.", "correcto");
+        mostrarToastPedidoV2(
+            textos.precuentaGenerada,
+            "correcto"
+        );
 
     }catch(error){
 
-        console.error("Error generando precuenta:", error);
+        console.error(
+            "Error generando precuenta:",
+            error
+        );
 
         if(ventanaTicket){
 
@@ -1042,24 +1332,25 @@ async function generarPrecuenta(numeroMesa){
 
             ventanaTicket.document.write(`
                 <!DOCTYPE html>
-                <html lang="es">
+                <html lang="${textos.idiomaHtmlPrecuenta}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Error precuenta</title>
+                    <title>${textos.errorTituloPrecuenta}</title>
                 </head>
+
                 <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
-                    <h2>No se pudo imprimir la precuenta</h2>
-                    <p>Revisa que el servidor esté funcionando.</p>
+                    <h2>${textos.noImprimirPrecuenta}</h2>
+                    <p>${textos.revisarServidorPrecuenta}</p>
                 </body>
                 </html>
             `);
 
             ventanaTicket.document.close();
-
         }
 
-        mostrarToastPedidoV2("No se pudo generar la precuenta.", "error");
-
+        mostrarToastPedidoV2(
+            textos.noGenerarPrecuenta,
+            "error"
+        );
     }
-
 }

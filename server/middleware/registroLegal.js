@@ -1,3 +1,5 @@
+const { normalizarIdioma } = require("../utils/i18n");
+
 function escapar(valor) {
   return String(valor == null ? "" : valor)
     .replace(/&/g, "&amp;")
@@ -9,6 +11,59 @@ function escapar(valor) {
 function valorAceptado(valor) {
   const v = String(valor || "").trim().toLowerCase();
   return v === "si" || v === "sí" || v === "on" || v === "true" || v === "1" || v === "acepto";
+}
+
+function textosRegistroLegal(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const textos = {
+    es: {
+      acepto: "Acepto los",
+      terminosLargos: "Términos y condiciones",
+      privacidadLarga: "Política de privacidad",
+      suscripcionLarga: "Condiciones de suscripción",
+      la: "la",
+      yLas: "y las",
+      titulo: "Aceptación legal requerida",
+      mensaje: "Para crear una cuenta en Restaurant Service POS debes aceptar los términos del servicio, la política de privacidad y las condiciones de suscripción.",
+      volver: "Volver al registro",
+      terminos: "Términos",
+      privacidad: "Privacidad",
+      suscripcion: "Suscripción"
+    },
+
+    it: {
+      acepto: "Accetto i",
+      terminosLargos: "Termini e condizioni",
+      privacidadLarga: "Informativa sulla privacy",
+      suscripcionLarga: "Condizioni di abbonamento",
+      la: "la",
+      yLas: "e le",
+      titulo: "Accettazione legale richiesta",
+      mensaje: "Per creare un account su Restaurant Service POS devi accettare i termini del servizio, l'informativa sulla privacy e le condizioni di abbonamento.",
+      volver: "Torna alla registrazione",
+      terminos: "Termini",
+      privacidad: "Privacy",
+      suscripcion: "Abbonamento"
+    },
+
+    en: {
+      acepto: "I accept the",
+      terminosLargos: "Terms and Conditions",
+      privacidadLarga: "Privacy Policy",
+      suscripcionLarga: "Subscription Terms",
+      la: "the",
+      yLas: "and the",
+      titulo: "Legal acceptance required",
+      mensaje: "To create a Restaurant Service POS account, you must accept the Terms of Service, Privacy Policy and Subscription Terms.",
+      volver: "Back to registration",
+      terminos: "Terms",
+      privacidad: "Privacy",
+      suscripcion: "Subscription"
+    }
+  };
+
+  return Object.assign({ idioma: idioma }, textos[idioma] || textos.es);
 }
 
 function emailDesdeBody(body) {
@@ -23,8 +78,11 @@ function emailDesdeBody(body) {
   );
 }
 
-function insertarCheckboxLegal(html) {
+function insertarCheckboxLegal(html, idiomaValor) {
   if (!html || typeof html !== "string") return html;
+
+  const t = textosRegistroLegal(idiomaValor);
+  const idioma = t.idioma;
   if (html.includes('name="acepta_legal"') || html.includes("name='acepta_legal'")) return html;
   if (!html.toLowerCase().includes("<form")) return html;
 
@@ -48,12 +106,12 @@ function insertarCheckboxLegal(html) {
           style="margin-top:3px;min-width:16px;min-height:16px;"
         >
         <span>
-          Acepto los
-          <a href="/terminos" target="_blank" rel="noopener">Términos y condiciones</a>,
-          la
-          <a href="/privacidad" target="_blank" rel="noopener">Política de privacidad</a>
-          y las
-          <a href="/condiciones-suscripcion" target="_blank" rel="noopener">Condiciones de suscripción</a>.
+          ${escapar(t.acepto)}
+          <a href="/terminos?idioma=${encodeURIComponent(idioma)}" target="_blank" rel="noopener">${escapar(t.terminosLargos)}</a>,
+          ${escapar(t.la)}
+          <a href="/privacidad?idioma=${encodeURIComponent(idioma)}" target="_blank" rel="noopener">${escapar(t.privacidadLarga)}</a>
+          ${escapar(t.yLas)}
+          <a href="/condiciones-suscripcion?idioma=${encodeURIComponent(idioma)}" target="_blank" rel="noopener">${escapar(t.suscripcionLarga)}</a>.
         </span>
       </label>
     </div>
@@ -77,12 +135,15 @@ function insertarCheckboxLegal(html) {
   return html;
 }
 
-function paginaAceptacionRequerida() {
+function paginaAceptacionRequerida(idiomaValor) {
+  const t = textosRegistroLegal(idiomaValor);
+  const idioma = t.idioma;
+
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(idioma)}">
 <head>
   <meta charset="utf-8">
-  <title>Aceptación legal requerida - Restaurant Service POS</title>
+  <title>${escapar(t.titulo)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body{
@@ -138,13 +199,15 @@ function paginaAceptacionRequerida() {
 </head>
 <body>
   <div class="card">
-    <h1>Aceptación legal requerida</h1>
-    <p>Para crear una cuenta en Restaurant Service POS debes aceptar los términos del servicio, la política de privacidad y las condiciones de suscripción.</p>
-    <a href="/registro">Volver al registro</a>
+    <h1>${escapar(t.titulo)}</h1>
+    <p>${escapar(t.mensaje)}</p>
+
+    <a href="/registro?idioma=${encodeURIComponent(idioma)}">${escapar(t.volver)}</a>
+
     <div class="links">
-      <a href="/terminos" target="_blank">Términos</a> ·
-      <a href="/privacidad" target="_blank">Privacidad</a> ·
-      <a href="/condiciones-suscripcion" target="_blank">Suscripción</a>
+      <a href="/terminos?idioma=${encodeURIComponent(idioma)}" target="_blank">${escapar(t.terminos)}</a> ·
+      <a href="/privacidad?idioma=${encodeURIComponent(idioma)}" target="_blank">${escapar(t.privacidad)}</a> ·
+      <a href="/condiciones-suscripcion?idioma=${encodeURIComponent(idioma)}" target="_blank">${escapar(t.suscripcion)}</a>
     </div>
   </div>
 </body>
@@ -211,7 +274,10 @@ module.exports = function registroLegalMiddleware(db) {
       const originalSend = res.send.bind(res);
 
       res.send = function(body) {
-        return originalSend(insertarCheckboxLegal(body));
+        return originalSend(insertarCheckboxLegal(
+          body,
+          req.query && req.query.idioma
+        ));
       };
 
       return next();
@@ -221,7 +287,9 @@ module.exports = function registroLegalMiddleware(db) {
       const body = req.body || {};
 
       if (!valorAceptado(body.acepta_legal)) {
-        return res.status(400).send(paginaAceptacionRequerida());
+        return res.status(400).send(
+          paginaAceptacionRequerida(body.idioma)
+        );
       }
 
       guardarAceptacion(db, req);

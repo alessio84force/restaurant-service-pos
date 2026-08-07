@@ -2,6 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { normalizarIdioma } = require("../utils/i18n");
 
 function requiereLoginJson(req, res, next) {
   if (req.session && req.session.usuario) return next();
@@ -855,6 +856,62 @@ async function renderTicketMesa(db, restauranteId, mesaParam) {
 </html>`;
 }
 
+function textosPrecuentaBackend(idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const diccionario = {
+    es: {
+      idioma: "es",
+      locale: "es-ES",
+      titulo: "Precuenta",
+      mesa: "Mesa",
+      pedido: "Pedido",
+      fecha: "Fecha",
+      imprimir: "Imprimir",
+      cerrar: "Cerrar ventana",
+      producto: "Producto",
+      sinProductos: "No hay productos en esta mesa.",
+      total: "Total",
+      gracias: "Gracias por su visita",
+      mesaNoEncontrada: "Mesa no encontrada"
+    },
+
+    it: {
+      idioma: "it",
+      locale: "it-IT",
+      titulo: "Preconto",
+      mesa: "Tavolo",
+      pedido: "Ordine",
+      fecha: "Data",
+      imprimir: "Stampa",
+      cerrar: "Chiudi finestra",
+      producto: "Prodotto",
+      sinProductos: "Nessun prodotto in questo tavolo.",
+      total: "Totale",
+      gracias: "Grazie per la visita",
+      mesaNoEncontrada: "Tavolo non trovato"
+    },
+
+    en: {
+      idioma: "en",
+      locale: "en-GB",
+      titulo: "Bill preview",
+      mesa: "Table",
+      pedido: "Order",
+      fecha: "Date",
+      imprimir: "Print",
+      cerrar: "Close window",
+      producto: "Product",
+      sinProductos: "No products on this table.",
+      total: "Total",
+      gracias: "Thank you for visiting",
+      mesaNoEncontrada: "Table not found"
+    }
+  };
+
+  return diccionario[idioma] || diccionario.es;
+}
+
 async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
   function e(valor) {
     return String(valor == null ? "" : valor)
@@ -868,17 +925,34 @@ async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
     return Number(valor || 0).toFixed(2) + " €";
   }
 
-  const mesa = await buscarMesa(db, restauranteId, mesaParam);
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
+    [restauranteId]
+  ) || {};
+
+  const idioma = normalizarIdioma(restaurante.idioma);
+  const textos = textosPrecuentaBackend(idioma);
+
+  const mesa = await buscarMesa(
+    db,
+    restauranteId,
+    mesaParam
+  );
 
   if (!mesa) {
     return {
       ok: false,
       status: 404,
-      html: "<h1>Mesa no encontrada</h1>"
+      html: "<h1>" + e(textos.mesaNoEncontrada) + "</h1>"
     };
   }
 
-  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
+  const pedido = await buscarPedidoMesa(
+    db,
+    restauranteId,
+    mesa.id
+  );
 
   const config = await get(
     db,
@@ -904,22 +978,36 @@ async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
     [restauranteId, pedido.id, restauranteId]
   ) : [];
 
-  const totalCalculado = lineas.reduce((acc, l) => {
-    return acc + Number(l.cantidad || 0) * Number(l.precio || 0);
+  const totalCalculado = lineas.reduce((acc, linea) => {
+    return acc +
+      Number(linea.cantidad || 0) *
+      Number(linea.precio || 0);
   }, 0);
 
-  const totalFinal = pedido && Number(pedido.total || 0) > 0
-    ? Number(pedido.total || 0)
-    : totalCalculado;
+  const totalFinal =
+    pedido && Number(pedido.total || 0) > 0
+      ? Number(pedido.total || 0)
+      : totalCalculado;
 
-  const filas = lineas.map((l) => {
-    const cantidad = Number(l.cantidad || 0);
-    const precio = Number(l.precio || 0);
+  const filas = lineas.map((linea) => {
+    const cantidad = Number(linea.cantidad || 0);
+    const precio = Number(linea.precio || 0);
     const subtotal = cantidad * precio;
 
     return "<tr>" +
-      "<td>" + cantidad + " x " + e(l.producto || "Producto") + (l.nota ? "<br><small>" + e(l.nota) + "</small>" : "") + "</td>" +
-      "<td style='text-align:right;'>" + money(subtotal) + "</td>" +
+      "<td>" +
+        cantidad +
+        " x " +
+        e(linea.producto || textos.producto) +
+        (
+          linea.nota
+            ? "<br><small>" + e(linea.nota) + "</small>"
+            : ""
+        ) +
+      "</td>" +
+      "<td style='text-align:right;'>" +
+        money(subtotal) +
+      "</td>" +
     "</tr>";
   }).join("");
 
@@ -927,11 +1015,17 @@ async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
     ? '<img class="logo" src="' + e(config.logo) + '">'
     : "";
 
+  const numeroMesa = e(
+    mesa.numero || mesaParam
+  );
+
   const html = `<!doctype html>
-<html lang="es">
+<html lang="${textos.idioma}">
 <head>
   <meta charset="utf-8">
-  <title>Precuenta mesa ${e(mesa.numero || mesaParam)}</title>
+
+  <title>${textos.titulo} - ${textos.mesa} ${numeroMesa}</title>
+
   <style>
     body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;margin:0;padding:28px;color:#111827;}
     .ticket{max-width:380px;margin:0 auto;background:white;border:1px solid #e5e7eb;border-radius:18px;padding:18px;box-shadow:0 18px 42px rgba(15,23,42,.14);}
@@ -946,7 +1040,8 @@ async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
     .total{font-size:22px;font-weight:900;text-align:right;margin-top:8px;}
     .actions{text-align:center;margin:18px 0;}
     button,a{display:inline-block;border:0;border-radius:12px;padding:10px 13px;background:#111827;color:white;text-decoration:none;font-weight:900;cursor:pointer;font-size:14px;}
-    a.sec{background:#e5e7eb;color:#111827;}
+    button.sec{background:#e5e7eb;color:#111827;}
+
     @media print{
       body{background:white;padding:0;}
       .ticket{box-shadow:none;border:0;border-radius:0;max-width:none;}
@@ -954,45 +1049,100 @@ async function renderTicketMesaSaasSeguro(db, restauranteId, mesaParam) {
     }
   </style>
 </head>
+
 <body>
   <div class="actions">
-    <button onclick="window.print()">Imprimir</button>
-    <button type="button" class="sec" onclick="window.close()">Cerrar ventana</button>
+    <button onclick="window.print()">${textos.imprimir}</button>
+
+    <button
+      type="button"
+      class="sec"
+      onclick="window.close()"
+    >
+      ${textos.cerrar}
+    </button>
   </div>
 
   <div class="ticket">
     <div class="center">
       ${logoHtml}
-      <h1>${e(config.nome_ristorante || "Restaurant Service POS")}</h1>
+
+      <h1>${e(
+        config.nome_ristorante ||
+        "Restaurant Service POS"
+      )}</h1>
+
       <div class="muted">
-        ${config.partita_iva ? "<div>" + e(config.partita_iva) + "</div>" : ""}
-        ${config.indirizzo ? "<div>" + e(config.indirizzo) + "</div>" : ""}
-        ${config.telefono ? "<div>" + e(config.telefono) + "</div>" : ""}
-        ${config.email ? "<div>" + e(config.email) + "</div>" : ""}
+        ${
+          config.partita_iva
+            ? "<div>" + e(config.partita_iva) + "</div>"
+            : ""
+        }
+
+        ${
+          config.indirizzo
+            ? "<div>" + e(config.indirizzo) + "</div>"
+            : ""
+        }
+
+        ${
+          config.telefono
+            ? "<div>" + e(config.telefono) + "</div>"
+            : ""
+        }
+
+        ${
+          config.email
+            ? "<div>" + e(config.email) + "</div>"
+            : ""
+        }
       </div>
     </div>
 
     <hr>
 
-    <div><strong>Mesa:</strong> ${e(mesa.numero || mesaParam)}</div>
-    <div><strong>Pedido:</strong> ${pedido ? e(pedido.id) : "-"}</div>
-    <div><strong>Fecha:</strong> ${new Date().toLocaleString("es-ES")}</div>
+    <div>
+      <strong>${textos.mesa}:</strong>
+      ${numeroMesa}
+    </div>
+
+    <div>
+      <strong>${textos.pedido}:</strong>
+      ${pedido ? e(pedido.id) : "-"}
+    </div>
+
+    <div>
+      <strong>${textos.fecha}:</strong>
+      ${new Date().toLocaleString(textos.locale)}
+    </div>
 
     <hr>
 
     <table>
       <tbody>
-        ${filas || "<tr><td>No hay productos en esta mesa.</td><td></td></tr>"}
+        ${
+          filas ||
+          "<tr><td>" +
+            e(textos.sinProductos) +
+          "</td><td></td></tr>"
+        }
       </tbody>
     </table>
 
     <hr>
 
-    <div class="total">Total: ${money(totalFinal)}</div>
+    <div class="total">
+      ${textos.total}: ${money(totalFinal)}
+    </div>
 
     <hr>
 
-    <div class="center muted">${e(config.mensaje_ticket || "Gracias por su visita")}</div>
+    <div class="center muted">
+      ${e(
+        config.mensaje_ticket ||
+        textos.gracias
+      )}
+    </div>
   </div>
 </body>
 </html>`;

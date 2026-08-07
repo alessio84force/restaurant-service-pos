@@ -2,6 +2,10 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const {
+  textosDestinosImpresion,
+  nombreDestinoVisible
+} = require("../utils/destinosImpresionI18n");
 
 const DESTINOS_BASE = [
   { id: "bar", nombre: "Bar", activo: 1, orden: 10 },
@@ -37,7 +41,11 @@ function requiereConfig(req, res, next) {
   const rol = String(req.session.usuario.rol || "").toLowerCase();
 
   if (rol !== "admin" && rol !== "gerente") {
-    return res.status(403).send("No tienes permisos para configurar destinos e impresión.");
+    const textos = textosDestinosImpresion(
+      req.session.usuario.idioma
+    );
+
+    return res.status(403).send(textos.sinPermisos);
   }
 
   return next();
@@ -76,6 +84,18 @@ function get(db, sql, params) {
       resolve(row || null);
     });
   });
+}
+
+async function textosDestinosRestaurante(db, restauranteId) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=?",
+    [restauranteId]
+  );
+
+  return textosDestinosImpresion(
+    restaurante && restaurante.idioma
+  );
 }
 
 function run(db, sql, params) {
@@ -187,19 +207,23 @@ function configDestino(config, configJson, destino) {
   };
 }
 
-function renderDestinos(destinos, query) {
+function renderDestinos(destinos, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
 
   const filas = destinos.map((d) => `
     <tr>
-      <td><strong>${escapar(d.nombre)}</strong><br><small>${escapar(d.id)}</small></td>
-      <td>${d.base ? "Base del sistema" : "Personalizado"}</td>
-      <td>${Number(d.activo) === 1 ? "<span class='ok'>Activo</span>" : "<span class='off'>Desactivado</span>"}</td>
+      <td><strong>${escapar(nombreDestinoVisible(d, textos))}</strong><br><small>${escapar(d.id)}</small></td>
+      <td>${d.base ? escapar(textos.baseSistema) : escapar(textos.personalizado)}</td>
+      <td>${Number(d.activo) === 1
+        ? "<span class='ok'>" + escapar(textos.activo) + "</span>"
+        : "<span class='off'>" + escapar(textos.desactivado) + "</span>"}</td>
       <td>
-        ${d.base ? "<small>No se elimina. Siempre disponible para empezar rápido.</small>" : `
+        ${d.base
+          ? "<small>" + escapar(textos.baseNoEliminar) + "</small>"
+          : `
           <form method="POST" action="/configuracion-destinos/${encodeURIComponent(d.id)}/${Number(d.activo) === 1 ? "desactivar" : "activar"}">
-            <button type="submit">${Number(d.activo) === 1 ? "Desactivar" : "Activar"}</button>
+            <button type="submit">${escapar(Number(d.activo) === 1 ? textos.desactivar : textos.activar)}</button>
           </form>
         `}
       </td>
@@ -207,10 +231,10 @@ function renderDestinos(destinos, query) {
   `).join("");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Destinos de comanda - Restaurant Service POS</title>
+  <title>${escapar(textos.destinosComanda)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -366,12 +390,12 @@ function renderDestinos(destinos, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Destinos de comanda</h1>
-      <p>Define dónde se envía cada comanda: bar, cocina, pizzeria, parrilla, coctelería u otros puntos de trabajo.</p>
+      <h1>${escapar(textos.destinosComanda)}</h1>
+      <p>${escapar(textos.descripcionDestinos)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-productos">Productos</a>
-        <a class="btn sec" href="/configuracion-impresoras">Impresión</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-productos">${escapar(textos.productos)}</a>
+        <a class="btn sec" href="/configuracion-impresoras">${escapar(textos.impresion)}</a>
       </div>
     </section>
 
@@ -379,25 +403,25 @@ function renderDestinos(destinos, query) {
     ${error ? `<div class="msg errmsg">${escapar(error)}</div>` : ""}
 
     <section class="card">
-      <h2>Crear destino personalizado</h2>
+      <h2>${escapar(textos.crearDestinoPersonalizado)}</h2>
       <form method="POST" action="/configuracion-destinos/crear">
-        <label>Nombre</label>
+        <label>${escapar(textos.nombre)}</label>
         <div class="line">
-          <input name="nombre" placeholder="Parrilla, Coctelería, Terraza bar..." required>
-          <button type="submit">Crear destino</button>
+          <input name="nombre" placeholder="${escapar(textos.placeholderDestino)}" required>
+          <button type="submit">${escapar(textos.crearDestino)}</button>
         </div>
       </form>
     </section>
 
     <section class="card">
-      <h2>Destinos disponibles</h2>
+      <h2>${escapar(textos.destinosDisponibles)}</h2>
       <table>
         <thead>
           <tr>
-            <th>Destino</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th>Acción</th>
+            <th>${escapar(textos.destino)}</th>
+            <th>${escapar(textos.tipo)}</th>
+            <th>${escapar(textos.estado)}</th>
+            <th>${escapar(textos.accion)}</th>
           </tr>
         </thead>
         <tbody>
@@ -410,15 +434,23 @@ function renderDestinos(destinos, query) {
 </html>`;
 }
 
-function renderImpresoras(config, destinos, query) {
+function renderImpresoras(config, destinos, query, textos) {
   const ok = query.ok || "";
   const error = query.error || "";
   const configJson = parseConfigImpresion(config);
   const modo = config.modo_impresion || "preview";
 
   const destinosImpresion = [
-    { id: "ticket", nombre: "Ticket / caja", activo: 1, orden: 0 },
-    ...destinos
+    {
+      id: "ticket",
+      nombre: textos.ticketCaja,
+      activo: 1,
+      orden: 0
+    },
+    ...destinos.map((destino) => ({
+      ...destino,
+      nombre: nombreDestinoVisible(destino, textos)
+    }))
   ];
 
   const cards = destinosImpresion.map((d) => {
@@ -429,27 +461,27 @@ function renderImpresoras(config, destinos, query) {
         <h3>${escapar(d.nombre)}</h3>
         <small>${escapar(d.id)}</small>
 
-        <label>Nombre impresora / IP / referencia</label>
-        <input name="impresora_${escapar(d.id)}" value="${escapar(cfg.nombre)}" placeholder="Ej. EPSON barra, 192.168.1.50...">
+        <label>${escapar(textos.nombreImpresora)}</label>
+        <input name="impresora_${escapar(d.id)}" value="${escapar(cfg.nombre)}" placeholder="${escapar(textos.placeholderImpresora)}">
 
-        <label>Modo</label>
+        <label>${escapar(textos.modo)}</label>
         <select name="modo_${escapar(d.id)}">
-          <option value="preview" ${cfg.modo === "preview" ? "selected" : ""}>Preview / ventana</option>
-          <option value="archivo_txt" ${cfg.modo === "archivo_txt" ? "selected" : ""}>Archivo TXT</option>
-          <option value="escpos_red" ${cfg.modo === "escpos_red" ? "selected" : ""}>ESC/POS red futura</option>
+          <option value="preview" ${cfg.modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
+          <option value="archivo_txt" ${cfg.modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
+          <option value="escpos_red" ${cfg.modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
         </select>
 
-        <button type="submit" formaction="/configuracion-impresoras/probar-${encodeURIComponent(d.id)}">Probar ${escapar(d.nombre)}</button>
-        <a class="link" target="_blank" href="/configuracion-impresoras/ver-prueba/${encodeURIComponent(d.id)}">Ver última prueba</a>
+        <button type="submit" formaction="/configuracion-impresoras/probar-${encodeURIComponent(d.id)}">${escapar(textos.probar)} ${escapar(d.nombre)}</button>
+        <a class="link" target="_blank" href="/configuracion-impresoras/ver-prueba/${encodeURIComponent(d.id)}">${escapar(textos.verUltimaPrueba)}</a>
       </div>
     `;
   }).join("");
 
   return `<!doctype html>
-<html lang="es">
+<html lang="${escapar(textos.lang)}">
 <head>
   <meta charset="utf-8">
-  <title>Centro de impresión - Restaurant Service POS</title>
+  <title>${escapar(textos.centroImpresion)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     *{box-sizing:border-box;}
@@ -478,12 +510,12 @@ function renderImpresoras(config, destinos, query) {
 <body>
   <main class="wrap">
     <section class="hero">
-      <h1>Centro de impresión</h1>
-      <p>Configura ticket, bar, cocina y todos los destinos de comanda de este restaurante.</p>
+      <h1>${escapar(textos.centroImpresion)}</h1>
+      <p>${escapar(textos.descripcionImpresion)}</p>
       <div class="actions">
-        <a class="btn sec" href="/configuracion">Volver a configuración</a>
-        <a class="btn sec" href="/configuracion-destinos">Destinos</a>
-        <a class="btn sec" href="/app/v2">Abrir POS</a>
+        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
+        <a class="btn sec" href="/configuracion-destinos">${escapar(textos.destinos)}</a>
+        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
       </div>
     </section>
 
@@ -492,13 +524,13 @@ function renderImpresoras(config, destinos, query) {
 
     <form method="POST" action="/configuracion-impresoras">
       <section class="card">
-        <h2>Modo general</h2>
-        <label>Modo impresión general</label>
+        <h2>${escapar(textos.modoGeneral)}</h2>
+        <label>${escapar(textos.modoImpresionGeneral)}</label>
         <select name="modo_impresion">
-          <option value="preview" ${modo === "preview" ? "selected" : ""}>Preview / ventana</option>
-          <option value="archivo_txt" ${modo === "archivo_txt" ? "selected" : ""}>Archivo TXT</option>
-          <option value="escpos_red" ${modo === "escpos_red" ? "selected" : ""}>ESC/POS red futura</option>
-          <option value="centro_impresion" ${modo === "centro_impresion" ? "selected" : ""}>Centro de impresión</option>
+          <option value="preview" ${modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
+          <option value="archivo_txt" ${modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
+          <option value="escpos_red" ${modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
+          <option value="centro_impresion" ${modo === "centro_impresion" ? "selected" : ""}>${escapar(textos.modoCentroImpresion)}</option>
         </select>
       </section>
 
@@ -506,23 +538,26 @@ function renderImpresoras(config, destinos, query) {
         ${cards}
       </section>
 
-      <button type="submit">Guardar centro de impresión</button>
+      <button type="submit">${escapar(textos.guardarCentroImpresion)}</button>
     </form>
   </main>
 </body>
 </html>`;
 }
 
-function pruebaTexto(destino) {
+function pruebaTexto(destino, textos) {
   return [
     "RESTAURANT SERVICE POS",
-    "PRUEBA " + String(destino.nombre || destino.id).toUpperCase(),
-    "DESTINO: " + String(destino.id).toUpperCase(),
-    "HORA: " + new Date().toLocaleString("es-ES"),
+    textos.prueba + " " +
+      String(destino.nombre || destino.id).toUpperCase(),
+    textos.etiquetaDestino + ": " +
+      String(destino.id).toUpperCase(),
+    textos.etiquetaHora + ": " +
+      new Date().toLocaleString(textos.localeFecha),
     "------------------------------",
-    "1 x PRODUCTO DE PRUEBA",
+    textos.productoPrueba,
     "------------------------------",
-    "Si ves esto, la prueba se generó correctamente.",
+    textos.pruebaCorrecta,
     ""
   ].join("\n");
 }
@@ -551,23 +586,40 @@ module.exports = function destinosImpresionSaasRoutes(db) {
 
   router.get("/configuracion-destinos", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const destinos = await destinosRestaurante(db, restauranteId);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
+    const destinos = await destinosRestaurante(
+      db,
+      restauranteId
+    );
 
-    res.send(renderDestinos(destinos, req.query || {}));
+    res.send(
+      renderDestinos(
+        destinos,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-destinos/crear", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const nombre = String((req.body || {}).nombre || "").trim();
 
     if (!nombre) {
-      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent("Nombre no válido"));
+      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent(textos.nombreNoValido));
     }
 
     const idBase = slug(nombre);
 
     if (!idBase) {
-      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent("Nombre no válido"));
+      return res.redirect("/configuracion-destinos?error=" + encodeURIComponent(textos.nombreNoValido));
     }
 
     const id = "r" + restauranteId + "_" + idBase;
@@ -578,11 +630,15 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, nombre, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino creado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoCreado));
   });
 
   router.post("/configuracion-destinos/:id/activar", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const id = String(req.params.id || "");
 
     await run(
@@ -591,11 +647,15 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino activado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoActivado));
   });
 
   router.post("/configuracion-destinos/:id/desactivar", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const id = String(req.params.id || "");
 
     await run(
@@ -604,7 +664,7 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       [id, restauranteId]
     );
 
-    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent("Destino desactivado"));
+    res.redirect("/configuracion-destinos?ok=" + encodeURIComponent(textos.destinoDesactivado));
   });
 
   router.get("/api/centro-impresion", requiereLoginJson, async function(req, res) {
@@ -634,14 +694,35 @@ module.exports = function destinosImpresionSaasRoutes(db) {
 
   router.get("/configuracion-impresoras", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
-    const config = await asegurarConfig(db, restauranteId);
-    const destinos = await destinosRestaurante(db, restauranteId);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
+    const config = await asegurarConfig(
+      db,
+      restauranteId
+    );
+    const destinos = await destinosRestaurante(
+      db,
+      restauranteId
+    );
 
-    res.send(renderImpresoras(config, destinos, req.query || {}));
+    res.send(
+      renderImpresoras(
+        config,
+        destinos,
+        req.query || {},
+        textos
+      )
+    );
   });
 
   router.post("/configuracion-impresoras", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const body = req.body || {};
     const config = await asegurarConfig(db, restauranteId);
     const destinos = await destinosRestaurante(db, restauranteId);
@@ -678,35 +759,59 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       ]
     );
 
-    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent("Centro de impresión guardado correctamente"));
+    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent(textos.centroImpresionGuardado));
   });
 
   router.post("/configuracion-impresoras/probar-:destinoId", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const destinoId = String(req.params.destinoId || "ticket");
-    const destinos = [{ id: "ticket", nombre: "Ticket / caja", activo: 1 }].concat(await destinosRestaurante(db, restauranteId));
+    const destinos = [
+      {
+        id: "ticket",
+        nombre: textos.ticketCaja,
+        activo: 1
+      },
+      ...(await destinosRestaurante(
+        db,
+        restauranteId
+      )).map((destino) => ({
+        ...destino,
+        nombre: nombreDestinoVisible(
+          destino,
+          textos
+        )
+      }))
+    ];
     const destino = destinos.find((d) => String(d.id) === destinoId) || { id: destinoId, nombre: destinoId, activo: 1 };
     const archivo = nombreArchivoPrueba(destinoId, restauranteId);
     const carpeta = path.join(process.cwd(), "prints");
 
     try {
       fs.mkdirSync(carpeta, { recursive: true });
-      fs.writeFileSync(path.join(carpeta, archivo), pruebaTexto(destino), "utf8");
+      fs.writeFileSync(path.join(carpeta, archivo), pruebaTexto(destino, textos), "utf8");
     } catch (err) {
       console.error("[destinosImpresionSaas] Error prueba impresión:", err.message);
-      return res.redirect("/configuracion-impresoras?error=" + encodeURIComponent("No se pudo generar la prueba"));
+      return res.redirect("/configuracion-impresoras?error=" + encodeURIComponent(textos.noGenerarPrueba));
     }
 
-    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent("Prueba generada en prints/" + archivo));
+    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent(textos.pruebaGenerada + " prints/" + archivo));
   });
 
   router.get("/configuracion-impresoras/ver-prueba/:destinoId", requiereConfig, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
+    const textos = await textosDestinosRestaurante(
+      db,
+      restauranteId
+    );
     const archivo = nombreArchivoPrueba(req.params.destinoId, restauranteId);
     const ruta = path.join(process.cwd(), "prints", archivo);
 
     if (!fs.existsSync(ruta)) {
-      return res.send("<pre>No hay prueba generada todavía para este destino.</pre>");
+      return res.send("<pre>" + escapar(textos.sinPruebaGenerada) + "</pre>");
     }
 
     res.type("text/plain").send(fs.readFileSync(ruta, "utf8"));

@@ -1,5 +1,180 @@
 let cobroActualV2 = null;
 
+function textosCobroV2(){
+
+    const idiomaDocumento = String(
+        document.documentElement.lang || "es"
+    ).toLowerCase();
+
+    const idioma = ["es","it","en"].includes(idiomaDocumento)
+        ? idiomaDocumento
+        : "es";
+
+    const textos = {
+        es: {
+            locale: "es-ES",
+            cobro: "Cobro",
+            seleccionaMesaAntes: "Selecciona una mesa antes de cobrar.",
+            cargandoDatosPedido: "Cargando datos del pedido...",
+            errorCobro: "Error en cobro",
+            noCargarDatos: "No se pudieron cargar los datos del cobro.",
+            revisarServidor: "Revisa que el servidor esté funcionando correctamente.",
+            volverPedido: "Volver al pedido",
+            tarjeta: "Tarjeta",
+            efectivo: "Efectivo",
+            bizum: "Bizum",
+            pago: "Pago",
+            sinPagos: "Todavía no hay pagos registrados.",
+            pagosSuperiores: "La cuenta tiene pagos superiores al total. La mesa se cerrará automáticamente.",
+            registrandoPago: "Registrando pago...",
+            confirmarPago: "Confirmar pago",
+            pagoCompletadoCerrando: "Pago completado. Cerrando mesa automáticamente...",
+            mesa: "Mesa",
+            pedido: "Pedido",
+            volver: "Volver",
+            totalCuenta: "Total cuenta",
+            pagado: "Pagado",
+            pendiente: "Pendiente",
+            metodoPago: "Método de pago",
+            importeCobrar: "Importe a cobrar",
+            todo: "Todo",
+            mitad: "Mitad",
+            pagosRealizados: "Pagos realizados",
+            cuentaYaPagada: "La cuenta ya está pagada. Cerrando mesa...",
+            importeMayorCero: "Introduce un importe mayor que 0.",
+            importeSuperaPendiente: "El importe no puede superar el pendiente.",
+            pagoRegistrado: "Pago registrado correctamente.",
+            noRegistrarPago: "No se pudo registrar el pago.",
+            cuentaPagadaCerrando: "Cuenta pagada. Cerrando mesa automáticamente...",
+            pagoRegistradoNoCierra: "El pago está registrado, pero no se pudo cerrar la mesa automáticamente.",
+            cerrada: "cerrada",
+            pedidoCobrado: "cobrado correctamente.",
+            totalPagado: "Total pagado",
+            imprimirTicketFinal: "Imprimir ticket final",
+            volverMesas: "Volver a mesas",
+            bienvenida: "Bienvenido",
+            seleccionaMesaComenzar: "Selecciona una mesa para comenzar.",
+            preparandoTicketFinal: "Preparando ticket final...",
+            pedidoNoEncontradoTicketFinal: "No se encontró el pedido para imprimir el ticket final.",
+            noGenerarTicketFinal: "No se pudo generar el ticket final",
+            popupBloqueadoTicket:
+                "El navegador ha bloqueado la ventana del ticket final. Permite las ventanas emergentes para este sitio.",
+            cerrarVentanaReintentar:
+                "Cierra esta ventana e inténtalo de nuevo.",
+            cerrar: "Cerrar"
+        },
+
+        it: {
+            locale: "it-IT",
+            cobro: "Incasso",
+            seleccionaMesaAntes: "Seleziona un tavolo prima di incassare.",
+            cargandoDatosPedido: "Caricamento dati dell'ordine...",
+            errorCobro: "Errore nell'incasso",
+            noCargarDatos: "Impossibile caricare i dati dell'incasso.",
+            revisarServidor: "Controlla che il server funzioni correttamente.",
+            volverPedido: "Torna all'ordine",
+            tarjeta: "Carta",
+            efectivo: "Contanti",
+            bizum: "Bizum",
+            pago: "Pagamento",
+            sinPagos: "Non ci sono ancora pagamenti registrati.",
+            pagosSuperiores: "I pagamenti superano il totale del conto. Il tavolo verrà chiuso automaticamente.",
+            registrandoPago: "Registrazione pagamento...",
+            confirmarPago: "Conferma pagamento",
+            pagoCompletadoCerrando: "Pagamento completato. Chiusura automatica del tavolo...",
+            mesa: "Tavolo",
+            pedido: "Ordine",
+            volver: "Indietro",
+            totalCuenta: "Totale conto",
+            pagado: "Pagato",
+            pendiente: "Residuo",
+            metodoPago: "Metodo di pagamento",
+            importeCobrar: "Importo da incassare",
+            todo: "Tutto",
+            mitad: "Metà",
+            pagosRealizados: "Pagamenti effettuati",
+            cuentaYaPagada: "Il conto è già pagato. Chiusura del tavolo...",
+            importeMayorCero: "Inserisci un importo maggiore di 0.",
+            importeSuperaPendiente: "L'importo non può superare il residuo.",
+            pagoRegistrado: "Pagamento registrato correttamente.",
+            noRegistrarPago: "Impossibile registrare il pagamento.",
+            cuentaPagadaCerrando: "Conto pagato. Chiusura automatica del tavolo...",
+            pagoRegistradoNoCierra: "Il pagamento è stato registrato, ma non è stato possibile chiudere automaticamente il tavolo.",
+            cerrada: "chiuso",
+            pedidoCobrado: "incassato correttamente.",
+            totalPagado: "Totale pagato",
+            imprimirTicketFinal: "Stampa ticket finale",
+            volverMesas: "Torna ai tavoli",
+            bienvenida: "Benvenuto",
+            seleccionaMesaComenzar: "Seleziona un tavolo per iniziare.",
+            preparandoTicketFinal: "Preparazione ticket finale...",
+            pedidoNoEncontradoTicketFinal: "Ordine non trovato per stampare il ticket finale.",
+            noGenerarTicketFinal: "Impossibile generare il ticket finale",
+            popupBloqueadoTicket:
+                "Il browser ha bloccato la finestra del ticket finale. Consenti le finestre popup per questo sito.",
+            cerrarVentanaReintentar:
+                "Chiudi questa finestra e riprova.",
+            cerrar: "Chiudi"
+        },
+
+        en: {
+            locale: "en-GB",
+            cobro: "Payment",
+            seleccionaMesaAntes: "Select a table before taking payment.",
+            cargandoDatosPedido: "Loading order details...",
+            errorCobro: "Payment error",
+            noCargarDatos: "Payment details could not be loaded.",
+            revisarServidor: "Check that the server is running correctly.",
+            volverPedido: "Back to order",
+            tarjeta: "Card",
+            efectivo: "Cash",
+            bizum: "Bizum",
+            pago: "Payment",
+            sinPagos: "No payments have been recorded yet.",
+            pagosSuperiores: "Payments exceed the total. The table will close automatically.",
+            registrandoPago: "Recording payment...",
+            confirmarPago: "Confirm payment",
+            pagoCompletadoCerrando: "Payment completed. Closing table automatically...",
+            mesa: "Table",
+            pedido: "Order",
+            volver: "Back",
+            totalCuenta: "Bill total",
+            pagado: "Paid",
+            pendiente: "Remaining",
+            metodoPago: "Payment method",
+            importeCobrar: "Amount to charge",
+            todo: "All",
+            mitad: "Half",
+            pagosRealizados: "Payments made",
+            cuentaYaPagada: "The bill has already been paid. Closing table...",
+            importeMayorCero: "Enter an amount greater than 0.",
+            importeSuperaPendiente: "The amount cannot exceed the remaining balance.",
+            pagoRegistrado: "Payment recorded successfully.",
+            noRegistrarPago: "The payment could not be recorded.",
+            cuentaPagadaCerrando: "Bill paid. Closing table automatically...",
+            pagoRegistradoNoCierra: "The payment was recorded, but the table could not be closed automatically.",
+            cerrada: "closed",
+            pedidoCobrado: "paid successfully.",
+            totalPagado: "Total paid",
+            imprimirTicketFinal: "Print final receipt",
+            volverMesas: "Back to tables",
+            bienvenida: "Welcome",
+            seleccionaMesaComenzar: "Select a table to get started.",
+            preparandoTicketFinal: "Preparing final receipt...",
+            pedidoNoEncontradoTicketFinal: "The order could not be found for printing the final receipt.",
+            noGenerarTicketFinal: "The final receipt could not be generated",
+            popupBloqueadoTicket:
+                "The browser blocked the final receipt window. Allow pop-up windows for this site.",
+            cerrarVentanaReintentar:
+                "Close this window and try again.",
+            cerrar: "Close"
+        }
+    };
+
+    return textos[idioma];
+}
+
+
 function formatearDineroCobroV2(valor){
 
     const numero = Number(valor || 0);
@@ -30,12 +205,13 @@ function obtenerTotalPagadoCobroV2(){
 
 function formatearMetodoCobroV2(metodo){
 
-    if(metodo === "tarjeta") return "Tarjeta";
-    if(metodo === "efectivo") return "Efectivo";
-    if(metodo === "bizum") return "Bizum";
+    const textos = textosCobroV2();
 
-    return metodo || "Pago";
+    if(metodo === "tarjeta") return textos.tarjeta;
+    if(metodo === "efectivo") return textos.efectivo;
+    if(metodo === "bizum") return textos.bizum;
 
+    return metodo || textos.pago;
 }
 
 function formatearFechaCobroV2(fecha){
@@ -44,6 +220,7 @@ function formatearFechaCobroV2(fecha){
         return "";
     }
 
+    const textos = textosCobroV2();
     const fechaNormalizada = String(fecha).replace(" ", "T");
     const objetoFecha = new Date(fechaNormalizada);
 
@@ -51,14 +228,13 @@ function formatearFechaCobroV2(fecha){
         return fecha;
     }
 
-    return objetoFecha.toLocaleString("es-ES", {
+    return objetoFecha.toLocaleString(textos.locale, {
         day:"2-digit",
         month:"2-digit",
         year:"numeric",
         hour:"2-digit",
         minute:"2-digit"
     });
-
 }
 
 function obtenerPanelCobroV2(){
@@ -98,19 +274,20 @@ function normalizarImporteCobroV2(valor){
 
 async function abrirCobro(pedidoId, totalPedido){
 
+    const textos = textosCobroV2();
+
     if(!mesaSeleccionada){
 
         const panel = obtenerPanelCobroV2();
 
         panel.innerHTML = `
             <div class="bienvenida">
-                <h2>Cobro</h2>
-                <p>Selecciona una mesa antes de cobrar.</p>
+                <h2>${textos.cobro}</h2>
+                <p>${textos.seleccionaMesaAntes}</p>
             </div>
         `;
 
         return;
-
     }
 
     cobroActualV2 = {
@@ -132,24 +309,23 @@ async function abrirCobro(pedidoId, totalPedido){
     renderCargandoCobroV2();
 
     await cargarDatosCobroV2();
-
 }
 
 function renderCargandoCobroV2(){
 
+    const textos = textosCobroV2();
     const panel = obtenerPanelCobroV2();
 
     panel.innerHTML = `
         <div class="cobro-panel">
             <div class="cobro-header">
                 <div>
-                    <h2>Cobro</h2>
-                    <p>Cargando datos del pedido...</p>
+                    <h2>${textos.cobro}</h2>
+                    <p>${textos.cargandoDatosPedido}</p>
                 </div>
             </div>
         </div>
     `;
-
 }
 
 async function cargarDatosCobroV2(){
@@ -158,29 +334,62 @@ async function cargarDatosCobroV2(){
         return;
     }
 
+    const textos = textosCobroV2();
+
     try{
 
-        const pagos = await apiGet("/pedido/" + cobroActualV2.pedidoId + "/pagos");
-        const pendienteData = await apiGet("/pedido/" + cobroActualV2.pedidoId + "/pendiente");
+        const pagos = await apiGet(
+            "/pedido/" +
+            cobroActualV2.pedidoId +
+            "/pagos"
+        );
 
-        cobroActualV2.pagos = Array.isArray(pagos) ? pagos : [];
-        cobroActualV2.pagado = obtenerTotalPagadoCobroV2();
+        const pendienteData = await apiGet(
+            "/pedido/" +
+            cobroActualV2.pedidoId +
+            "/pendiente"
+        );
 
-        if(pendienteData && pendienteData.pendiente !== undefined && pendienteData.pendiente !== null){
-            cobroActualV2.pendiente = redondearImporteCobroV2(pendienteData.pendiente);
+        cobroActualV2.pagos = Array.isArray(pagos)
+            ? pagos
+            : [];
+
+        cobroActualV2.pagado =
+            obtenerTotalPagadoCobroV2();
+
+        if(
+            pendienteData &&
+            pendienteData.pendiente !== undefined &&
+            pendienteData.pendiente !== null
+        ){
+            cobroActualV2.pendiente =
+                redondearImporteCobroV2(
+                    pendienteData.pendiente
+                );
         }else{
-            cobroActualV2.pendiente = redondearImporteCobroV2(cobroActualV2.total - cobroActualV2.pagado);
+            cobroActualV2.pendiente =
+                redondearImporteCobroV2(
+                    cobroActualV2.total -
+                    cobroActualV2.pagado
+                );
         }
 
         renderCobroV2();
 
-        if(cobroActualV2.pendiente <= 0 && !cobroActualV2.cerrando && !cobroActualV2.cerrado){
+        if(
+            cobroActualV2.pendiente <= 0 &&
+            !cobroActualV2.cerrando &&
+            !cobroActualV2.cerrado
+        ){
             await cerrarMesaDesdeCobroV2();
         }
 
     }catch(error){
 
-        console.error("Error cargando cobro:", error);
+        console.error(
+            "Error cargando cobro:",
+            error
+        );
 
         const panel = obtenerPanelCobroV2();
 
@@ -188,23 +397,24 @@ async function cargarDatosCobroV2(){
             <div class="cobro-panel">
                 <div class="cobro-header">
                     <div>
-                        <h2>Error en cobro</h2>
-                        <p>No se pudieron cargar los datos del cobro.</p>
+                        <h2>${textos.errorCobro}</h2>
+                        <p>${textos.noCargarDatos}</p>
                     </div>
                 </div>
 
                 <div class="cobro-mensaje error">
-                    Revisa que el servidor esté funcionando correctamente.
+                    ${textos.revisarServidor}
                 </div>
 
-                <button class="cobro-btn-secundario" onclick="volverAlPedidoDesdeCobroV2()">
-                    Volver al pedido
+                <button
+                    class="cobro-btn-secundario"
+                    onclick="volverAlPedidoDesdeCobroV2()"
+                >
+                    ${textos.volverPedido}
                 </button>
             </div>
         `;
-
     }
-
 }
 
 function renderCobroV2(){
@@ -213,144 +423,213 @@ function renderCobroV2(){
         return;
     }
 
+    const textos = textosCobroV2();
     const panel = obtenerPanelCobroV2();
 
-    const pendienteReal = redondearImporteCobroV2(cobroActualV2.pendiente);
-    const pendienteVisible = Math.max(0, pendienteReal);
-    const totalPagado = obtenerTotalPagadoCobroV2();
+    const pendienteReal =
+        redondearImporteCobroV2(
+            cobroActualV2.pendiente
+        );
 
-    const importeInput = cobroActualV2.importeActual !== null
-        ? cobroActualV2.importeActual
-        : pendienteVisible.toFixed(2);
+    const pendienteVisible =
+        Math.max(0, pendienteReal);
 
-    const desactivado = cobroActualV2.procesando || cobroActualV2.cerrando || pendienteVisible <= 0;
+    const totalPagado =
+        obtenerTotalPagadoCobroV2();
+
+    const importeInput =
+        cobroActualV2.importeActual !== null
+            ? cobroActualV2.importeActual
+            : pendienteVisible.toFixed(2);
+
+    const desactivado =
+        cobroActualV2.procesando ||
+        cobroActualV2.cerrando ||
+        pendienteVisible <= 0;
 
     let historialHtml = "";
 
-    if(!cobroActualV2.pagos || cobroActualV2.pagos.length === 0){
-
+    if(
+        !cobroActualV2.pagos ||
+        cobroActualV2.pagos.length === 0
+    ){
         historialHtml = `
             <div class="cobro-historial-vacio">
-                Todavía no hay pagos registrados.
+                ${textos.sinPagos}
             </div>
         `;
-
     }else{
+        historialHtml = cobroActualV2.pagos
+            .map((pago)=>{
+                return `
+                    <div class="cobro-pago-item">
+                        <div>
+                            <strong>
+                                ${formatearMetodoCobroV2(
+                                    pago.metodo
+                                )}
+                            </strong>
 
-        historialHtml = cobroActualV2.pagos.map((pago)=>{
+                            <span>
+                                ${formatearFechaCobroV2(
+                                    pago.fecha
+                                )}
+                            </span>
+                        </div>
 
-            return `
-                <div class="cobro-pago-item">
-                    <div>
-                        <strong>${formatearMetodoCobroV2(pago.metodo)}</strong>
-                        <span>${formatearFechaCobroV2(pago.fecha)}</span>
+                        <div>
+                            ${formatearDineroCobroV2(
+                                pago.importe
+                            )}
+                        </div>
                     </div>
-                    <div>
-                        ${formatearDineroCobroV2(pago.importe)}
-                    </div>
-                </div>
-            `;
-
-        }).join("");
-
+                `;
+            })
+            .join("");
     }
 
     let mensajeHtml = "";
 
     if(cobroActualV2.mensaje){
-
         mensajeHtml = `
             <div class="cobro-mensaje ${cobroActualV2.tipoMensaje}">
                 ${cobroActualV2.mensaje}
             </div>
         `;
-
     }
 
     let avisoPendienteNegativo = "";
 
     if(pendienteReal < 0){
-
         avisoPendienteNegativo = `
             <div class="cobro-mensaje aviso">
-                La cuenta tiene pagos superiores al total. La mesa se cerrará automáticamente.
+                ${textos.pagosSuperiores}
             </div>
         `;
-
     }
 
-    const textoBotonConfirmar = cobroActualV2.procesando
-        ? "Registrando pago..."
-        : "Confirmar pago";
+    const textoBotonConfirmar =
+        cobroActualV2.procesando
+            ? textos.registrandoPago
+            : textos.confirmarPago;
 
-    const textoCierre = cobroActualV2.cerrando
-        ? `
-            <div class="cobro-mensaje correcto">
-                Pago completado. Cerrando mesa automáticamente...
-            </div>
-        `
-        : "";
+    const textoCierre =
+        cobroActualV2.cerrando
+            ? `
+                <div class="cobro-mensaje correcto">
+                    ${textos.pagoCompletadoCerrando}
+                </div>
+            `
+            : "";
 
     panel.innerHTML = `
         <div class="cobro-panel">
 
             <div class="cobro-header">
                 <div>
-                    <h2>Cobro - Mesa ${cobroActualV2.mesa}</h2>
-                    <p>Pedido ${cobroActualV2.pedidoId}</p>
+                    <h2>
+                        ${textos.cobro} -
+                        ${textos.mesa}
+                        ${cobroActualV2.mesa}
+                    </h2>
+
+                    <p>
+                        ${textos.pedido}
+                        ${cobroActualV2.pedidoId}
+                    </p>
                 </div>
 
-                <button class="cobro-btn-volver" onclick="volverAlPedidoDesdeCobroV2()">
-                    ← Volver
+                <button
+                    class="cobro-btn-volver"
+                    onclick="volverAlPedidoDesdeCobroV2()"
+                >
+                    ← ${textos.volver}
                 </button>
             </div>
 
             <div class="cobro-resumen">
                 <div class="cobro-card">
-                    <span>Total cuenta</span>
-                    <strong>${formatearDineroCobroV2(cobroActualV2.total)}</strong>
+                    <span>${textos.totalCuenta}</span>
+
+                    <strong>
+                        ${formatearDineroCobroV2(
+                            cobroActualV2.total
+                        )}
+                    </strong>
                 </div>
 
                 <div class="cobro-card">
-                    <span>Pagado</span>
-                    <strong>${formatearDineroCobroV2(totalPagado)}</strong>
+                    <span>${textos.pagado}</span>
+
+                    <strong>
+                        ${formatearDineroCobroV2(
+                            totalPagado
+                        )}
+                    </strong>
                 </div>
 
                 <div class="cobro-card pendiente">
-                    <span>Pendiente</span>
-                    <strong>${formatearDineroCobroV2(pendienteVisible)}</strong>
+                    <span>${textos.pendiente}</span>
+
+                    <strong>
+                        ${formatearDineroCobroV2(
+                            pendienteVisible
+                        )}
+                    </strong>
                 </div>
             </div>
 
             ${mensajeHtml}
-
             ${avisoPendienteNegativo}
-
             ${textoCierre}
 
             <div class="cobro-bloque">
-                <h3>Método de pago</h3>
+                <h3>${textos.metodoPago}</h3>
 
                 <div class="cobro-metodos">
-                    <button class="${cobroActualV2.metodo === "tarjeta" ? "activo" : ""}" onclick="seleccionarMetodoCobroV2('tarjeta')" ${cobroActualV2.cerrando ? "disabled" : ""}>
-                        💳 Tarjeta
+                    <button
+                        class="${
+                            cobroActualV2.metodo === "tarjeta"
+                                ? "activo"
+                                : ""
+                        }"
+                        onclick="seleccionarMetodoCobroV2('tarjeta')"
+                        ${cobroActualV2.cerrando ? "disabled" : ""}
+                    >
+                        💳 ${textos.tarjeta}
                     </button>
 
-                    <button class="${cobroActualV2.metodo === "efectivo" ? "activo" : ""}" onclick="seleccionarMetodoCobroV2('efectivo')" ${cobroActualV2.cerrando ? "disabled" : ""}>
-                        💵 Efectivo
+                    <button
+                        class="${
+                            cobroActualV2.metodo === "efectivo"
+                                ? "activo"
+                                : ""
+                        }"
+                        onclick="seleccionarMetodoCobroV2('efectivo')"
+                        ${cobroActualV2.cerrando ? "disabled" : ""}
+                    >
+                        💵 ${textos.efectivo}
                     </button>
 
-                    <button class="${cobroActualV2.metodo === "bizum" ? "activo" : ""}" onclick="seleccionarMetodoCobroV2('bizum')" ${cobroActualV2.cerrando ? "disabled" : ""}>
-                        📱 Bizum
+                    <button
+                        class="${
+                            cobroActualV2.metodo === "bizum"
+                                ? "activo"
+                                : ""
+                        }"
+                        onclick="seleccionarMetodoCobroV2('bizum')"
+                        ${cobroActualV2.cerrando ? "disabled" : ""}
+                    >
+                        📱 ${textos.bizum}
                     </button>
                 </div>
             </div>
 
             <div class="cobro-bloque">
-                <h3>Importe a cobrar</h3>
+                <h3>${textos.importeCobrar}</h3>
 
                 <div class="cobro-input-row">
-                    <input 
+                    <input
                         id="cobro-importe"
                         type="number"
                         step="0.01"
@@ -359,22 +638,55 @@ function renderCobroV2(){
                         ${desactivado ? "disabled" : ""}
                     >
 
-                    <button class="cobro-btn-principal" onclick="confirmarPagoCobroV2()" ${desactivado ? "disabled" : ""}>
+                    <button
+                        class="cobro-btn-principal"
+                        onclick="confirmarPagoCobroV2()"
+                        ${desactivado ? "disabled" : ""}
+                    >
                         ${textoBotonConfirmar}
                     </button>
                 </div>
 
                 <div class="cobro-importes-rapidos">
-                    <button onclick="ponerImporteCobroV2('todo')" ${desactivado ? "disabled" : ""}>Todo</button>
-                    <button onclick="ponerImporteCobroV2('mitad')" ${desactivado ? "disabled" : ""}>Mitad</button>
-                    <button onclick="ponerImporteCobroV2(5)" ${desactivado ? "disabled" : ""}>5 €</button>
-                    <button onclick="ponerImporteCobroV2(10)" ${desactivado ? "disabled" : ""}>10 €</button>
-                    <button onclick="ponerImporteCobroV2(20)" ${desactivado ? "disabled" : ""}>20 €</button>
+                    <button
+                        onclick="ponerImporteCobroV2('todo')"
+                        ${desactivado ? "disabled" : ""}
+                    >
+                        ${textos.todo}
+                    </button>
+
+                    <button
+                        onclick="ponerImporteCobroV2('mitad')"
+                        ${desactivado ? "disabled" : ""}
+                    >
+                        ${textos.mitad}
+                    </button>
+
+                    <button
+                        onclick="ponerImporteCobroV2(5)"
+                        ${desactivado ? "disabled" : ""}
+                    >
+                        5 €
+                    </button>
+
+                    <button
+                        onclick="ponerImporteCobroV2(10)"
+                        ${desactivado ? "disabled" : ""}
+                    >
+                        10 €
+                    </button>
+
+                    <button
+                        onclick="ponerImporteCobroV2(20)"
+                        ${desactivado ? "disabled" : ""}
+                    >
+                        20 €
+                    </button>
                 </div>
             </div>
 
             <div class="cobro-bloque">
-                <h3>Pagos realizados</h3>
+                <h3>${textos.pagosRealizados}</h3>
 
                 <div class="cobro-historial">
                     ${historialHtml}
@@ -383,7 +695,6 @@ function renderCobroV2(){
 
         </div>
     `;
-
 }
 
 function seleccionarMetodoCobroV2(metodo){
@@ -431,45 +742,69 @@ function ponerImporteCobroV2(valor){
 
 async function confirmarPagoCobroV2(){
 
-    if(!cobroActualV2 || cobroActualV2.procesando || cobroActualV2.cerrando){
+    if(
+        !cobroActualV2 ||
+        cobroActualV2.procesando ||
+        cobroActualV2.cerrando
+    ){
         return;
     }
 
-    const pendiente = Math.max(0, redondearImporteCobroV2(cobroActualV2.pendiente));
-    const importe = normalizarImporteCobroV2(obtenerImporteEscritoCobroV2());
+    const textos = textosCobroV2();
 
-    cobroActualV2.importeActual = importe.toFixed(2);
+    const pendiente = Math.max(
+        0,
+        redondearImporteCobroV2(
+            cobroActualV2.pendiente
+        )
+    );
+
+    const importe = normalizarImporteCobroV2(
+        obtenerImporteEscritoCobroV2()
+    );
+
+    cobroActualV2.importeActual =
+        importe.toFixed(2);
 
     if(pendiente <= 0){
 
-        cobroActualV2.mensaje = "La cuenta ya está pagada. Cerrando mesa...";
-        cobroActualV2.tipoMensaje = "correcto";
+        cobroActualV2.mensaje =
+            textos.cuentaYaPagada;
+
+        cobroActualV2.tipoMensaje =
+            "correcto";
+
         renderCobroV2();
 
         await cerrarMesaDesdeCobroV2();
 
         return;
-
     }
 
     if(importe <= 0){
 
-        cobroActualV2.mensaje = "Introduce un importe mayor que 0.";
-        cobroActualV2.tipoMensaje = "error";
+        cobroActualV2.mensaje =
+            textos.importeMayorCero;
+
+        cobroActualV2.tipoMensaje =
+            "error";
+
         renderCobroV2();
 
         return;
-
     }
 
     if(importe > pendiente){
 
-        cobroActualV2.mensaje = "El importe no puede superar el pendiente.";
-        cobroActualV2.tipoMensaje = "error";
+        cobroActualV2.mensaje =
+            textos.importeSuperaPendiente;
+
+        cobroActualV2.tipoMensaje =
+            "error";
+
         renderCobroV2();
 
         return;
-
     }
 
     try{
@@ -480,52 +815,83 @@ async function confirmarPagoCobroV2(){
 
         renderCobroV2();
 
-        await apiPost("/pedido/" + cobroActualV2.pedidoId + "/pago", {
-            metodo: cobroActualV2.metodo,
-            importe: importe
-        });
+        await apiPost(
+            "/pedido/" +
+            cobroActualV2.pedidoId +
+            "/pago",
+            {
+                metodo: cobroActualV2.metodo,
+                importe: importe
+            }
+        );
 
         cobroActualV2.procesando = false;
         cobroActualV2.importeActual = null;
-        cobroActualV2.mensaje = "Pago registrado correctamente.";
-        cobroActualV2.tipoMensaje = "correcto";
+        cobroActualV2.mensaje =
+            textos.pagoRegistrado;
+
+        cobroActualV2.tipoMensaje =
+            "correcto";
 
         await cargarDatosCobroV2();
 
     }catch(error){
 
-        console.error("Error registrando pago:", error);
+        console.error(
+            "Error registrando pago:",
+            error
+        );
 
         cobroActualV2.procesando = false;
-        cobroActualV2.mensaje = "No se pudo registrar el pago.";
-        cobroActualV2.tipoMensaje = "error";
+        cobroActualV2.mensaje =
+            textos.noRegistrarPago;
+
+        cobroActualV2.tipoMensaje =
+            "error";
 
         renderCobroV2();
-
     }
-
 }
 
 async function cerrarMesaDesdeCobroV2(){
 
-    if(!cobroActualV2 || cobroActualV2.cerrando || cobroActualV2.cerrado){
+    if(
+        !cobroActualV2 ||
+        cobroActualV2.cerrando ||
+        cobroActualV2.cerrado
+    ){
         return;
     }
+
+    const textos = textosCobroV2();
 
     try{
 
         cobroActualV2.cerrando = true;
-        cobroActualV2.mensaje = "Cuenta pagada. Cerrando mesa automáticamente...";
-        cobroActualV2.tipoMensaje = "correcto";
+        cobroActualV2.mensaje =
+            textos.cuentaPagadaCerrando;
+
+        cobroActualV2.tipoMensaje =
+            "correcto";
 
         renderCobroV2();
 
-        const mesaCerrada = cobroActualV2.mesa;
-        const pedidoCerrado = cobroActualV2.pedidoId;
-        const totalCerrado = cobroActualV2.total;
-        const pagadoCerrado = obtenerTotalPagadoCobroV2();
+        const mesaCerrada =
+            cobroActualV2.mesa;
 
-        await apiPost("/cerrar-mesa/" + mesaCerrada, {});
+        const pedidoCerrado =
+            cobroActualV2.pedidoId;
+
+        const totalCerrado =
+            cobroActualV2.total;
+
+        const pagadoCerrado =
+            obtenerTotalPagadoCobroV2();
+
+        await apiPost(
+            "/cerrar-mesa/" + mesaCerrada,
+            {}
+        );
 
         cobroActualV2.cerrado = true;
         cobroActualV2.cerrando = false;
@@ -534,76 +900,118 @@ async function cerrarMesaDesdeCobroV2(){
 
         await cargarMesasV2();
 
-        renderMesaCerradaCobroV2(mesaCerrada, pedidoCerrado, totalCerrado, pagadoCerrado);
+        renderMesaCerradaCobroV2(
+            mesaCerrada,
+            pedidoCerrado,
+            totalCerrado,
+            pagadoCerrado
+        );
 
     }catch(error){
 
-        console.error("Error cerrando mesa:", error);
+        console.error(
+            "Error cerrando mesa:",
+            error
+        );
 
         cobroActualV2.cerrando = false;
-        cobroActualV2.mensaje = "El pago está registrado, pero no se pudo cerrar la mesa automáticamente.";
-        cobroActualV2.tipoMensaje = "error";
+        cobroActualV2.mensaje =
+            textos.pagoRegistradoNoCierra;
+
+        cobroActualV2.tipoMensaje =
+            "error";
 
         renderCobroV2();
-
     }
-
 }
 
 function renderMesaCerradaCobroV2(mesa, pedido, total, pagado){
 
+    const textos = textosCobroV2();
     const panel = obtenerPanelCobroV2();
 
     panel.innerHTML = `
         <div class="cobro-panel">
             <div class="cobro-cerrado">
-                <div class="cobro-cerrado-icono">✅</div>
+                <div class="cobro-cerrado-icono">
+                    ✅
+                </div>
 
-                <h2>Mesa ${mesa} cerrada</h2>
+                <h2>
+                    ${textos.mesa}
+                    ${mesa}
+                    ${textos.cerrada}
+                </h2>
 
-                <p>Pedido ${pedido} cobrado correctamente.</p>
+                <p>
+                    ${textos.pedido}
+                    ${pedido}
+                    ${textos.pedidoCobrado}
+                </p>
 
                 <div class="cobro-resumen">
                     <div class="cobro-card">
-                        <span>Total cuenta</span>
-                        <strong>${formatearDineroCobroV2(total)}</strong>
+                        <span>
+                            ${textos.totalCuenta}
+                        </span>
+
+                        <strong>
+                            ${formatearDineroCobroV2(
+                                total
+                            )}
+                        </strong>
                     </div>
 
                     <div class="cobro-card">
-                        <span>Total pagado</span>
-                        <strong>${formatearDineroCobroV2(pagado)}</strong>
+                        <span>
+                            ${textos.totalPagado}
+                        </span>
+
+                        <strong>
+                            ${formatearDineroCobroV2(
+                                pagado
+                            )}
+                        </strong>
                     </div>
 
                     <div class="cobro-card pendiente">
-                        <span>Pendiente</span>
+                        <span>
+                            ${textos.pendiente}
+                        </span>
+
                         <strong>0,00 €</strong>
                     </div>
                 </div>
 
-                <button class="cobro-btn-principal" onclick="imprimirTicketFinalCobroV2(${pedido})">
-                    Imprimir ticket final
+                <button
+                    class="cobro-btn-principal"
+                    onclick="imprimirTicketFinalCobroV2(${pedido})"
+                >
+                    ${textos.imprimirTicketFinal}
                 </button>
 
-                <button class="cobro-btn-secundario" onclick="mostrarInicioCobroV2()">
-                    Volver a mesas
+                <button
+                    class="cobro-btn-secundario"
+                    onclick="mostrarInicioCobroV2()"
+                >
+                    ${textos.volverMesas}
                 </button>
             </div>
         </div>
     `;
-
 }
 
 function mostrarInicioCobroV2(){
 
+    const textos = textosCobroV2();
     const panel = obtenerPanelCobroV2();
 
     panel.innerHTML = `
         <div class="bienvenida">
-            <h2>Bienvenido</h2>
-            <p>Selecciona una mesa para comenzar.</p>
+            <h2>${textos.bienvenida}</h2>
+            <p>${textos.seleccionaMesaComenzar}</p>
         </div>
     `;
-
 }
 
 function volverAlPedidoDesdeCobroV2(){
@@ -620,8 +1028,20 @@ function volverAlPedidoDesdeCobroV2(){
 
 async function imprimirTicketFinalCobroV2(pedidoId){
 
+    const textos = textosCobroV2();
+
+    const idiomaDocumento = String(
+        document.documentElement.lang || "es"
+    ).toLowerCase();
+
+    const idioma = ["es","it","en"].includes(
+        idiomaDocumento
+    )
+        ? idiomaDocumento
+        : "es";
+
     if(!pedidoId){
-        alert("No se encontró el pedido para imprimir el ticket final.");
+        alert(textos.pedidoNoEncontradoTicketFinal);
         return;
     }
 
@@ -637,10 +1057,10 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
         ventanaTicket.document.write(`
             <!DOCTYPE html>
-            <html lang="es">
+            <html lang="${idioma}">
             <head>
                 <meta charset="UTF-8">
-                <title>Preparando ticket final</title>
+                <title>${textos.preparandoTicketFinal}</title>
                 <style>
                     body{
                         font-family:Arial,sans-serif;
@@ -672,8 +1092,8 @@ async function imprimirTicketFinalCobroV2(pedidoId){
             <body>
                 <div class="cargando">
                     <div class="spinner"></div>
-                    <h2>Preparando ticket final...</h2>
-                    <p>Pedido ${pedidoId}</p>
+                    <h2>${textos.preparandoTicketFinal}</h2>
+                    <p>${textos.pedido} ${pedidoId}</p>
                 </div>
             </body>
             </html>
@@ -693,7 +1113,9 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         );
 
         if(!respuesta.ok){
-            throw new Error("No se pudo generar el ticket final");
+            throw new Error(
+                textos.noGenerarTicketFinal
+            );
         }
 
         const htmlTicket = await respuesta.text();
@@ -710,8 +1132,7 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         }
 
         alert(
-            "El navegador ha bloqueado la ventana del ticket final. " +
-            "Permite las ventanas emergentes para este sitio."
+            textos.popupBloqueadoTicket
         );
 
     }catch(error){
@@ -724,19 +1145,19 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
             ventanaTicket.document.write(`
                 <!DOCTYPE html>
-                <html lang="es">
+                <html lang="${idioma}">
                 <head>
                     <meta charset="UTF-8">
-                    <title>Error ticket final</title>
+                    <title>${textos.noGenerarTicketFinal}</title>
                 </head>
                 <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;color:#1f2937;">
-                    <h2>No se pudo generar el ticket final</h2>
-                    <p>Cierra esta ventana e inténtalo de nuevo.</p>
+                    <h2>${textos.noGenerarTicketFinal}</h2>
+                    <p>${textos.cerrarVentanaReintentar}</p>
                     <button
                         onclick="window.close()"
                         style="margin-top:20px;padding:12px 18px;border:0;border-radius:10px;background:#111827;color:white;font-weight:700;"
                     >
-                        Cerrar
+                        ${textos.cerrar}
                     </button>
                 </body>
                 </html>
@@ -746,7 +1167,9 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
         }else{
 
-            alert("No se pudo generar el ticket final.");
+            alert(
+                textos.noGenerarTicketFinal + "."
+            );
 
         }
 
