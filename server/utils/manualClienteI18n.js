@@ -135,8 +135,7 @@ function textosManualCliente(idiomaValor) {
         colores: [
           "Libre",
           "Ocupada",
-          "Cuenta pedida",
-          "Reservada"
+          "Cuenta pedida"
         ]
       },
 
@@ -466,8 +465,7 @@ function textosManualCliente(idiomaValor) {
         colores: [
           "Libero",
           "Occupato",
-          "Conto richiesto",
-          "Prenotato"
+          "Conto richiesto"
         ]
       },
 
@@ -797,8 +795,7 @@ function textosManualCliente(idiomaValor) {
         colores: [
           "Available",
           "Occupied",
-          "Bill requested",
-          "Reserved"
+          "Bill requested"
         ]
       },
 

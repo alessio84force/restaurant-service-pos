@@ -81,10 +81,20 @@ function renderChecklist(lista) {
 }
 
 function renderBadges(lista) {
+  const clasesMesa = [
+    "badge-mesa-libre",
+    "badge-mesa-ocupada",
+    "badge-mesa-cuenta"
+  ];
+
   return (lista || [])
-    .map(function(texto) {
+    .map(function(texto, indice) {
+      const claseMesa = clasesMesa[indice] || "";
+
       return (
-        '<span class="badge">' +
+        '<span class="badge ' +
+        claseMesa +
+        '">' +
         escapar(texto) +
         "</span>"
       );
@@ -402,6 +412,24 @@ function paginaManual(textos) {
       background:#eff6ff;
       color:#1d4ed8;
       margin:3px 4px 3px 0;
+    }
+
+    .badge-mesa-libre{
+      background:#eafaf1;
+      border:2px solid #27ae60;
+      color:#111827;
+    }
+
+    .badge-mesa-ocupada{
+      background:#eef5ff;
+      border:2px solid #2f80ed;
+      color:#111827;
+    }
+
+    .badge-mesa-cuenta{
+      background:#fff7df;
+      border:2px solid #f2c94c;
+      color:#111827;
     }
 
     .checklist{
