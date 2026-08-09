@@ -98,6 +98,23 @@ app.use(function(req, res, next){
 });
 
 
+// V2.10.0 - Smartphone usa automaticamente il POS mobile
+function esSmartphonePos(req) {
+  const ua = String(
+    (req && req.headers && req.headers["user-agent"]) || ""
+  );
+
+  const smartphone =
+    /iPhone|iPod|Windows Phone|IEMobile|Opera Mini/i.test(ua) ||
+    /Android.*Mobile/i.test(ua);
+
+  const tablet =
+    /iPad|Tablet/i.test(ua) ||
+    (/Android/i.test(ua) && !/Mobile/i.test(ua));
+
+  return smartphone && !tablet;
+}
+
 // Proteccion POS V2: sin login no se puede entrar al POS
 app.use('/app/v2', (req, res, next) => {
   if (!req.session || !req.session.usuario) {
@@ -115,6 +132,14 @@ app.use('/app/v2', (req, res, next) => {
   }
 
   if (['admin','gerente'].includes(rol)) {
+    const staAprendoPosDesktop =
+      req.path === "/" ||
+      req.path === "/index.html";
+
+    if (staAprendoPosDesktop && esSmartphonePos(req)) {
+      return res.redirect("/camarero");
+    }
+
     return next();
   }
 

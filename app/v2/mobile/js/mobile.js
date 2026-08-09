@@ -11,8 +11,380 @@ let estadoMobile = {
   productos: [],
   categoria: null,
   busqueda: "",
-  cargando: false
+  cargando: false,
+  usuario: null,
+  rol: "",
+  idioma: "es"
 };
+
+const TESTI_MOBILE = {
+  es: {
+    posMovil: "POS móvil",
+    camareroMovil: "Camarero móvil",
+    actualizar: "Actualizar",
+    mesas: "Mesas",
+    pedido: "Pedido",
+    productos: "Productos",
+    configuracion: "Configuración",
+    salir: "Salir",
+    cargandoPos: "Cargando POS móvil...",
+    cargando: "Cargando...",
+    sesionNoIniciada: "Sesión no iniciada",
+    errorApi: "Error de comunicación",
+    noCargarPos: "No se pudo cargar el POS móvil",
+    reintentar: "Reintentar",
+    noMesas: "No hay mesas configuradas.",
+    libre: "LIBRE",
+    ocupada: "OCUPADA",
+    cuentaPedida: "CUENTA PEDIDA",
+    seleccionaMesa: "Selecciona una mesa para empezar.",
+    verMesas: "Ver mesas",
+    mesa: "Mesa",
+    sinPedido: "No hay pedido abierto en esta mesa.",
+    abrirMesa: "Abrir mesa",
+    cambiarMesa: "Cambiar mesa",
+    producto: "Producto",
+    editarNota: "Editar nota",
+    anadirNota: "Añadir nota",
+    totalPedido: "Total pedido",
+    anadirProductos: "Añadir productos",
+    precuenta: "Precuenta",
+    enviarComandas: "Enviar comandas",
+    lineasPedido: "Líneas del pedido",
+    sinProductosPedido: "Todavía no hay productos.",
+    mesaAbierta: "Mesa abierta correctamente",
+    noAbrirMesa: "No se pudo abrir la mesa",
+    cantidadActualizada: "Cantidad actualizada",
+    noCambiarCantidad: "No se pudo cambiar la cantidad",
+    notaPrompt: "Nota para cocina/bar:",
+    notaGuardada: "Nota guardada",
+    noGuardarNota: "No se pudo guardar la nota",
+    seleccionaMesaAntes: "Selecciona una mesa antes de añadir productos.",
+    buscarProducto: "Buscar producto...",
+    puntoCoccion: "Punto de cocción",
+    sinProductosCategoria: "No hay productos en esta categoría.",
+    pocoHecho: "Poco hecho",
+    alPuntoMenos: "Al punto menos",
+    alPunto: "Al punto",
+    alPuntoMas: "Al punto más",
+    muyHecho: "Muy hecho",
+    puntoPrefijo: "Punto",
+    sinPunto: "Sin punto",
+    cancelar: "Cancelar",
+    seleccionaMesaPrimero: "Selecciona una mesa primero",
+    productoAnadido: "Producto añadido",
+    noAnadirProducto: "No se pudo añadir el producto",
+    seleccionaMesaComanda: "Selecciona una mesa",
+    enviandoComandas: "Enviando comandas...",
+    respuestaNoValida: "Respuesta no válida del servidor",
+    errorEnviarComandas: "Error enviando comandas",
+    comandasEnviadas: "Comandas enviadas",
+    sinNuevosProductos: "No hay productos nuevos para enviar",
+    noEnviarComanda: "No se pudo enviar la comanda",
+    noEnviarComandas: "No se pudieron enviar las comandas",
+    sinPedidoAbierto: "No hay pedido abierto",
+    precuentaGenerada: "Precuenta generada",
+    noGenerarPrecuenta: "No se pudo generar la precuenta"
+  },
+
+  it: {
+    posMovil: "POS mobile",
+    camareroMovil: "Cameriere mobile",
+    actualizar: "Aggiorna",
+    mesas: "Tavoli",
+    pedido: "Ordine",
+    productos: "Prodotti",
+    configuracion: "Configurazione",
+    salir: "Esci",
+    cargandoPos: "Caricamento POS mobile...",
+    cargando: "Caricamento...",
+    sesionNoIniciada: "Sessione non avviata",
+    errorApi: "Errore di comunicazione",
+    noCargarPos: "Impossibile caricare il POS mobile",
+    reintentar: "Riprova",
+    noMesas: "Non ci sono tavoli configurati.",
+    libre: "LIBERO",
+    ocupada: "OCCUPATO",
+    cuentaPedida: "CONTO RICHIESTO",
+    seleccionaMesa: "Seleziona un tavolo per iniziare.",
+    verMesas: "Vedi tavoli",
+    mesa: "Tavolo",
+    sinPedido: "Non ci sono ordini aperti su questo tavolo.",
+    abrirMesa: "Apri tavolo",
+    cambiarMesa: "Cambia tavolo",
+    producto: "Prodotto",
+    editarNota: "Modifica nota",
+    anadirNota: "Aggiungi nota",
+    totalPedido: "Totale ordine",
+    anadirProductos: "Aggiungi prodotti",
+    precuenta: "Preconto",
+    enviarComandas: "Invia comande",
+    lineasPedido: "Righe dell'ordine",
+    sinProductosPedido: "Non ci sono ancora prodotti.",
+    mesaAbierta: "Tavolo aperto correttamente",
+    noAbrirMesa: "Impossibile aprire il tavolo",
+    cantidadActualizada: "Quantità aggiornata",
+    noCambiarCantidad: "Impossibile modificare la quantità",
+    notaPrompt: "Nota per cucina/bar:",
+    notaGuardada: "Nota salvata",
+    noGuardarNota: "Impossibile salvare la nota",
+    seleccionaMesaAntes: "Seleziona un tavolo prima di aggiungere prodotti.",
+    buscarProducto: "Cerca prodotto...",
+    puntoCoccion: "Cottura",
+    sinProductosCategoria: "Non ci sono prodotti in questa categoria.",
+    pocoHecho: "Al sangue",
+    alPuntoMenos: "Medio-al sangue",
+    alPunto: "Media cottura",
+    alPuntoMas: "Medio-ben cotto",
+    muyHecho: "Ben cotto",
+    puntoPrefijo: "Cottura",
+    sinPunto: "Senza indicazione",
+    cancelar: "Annulla",
+    seleccionaMesaPrimero: "Seleziona prima un tavolo",
+    productoAnadido: "Prodotto aggiunto",
+    noAnadirProducto: "Impossibile aggiungere il prodotto",
+    seleccionaMesaComanda: "Seleziona un tavolo",
+    enviandoComandas: "Invio comande...",
+    respuestaNoValida: "Risposta del server non valida",
+    errorEnviarComandas: "Errore durante l'invio delle comande",
+    comandasEnviadas: "Comande inviate",
+    sinNuevosProductos: "Non ci sono nuovi prodotti da inviare",
+    noEnviarComanda: "Impossibile inviare la comanda",
+    noEnviarComandas: "Impossibile inviare le comande",
+    sinPedidoAbierto: "Non ci sono ordini aperti",
+    precuentaGenerada: "Preconto generato",
+    noGenerarPrecuenta: "Impossibile generare il preconto"
+  },
+
+  en: {
+    posMovil: "Mobile POS",
+    camareroMovil: "Mobile waiter",
+    actualizar: "Refresh",
+    mesas: "Tables",
+    pedido: "Order",
+    productos: "Products",
+    configuracion: "Settings",
+    salir: "Sign out",
+    cargandoPos: "Loading mobile POS...",
+    cargando: "Loading...",
+    sesionNoIniciada: "Session not started",
+    errorApi: "Communication error",
+    noCargarPos: "Could not load the mobile POS",
+    reintentar: "Try again",
+    noMesas: "No tables configured.",
+    libre: "FREE",
+    ocupada: "OCCUPIED",
+    cuentaPedida: "BILL REQUESTED",
+    seleccionaMesa: "Select a table to get started.",
+    verMesas: "View tables",
+    mesa: "Table",
+    sinPedido: "There is no open order on this table.",
+    abrirMesa: "Open table",
+    cambiarMesa: "Change table",
+    producto: "Product",
+    editarNota: "Edit note",
+    anadirNota: "Add note",
+    totalPedido: "Order total",
+    anadirProductos: "Add products",
+    precuenta: "Pre-bill",
+    enviarComandas: "Send orders",
+    lineasPedido: "Order lines",
+    sinProductosPedido: "There are no products yet.",
+    mesaAbierta: "Table opened successfully",
+    noAbrirMesa: "Could not open the table",
+    cantidadActualizada: "Quantity updated",
+    noCambiarCantidad: "Could not change the quantity",
+    notaPrompt: "Note for kitchen/bar:",
+    notaGuardada: "Note saved",
+    noGuardarNota: "Could not save the note",
+    seleccionaMesaAntes: "Select a table before adding products.",
+    buscarProducto: "Search product...",
+    puntoCoccion: "Doneness",
+    sinProductosCategoria: "There are no products in this category.",
+    pocoHecho: "Rare",
+    alPuntoMenos: "Medium rare",
+    alPunto: "Medium",
+    alPuntoMas: "Medium well",
+    muyHecho: "Well done",
+    puntoPrefijo: "Doneness",
+    sinPunto: "No preference",
+    cancelar: "Cancel",
+    seleccionaMesaPrimero: "Select a table first",
+    productoAnadido: "Product added",
+    noAnadirProducto: "Could not add the product",
+    seleccionaMesaComanda: "Select a table",
+    enviandoComandas: "Sending orders...",
+    respuestaNoValida: "Invalid server response",
+    errorEnviarComandas: "Error sending orders",
+    comandasEnviadas: "Orders sent",
+    sinNuevosProductos: "There are no new products to send",
+    noEnviarComanda: "Could not send the order",
+    noEnviarComandas: "Could not send the orders",
+    sinPedidoAbierto: "There is no open order",
+    precuentaGenerada: "Pre-bill generated",
+    noGenerarPrecuenta: "Could not generate the pre-bill"
+  }
+};
+
+function normalizarIdiomaMobile(valor){
+  const idioma = String(valor || "").trim().toLowerCase();
+
+  if(["es","it","en"].includes(idioma)){
+    return idioma;
+  }
+
+  return "es";
+}
+
+function textoMobile(clave){
+  const idioma = normalizarIdiomaMobile(
+    estadoMobile.idioma
+  );
+
+  const textos =
+    TESTI_MOBILE[idioma] ||
+    TESTI_MOBILE.es;
+
+  return Object.prototype.hasOwnProperty.call(textos, clave)
+    ? textos[clave]
+    : clave;
+}
+
+function aplicarIdiomaMobile(){
+  const idioma = normalizarIdiomaMobile(
+    estadoMobile.idioma
+  );
+
+  estadoMobile.idioma = idioma;
+  document.documentElement.lang = idioma;
+
+  const actualizar =
+    document.getElementById("mobile-actualizar");
+
+  const tabMesas =
+    document.getElementById("tab-mesas");
+
+  const tabPedido =
+    document.getElementById("tab-pedido");
+
+  const tabProductos =
+    document.getElementById("tab-productos");
+
+  const configuracion =
+    document.getElementById("mobile-configuracion");
+
+  const salir =
+    document.getElementById("mobile-salir");
+
+  const loading =
+    document.getElementById("mobile-loading-inicial");
+
+  if(actualizar){
+    actualizar.textContent = textoMobile("actualizar");
+  }
+
+  if(tabMesas){
+    tabMesas.textContent = textoMobile("mesas");
+  }
+
+  if(tabPedido){
+    tabPedido.textContent = textoMobile("pedido");
+  }
+
+  if(tabProductos){
+    tabProductos.textContent = textoMobile("productos");
+  }
+
+  if(configuracion){
+    configuracion.textContent =
+      textoMobile("configuracion");
+  }
+
+  if(salir){
+    salir.textContent = textoMobile("salir");
+  }
+
+  if(loading){
+    loading.textContent =
+      textoMobile("cargandoPos");
+  }
+}
+
+function textoEstadoMesaMobile(estado){
+  if(estado === "cuenta"){
+    return textoMobile("cuentaPedida");
+  }
+
+  if(estado === "ocupada"){
+    return textoMobile("ocupada");
+  }
+
+  return textoMobile("libre");
+}
+
+async function cargarUsuarioMobile(){
+  const datos = await apiMobile("/usuario-actual");
+
+  const usuario =
+    datos && datos.usuario
+      ? datos.usuario
+      : datos;
+
+  estadoMobile.usuario = usuario || {};
+
+  estadoMobile.rol = String(
+    (usuario && usuario.rol) ||
+    (datos && datos.rol) ||
+    ""
+  ).toLowerCase();
+
+  estadoMobile.idioma = normalizarIdiomaMobile(
+    (usuario && usuario.idioma) ||
+    (datos && datos.idioma) ||
+    "es"
+  );
+
+  aplicarIdiomaMobile();
+  aplicarModoUsuarioMobile();
+}
+
+function aplicarModoUsuarioMobile(){
+  const esAdmin =
+    estadoMobile.rol === "admin" ||
+    estadoMobile.rol === "gerente";
+
+  const subtitulo =
+    document.getElementById("mobile-subtitulo");
+
+  const configuracion =
+    document.getElementById("mobile-configuracion");
+
+  const footer =
+    document.getElementById("mobile-footer");
+
+  if(subtitulo){
+    subtitulo.textContent =
+      esAdmin
+        ? textoMobile("posMovil")
+        : textoMobile("camareroMovil");
+  }
+
+  if(configuracion){
+    configuracion.hidden = !esAdmin;
+  }
+
+  if(footer){
+    footer.classList.toggle("solo-salida", !esAdmin);
+  }
+
+  document.title =
+    "Restaurant Service POS - " +
+    (
+      esAdmin
+        ? textoMobile("posMovil")
+        : textoMobile("camareroMovil")
+    );
+}
 
 function escaparMobile(texto){
   return String(texto === null || texto === undefined ? "" : texto)
@@ -41,14 +413,18 @@ async function apiMobile(path, opciones){
 
   if(respuesta.redirected && respuesta.url.includes("/login")){
     window.location.href = "/login";
-    throw new Error("Sesión no iniciada");
+    throw new Error(textoMobile("sesionNoIniciada"));
   }
 
   if(tipo.includes("application/json")){
     const datos = await respuesta.json();
 
     if(!respuesta.ok){
-      throw new Error(datos.error || datos.message || "Error API");
+      throw new Error(
+      datos.error ||
+      datos.message ||
+      textoMobile("errorApi")
+    );
     }
 
     return datos;
@@ -58,11 +434,13 @@ async function apiMobile(path, opciones){
 
   if(texto.includes("<form") || texto.includes("login") || respuesta.url.includes("/login")){
     window.location.href = "/login";
-    throw new Error("Sesión no iniciada");
+    throw new Error(textoMobile("sesionNoIniciada"));
   }
 
   if(!respuesta.ok){
-    throw new Error("Error " + respuesta.status);
+    throw new Error(
+    textoMobile("errorApi") + " " + respuesta.status
+  );
   }
 
   return texto;
@@ -98,7 +476,6 @@ function normalizarEstadoMesaMobile(mesa){
 
   if(pedidoEstado === "cuenta" || estado === "cuenta") return "cuenta";
   if(pedidoEstado === "abierto" || estado === "ocupada") return "ocupada";
-  if(estado === "reservada") return "reservada";
   return "libre";
 }
 
@@ -121,7 +498,11 @@ function normalizarMenuMobile(datos){
     const nombreProducto = fila.producto || fila.nombre || fila.nombre_producto;
 
     const categoriaId = fila.categoria_id || fila.id_categoria || fila.categoria || "sin-categoria";
-    const categoriaNombre = fila.categoria || fila.nombre_categoria || fila.categoria_nombre || "Productos";
+    const categoriaNombre =
+      fila.categoria ||
+      fila.nombre_categoria ||
+      fila.categoria_nombre ||
+      textoMobile("productos");
 
     categoriasMap[categoriaId] = {
       id: categoriaId,
@@ -200,7 +581,10 @@ async function recargarTodoMobile(){
     renderMobile();
   }catch(error){
     estadoMobile.cargando = false;
-    renderErrorMobile(error.message || "No se pudo cargar el POS móvil");
+    renderErrorMobile(
+      error.message ||
+      textoMobile("noCargarPos")
+    );
   }
 }
 
@@ -223,7 +607,7 @@ function renderMobile(){
 
   if(estadoMobile.cargando){
     document.getElementById("mobile-app").innerHTML = `
-      <section class="mobile-loading">Cargando...</section>
+      <section class="mobile-loading">${textoMobile("cargando")}</section>
     `;
     return;
   }
@@ -246,7 +630,7 @@ function renderErrorMobile(mensaje){
     <section class="mobile-error">
       ${escaparMobile(mensaje)}
       <div class="mobile-actions">
-        <button class="mobile-btn primary full" onclick="recargarTodoMobile()">Reintentar</button>
+        <button class="mobile-btn primary full" onclick="recargarTodoMobile()">${textoMobile("reintentar")}</button>
       </div>
     </section>
   `;
@@ -262,7 +646,7 @@ function renderMesasMobile(){
     return `
       <button class="mobile-mesa ${estado} ${activa ? "activa" : ""}" onclick="seleccionarMesaMobile('${escaparMobile(numero).replace(/'/g,"\\'")}')">
         <strong>${escaparMobile(numero)}</strong>
-        <span>${escaparMobile(estado.toUpperCase())}</span>
+        <span>${escaparMobile(textoEstadoMesaMobile(estado))}</span>
         ${zona ? `<small>${escaparMobile(zona)}</small>` : ""}
       </button>
     `;
@@ -270,9 +654,9 @@ function renderMesasMobile(){
 
   document.getElementById("mobile-app").innerHTML = `
     <section class="mobile-panel">
-      <h2>Mesas</h2>
+      <h2>${textoMobile("mesas")}</h2>
       <div class="mobile-grid-mesas">
-        ${mesasHtml || `<div class="mobile-empty">No hay mesas configuradas.</div>`}
+        ${mesasHtml || `<div class="mobile-empty">${textoMobile("noMesas")}</div>`}
       </div>
     </section>
   `;
@@ -291,7 +675,10 @@ async function seleccionarMesaMobile(numeroMesa){
     renderMobile();
   }catch(error){
     estadoMobile.cargando = false;
-    renderErrorMobile(error.message || "No se pudo abrir la mesa");
+    renderErrorMobile(
+      error.message ||
+      textoMobile("noAbrirMesa")
+    );
   }
 }
 
@@ -301,9 +688,9 @@ function renderPedidoMobile(){
   if(!mesa){
     document.getElementById("mobile-app").innerHTML = `
       <section class="mobile-empty">
-        Selecciona una mesa para empezar.
+        ${textoMobile("seleccionaMesa")}
         <div class="mobile-actions">
-          <button class="mobile-btn primary full" onclick="cambiarVistaMobile('mesas')">Ver mesas</button>
+          <button class="mobile-btn primary full" onclick="cambiarVistaMobile('mesas')">${textoMobile("verMesas")}</button>
         </div>
       </section>
     `;
@@ -313,11 +700,11 @@ function renderPedidoMobile(){
   if(!estadoMobile.pedido){
     document.getElementById("mobile-app").innerHTML = `
       <section class="mobile-panel">
-        <h2>Mesa ${escaparMobile(mesa)}</h2>
-        <p>No hay pedido abierto en esta mesa.</p>
+        <h2>${textoMobile("mesa")} ${escaparMobile(mesa)}</h2>
+        <p>${textoMobile("sinPedido")}</p>
         <div class="mobile-actions">
-          <button class="mobile-btn green full" onclick="abrirMesaMobile()">Abrir mesa</button>
-          <button class="mobile-btn full" onclick="cambiarVistaMobile('mesas')">Cambiar mesa</button>
+          <button class="mobile-btn green full" onclick="abrirMesaMobile()">${textoMobile("abrirMesa")}</button>
+          <button class="mobile-btn full" onclick="cambiarVistaMobile('mesas')">${textoMobile("cambiarMesa")}</button>
         </div>
       </section>
     `;
@@ -325,7 +712,10 @@ function renderPedidoMobile(){
   }
 
   const lineasHtml = estadoMobile.lineas.map((linea)=>{
-    const nombre = linea.nombre || linea.producto || "Producto";
+    const nombre =
+      linea.nombre ||
+      linea.producto ||
+      textoMobile("producto");
     const cantidad = Number(linea.cantidad || 0);
     const precio = Number(linea.precio || 0);
     const subtotal = Number(linea.subtotal || (cantidad * precio));
@@ -348,7 +738,7 @@ function renderPedidoMobile(){
 
         <div class="mobile-linea-extra">
           <button onclick="editarNotaLineaMobile(${Number(linea.id)}, '${escaparMobile(nota).replace(/'/g,"\\'")}')">
-            ${nota ? "Editar nota" : "Añadir nota"}
+            ${nota ? textoMobile("editarNota") : textoMobile("anadirNota")}
           </button>
         </div>
       </div>
@@ -357,23 +747,23 @@ function renderPedidoMobile(){
 
   document.getElementById("mobile-app").innerHTML = `
     <section class="mobile-panel">
-      <h2>Mesa ${escaparMobile(mesa)}</h2>
+      <h2>${textoMobile("mesa")} ${escaparMobile(mesa)}</h2>
 
       <div class="mobile-total">
-        <span>Total pedido</span>
+        <span>${textoMobile("totalPedido")}</span>
         <strong>${dineroMobile(estadoMobile.total)}</strong>
       </div>
 
       <div class="mobile-actions">
-        <button class="mobile-btn blue" onclick="cambiarVistaMobile('productos')">Añadir productos</button>
-        <button class="mobile-btn yellow" onclick="generarPrecuentaMobile()">Precuenta</button>
-        <button class="mobile-btn blue" onclick="enviarTodasComandasMobile()">Enviar comandas</button>
+        <button class="mobile-btn blue" onclick="cambiarVistaMobile('productos')">${textoMobile("anadirProductos")}</button>
+        <button class="mobile-btn yellow" onclick="generarPrecuentaMobile()">${textoMobile("precuenta")}</button>
+        <button class="mobile-btn blue" onclick="enviarTodasComandasMobile()">${textoMobile("enviarComandas")}</button>
       </div>
     </section>
 
     <section class="mobile-panel">
-      <h3>Líneas del pedido</h3>
-      ${lineasHtml || `<div class="mobile-empty">Todavía no hay productos.</div>`}
+      <h3>${textoMobile("lineasPedido")}</h3>
+      ${lineasHtml || `<div class="mobile-empty">${textoMobile("sinProductosPedido")}</div>`}
     </section>
   `;
 }
@@ -413,11 +803,11 @@ async function abrirMesaMobile(){
 
     estadoMobile.cargando = false;
     renderMobile();
-    toastMobile("Mesa abierta correctamente", "ok");
+    toastMobile(textoMobile("mesaAbierta"), "ok");
   }catch(error){
     estadoMobile.cargando = false;
     renderMobile();
-    toastMobile("No se pudo abrir la mesa", "error");
+    toastMobile(textoMobile("noAbrirMesa"), "error");
   }
 }
 
@@ -444,15 +834,18 @@ async function cambiarCantidadLineaMobile(lineaId, nuevaCantidad){
     await cargarMesasMobile();
 
     renderMobile();
-    toastMobile("Cantidad actualizada", "ok");
+    toastMobile(textoMobile("cantidadActualizada"), "ok");
   }catch(error){
     console.error("Error cambiando cantidad móvil:", error);
-    toastMobile("No se pudo cambiar la cantidad", "error");
+    toastMobile(textoMobile("noCambiarCantidad"), "error");
   }
 }
 
 async function editarNotaLineaMobile(lineaId, notaActual){
-  const nuevaNota = window.prompt("Nota para cocina/bar:", notaActual || "");
+  const nuevaNota = window.prompt(
+    textoMobile("notaPrompt"),
+    notaActual || ""
+  );
 
   if(nuevaNota === null) return;
 
@@ -464,9 +857,9 @@ async function editarNotaLineaMobile(lineaId, notaActual){
 
     await cargarPedidoMobile(estadoMobile.mesa);
     renderMobile();
-    toastMobile("Nota guardada", "ok");
+    toastMobile(textoMobile("notaGuardada"), "ok");
   }catch(error){
-    toastMobile("No se pudo guardar la nota", "error");
+    toastMobile(textoMobile("noGuardarNota"), "error");
   }
 }
 
@@ -474,9 +867,9 @@ function renderProductosMobile(){
   if(!estadoMobile.mesa){
     document.getElementById("mobile-app").innerHTML = `
       <section class="mobile-empty">
-        Selecciona una mesa antes de añadir productos.
+        ${textoMobile("seleccionaMesaAntes")}
         <div class="mobile-actions">
-          <button class="mobile-btn primary full" onclick="cambiarVistaMobile('mesas')">Ver mesas</button>
+          <button class="mobile-btn primary full" onclick="cambiarVistaMobile('mesas')">${textoMobile("verMesas")}</button>
         </div>
       </section>
     `;
@@ -501,7 +894,7 @@ function renderProductosMobile(){
     <button class="mobile-producto" onclick="prepararProductoMobile(${Number(p.id)})">
       <div>
         <strong>${escaparMobile(p.nombre)}</strong>
-        <small>${escaparMobile(p.categoria || "")}${Number(p.requiere_coccion) === 1 ? " · Punto cocción" : ""}</small>
+        <small>${escaparMobile(p.categoria || "")}${Number(p.requiere_coccion) === 1 ? " · " + textoMobile("puntoCoccion") : ""}</small>
       </div>
       <span>${dineroMobile(p.precio)}</span>
     </button>
@@ -509,12 +902,12 @@ function renderProductosMobile(){
 
   document.getElementById("mobile-app").innerHTML = `
     <section class="mobile-panel">
-      <h2>Productos</h2>
-      <p><strong>Mesa:</strong> ${escaparMobile(estadoMobile.mesa)}</p>
+      <h2>${textoMobile("productos")}</h2>
+      <p><strong>${textoMobile("mesa")}:</strong> ${escaparMobile(estadoMobile.mesa)}</p>
 
       <input
         class="mobile-search"
-        placeholder="Buscar producto..."
+        placeholder="${escaparMobile(textoMobile("buscarProducto"))}"
         value="${escaparMobile(estadoMobile.busqueda)}"
         oninput="buscarProductoMobile(this.value)"
       >
@@ -524,7 +917,7 @@ function renderProductosMobile(){
       </div>
 
       <div class="mobile-productos">
-        ${productosHtml || `<div class="mobile-empty">No hay productos en esta categoría.</div>`}
+        ${productosHtml || `<div class="mobile-empty">${textoMobile("sinProductosCategoria")}</div>`}
       </div>
     </section>
   `;
@@ -559,15 +952,18 @@ function cerrarModalMobile(){
 
 function mostrarModalPuntoMobile(producto){
   const opciones = [
-    "Poco hecho",
-    "Al punto menos",
-    "Al punto",
-    "Al punto más",
-    "Muy hecho"
+    textoMobile("pocoHecho"),
+    textoMobile("alPuntoMenos"),
+    textoMobile("alPunto"),
+    textoMobile("alPuntoMas"),
+    textoMobile("muyHecho")
   ];
 
+  const prefijo =
+    textoMobile("puntoPrefijo");
+
   const botones = opciones.map((opcion)=>`
-    <button onclick="anadirProductoMobilePorId(${Number(producto.id)}, 'Punto: ${escaparMobile(opcion).replace(/'/g,"\\'")}', '${escaparMobile(opcion).replace(/'/g,"\\'")}')">
+    <button onclick="anadirProductoMobilePorId(${Number(producto.id)}, '${escaparMobile(prefijo + ": " + opcion).replace(/'/g,"\\'")}', '${escaparMobile(opcion).replace(/'/g,"\\'")}')">
       ${escaparMobile(opcion)}
     </button>
   `).join("");
@@ -578,8 +974,8 @@ function mostrarModalPuntoMobile(producto){
         <h3>${escaparMobile(producto.nombre)}</h3>
         <div class="mobile-modal-options">
           ${botones}
-          <button onclick="anadirProductoMobilePorId(${Number(producto.id)}, '', '')">Sin punto</button>
-          <button onclick="cerrarModalMobile()">Cancelar</button>
+          <button onclick="anadirProductoMobilePorId(${Number(producto.id)}, '', '')">${textoMobile("sinPunto")}</button>
+          <button onclick="cerrarModalMobile()">${textoMobile("cancelar")}</button>
         </div>
       </div>
     </div>
@@ -596,7 +992,10 @@ function anadirProductoMobilePorId(productoId, nota, punto){
 
 async function anadirProductoMobile(producto, nota, punto){
   if(!estadoMobile.mesa){
-    toastMobile("Selecciona una mesa primero", "error");
+    toastMobile(
+      textoMobile("seleccionaMesaPrimero"),
+      "error"
+    );
     return;
   }
 
@@ -626,21 +1025,24 @@ async function anadirProductoMobile(producto, nota, punto){
     await cargarPedidoMobile(estadoMobile.mesa);
     await cargarMesasMobile();
 
-    toastMobile("Producto añadido", "ok");
+    toastMobile(textoMobile("productoAnadido"), "ok");
     renderProductosMobile();
   }catch(error){
-    toastMobile("No se pudo añadir producto", "error");
+    toastMobile(textoMobile("noAnadirProducto"), "error");
   }
 }
 
 async function enviarComandaMobile(destino){
   if(!estadoMobile.mesa){
-    toastMobile("Selecciona una mesa", "error");
+    toastMobile(
+      textoMobile("seleccionaMesaComanda"),
+      "error"
+    );
     return;
   }
 
   try{
-    toastMobile("Enviando comandas...", "info");
+    toastMobile(textoMobile("enviandoComandas"), "info");
 
     const respuestaFetch = await fetch(
       API_MOBILE + "/saas/comandas/enviar-todas/" + encodeURIComponent(estadoMobile.mesa),
@@ -655,40 +1057,57 @@ async function enviarComandaMobile(destino){
     );
 
     const respuesta = await respuestaFetch.json().catch(function(){
-      return { ok:false, error:"Respuesta no válida del servidor" };
+      return {
+        ok:false,
+        error:textoMobile("respuestaNoValida")
+      };
     });
 
     if(!respuestaFetch.ok || respuesta.ok === false){
-      throw new Error(respuesta.error || "Error enviando comandas");
+      throw new Error(
+      respuesta.error ||
+      textoMobile("errorEnviarComandas")
+    );
     }
 
     if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
-      toastMobile("Comandas enviadas: " + respuesta.enviados.join(", "), "ok");
+      toastMobile(
+        textoMobile("comandasEnviadas") +
+        ": " +
+        respuesta.enviados.join(", "),
+        "ok"
+      );
 
       if(typeof cargarPedidoMobile === "function"){
-        await cargarPedidoMobile();
+        await cargarPedidoMobile(estadoMobile.mesa);
       }
 
       return;
     }
 
     console.log("DEBUG enviarComandaMobile:", respuesta);
-    toastMobile("No hay productos nuevos para enviar", "aviso");
+    toastMobile(
+      textoMobile("sinNuevosProductos"),
+      "aviso"
+    );
   }catch(error){
     console.error("Error enviando comandas mobile:", error);
-    toastMobile("No se pudo enviar la comanda", "error");
+    toastMobile(textoMobile("noEnviarComanda"), "error");
   }
 }
 
 
 async function enviarTodasComandasMobile(){
   if(!estadoMobile.mesa){
-    toastMobile("Selecciona una mesa", "error");
+    toastMobile(
+      textoMobile("seleccionaMesaComanda"),
+      "error"
+    );
     return;
   }
 
   try{
-    toastMobile("Enviando comandas...", "info");
+    toastMobile(textoMobile("enviandoComandas"), "info");
 
     const respuestaFetch = await fetch(
       API_MOBILE + "/saas/comandas/enviar-todas/" + encodeURIComponent(estadoMobile.mesa),
@@ -703,35 +1122,49 @@ async function enviarTodasComandasMobile(){
     );
 
     const respuesta = await respuestaFetch.json().catch(function(){
-      return { ok:false, error:"Respuesta no válida del servidor" };
+      return {
+        ok:false,
+        error:textoMobile("respuestaNoValida")
+      };
     });
 
     if(!respuestaFetch.ok || respuesta.ok === false){
-      throw new Error(respuesta.error || "Error enviando comandas");
+      throw new Error(
+      respuesta.error ||
+      textoMobile("errorEnviarComandas")
+    );
     }
 
     if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
-      toastMobile("Comandas enviadas: " + respuesta.enviados.join(", "), "ok");
+      toastMobile(
+        textoMobile("comandasEnviadas") +
+        ": " +
+        respuesta.enviados.join(", "),
+        "ok"
+      );
 
       if(typeof cargarPedidoMobile === "function"){
-        await cargarPedidoMobile();
+        await cargarPedidoMobile(estadoMobile.mesa);
       }
 
       return;
     }
 
     console.log("DEBUG enviarTodasComandasMobile:", respuesta);
-    toastMobile("No hay productos nuevos para enviar", "aviso");
+    toastMobile(
+      textoMobile("sinNuevosProductos"),
+      "aviso"
+    );
   }catch(error){
     console.error("Error enviando comandas mobile:", error);
-    toastMobile("No se pudieron enviar las comandas", "error");
+    toastMobile(textoMobile("noEnviarComandas"), "error");
   }
 }
 
 
 async function generarPrecuentaMobile(){
   if(!estadoMobile.mesa || !estadoMobile.pedido){
-    toastMobile("No hay pedido abierto", "error");
+    toastMobile(textoMobile("sinPedidoAbierto"), "error");
     return;
   }
 
@@ -747,15 +1180,26 @@ async function generarPrecuentaMobile(){
     await cargarMesasMobile();
     renderMobile();
 
-    toastMobile("Precuenta generada", "ok");
+    toastMobile(textoMobile("precuentaGenerada"), "ok");
   }catch(error){
-    toastMobile("No se pudo generar la precuenta", "error");
+    toastMobile(textoMobile("noGenerarPrecuenta"), "error");
   }
 }
 
-document.addEventListener("DOMContentLoaded", ()=>{
-  recargarTodoMobile();
-});
+async function iniciarPosMobile(){
+  try{
+    await cargarUsuarioMobile();
+  }catch(error){
+    console.warn(
+      "No se pudo cargar el usuario móvil:",
+      error.message || error
+    );
+  }
+
+  await recargarTodoMobile();
+}
+
+document.addEventListener("DOMContentLoaded", iniciarPosMobile);
 
 /* V2.4.1E - Sincronización automática móvil ↔ PC */
 let sincronizandoMobile = false;

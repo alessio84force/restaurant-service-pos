@@ -2,18 +2,18 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Restaurant Service POS - Camarero móvil</title>
+<title>Restaurant Service POS</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<link rel="stylesheet" href="css/mobile.css?v=280r">
+<link rel="stylesheet" href="css/mobile.css?v=210b">
 </head>
 <body>
 
 <header class="mobile-topbar">
   <div>
     <strong>Restaurant Service</strong>
-    <span>Camarero móvil</span>
+    <span id="mobile-subtitulo">Camarero móvil</span>
   </div>
-  <button onclick="recargarTodoMobile()">Actualizar</button>
+  <button id="mobile-actualizar" onclick="recargarTodoMobile()">Actualizar</button>
 </header>
 
 <nav class="mobile-tabs">
@@ -23,37 +23,19 @@
 </nav>
 
 <main id="mobile-app">
-  <section class="mobile-loading">
+  <section id="mobile-loading-inicial" class="mobile-loading">
     Cargando POS móvil...
   </section>
 </main>
 
-<footer class="mobile-footer">
-  <a href="/app/v2/index.html">POS completo</a>
-  <a href="/logout">Salir</a>
+<footer id="mobile-footer" class="mobile-footer">
+  <a id="mobile-configuracion" href="/configuracion" hidden>Configuración</a>
+  <a id="mobile-salir" href="/logout">Salir</a>
 </footer>
 
 <div id="mobile-toast"></div>
 <div id="mobile-modal"></div>
 
-<script src="js/mobile.js?v=280r"></script>
-<style>
-.rs-pos-logout{
-  position:fixed;
-  right:14px;
-  bottom:14px;
-  z-index:9999;
-  background:#111827;
-  color:white;
-  text-decoration:none;
-  font-family:Arial,Helvetica,sans-serif;
-  font-weight:900;
-  border-radius:999px;
-  padding:10px 13px;
-  font-size:13px;
-  box-shadow:0 10px 24px rgba(0,0,0,.22);
-}
-</style>
-<a class="rs-pos-logout" href="/logout">Cerrar sesión</a>
+<script src="js/mobile.js?v=210c"></script>
 </body>
 </html>

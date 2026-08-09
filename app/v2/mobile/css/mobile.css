@@ -183,10 +183,6 @@ button,input{
   color:#111827;
 }
 
-.mobile-mesa.reservada{
-  background:var(--red);
-}
-
 .mobile-mesa.activa{
   outline:4px solid #111827;
 }
@@ -513,4 +509,14 @@ button,input{
   .mobile-productos{
     grid-template-columns:1fr 1fr;
   }
+}
+
+
+/* V2.10.0 - navigazione mobile secondo ruolo */
+.mobile-footer.solo-salida{
+  grid-template-columns:1fr;
+}
+
+.mobile-footer a[hidden]{
+  display:none;
 }
