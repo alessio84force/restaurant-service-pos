@@ -49,6 +49,9 @@ const TESTI_MOBILE = {
     totalPedido: "Total pedido",
     anadirProductos: "Añadir productos",
     precuenta: "Precuenta",
+    imprimirPrecuenta: "Imprimir cuenta",
+    volverPedido: "Volver al pedido",
+    noImprimirPrecuenta: "No se pudo abrir la impresión",
     enviarComandas: "Enviar comandas",
     lineasPedido: "Líneas del pedido",
     sinProductosPedido: "Todavía no hay productos.",
@@ -118,6 +121,9 @@ const TESTI_MOBILE = {
     totalPedido: "Totale ordine",
     anadirProductos: "Aggiungi prodotti",
     precuenta: "Preconto",
+    imprimirPrecuenta: "Stampa conto",
+    volverPedido: "Torna all'ordine",
+    noImprimirPrecuenta: "Impossibile aprire la stampa",
     enviarComandas: "Invia comande",
     lineasPedido: "Righe dell'ordine",
     sinProductosPedido: "Non ci sono ancora prodotti.",
@@ -187,6 +193,9 @@ const TESTI_MOBILE = {
     totalPedido: "Order total",
     anadirProductos: "Add products",
     precuenta: "Pre-bill",
+    imprimirPrecuenta: "Print bill",
+    volverPedido: "Back to order",
+    noImprimirPrecuenta: "Could not open printing",
     enviarComandas: "Send orders",
     lineasPedido: "Order lines",
     sinProductosPedido: "There are no products yet.",
@@ -603,6 +612,11 @@ function activarTabsMobile(){
 }
 
 function renderMobile(){
+  document.body.classList.toggle(
+    "mobile-preconto-attivo",
+    estadoMobile.vista === "precuenta"
+  );
+
   activarTabsMobile();
 
   if(estadoMobile.cargando){
@@ -621,9 +635,14 @@ function renderMobile(){
     renderPedidoMobile();
     return;
   }
+  if(estadoMobile.vista === "precuenta"){
+    renderPrecuentaMobile();
+    return;
+  }
 
   renderProductosMobile();
 }
+
 
 function renderErrorMobile(mensaje){
   document.getElementById("mobile-app").innerHTML = `
@@ -1162,6 +1181,162 @@ async function enviarTodasComandasMobile(){
 }
 
 
+
+function renderPrecuentaMobile(){
+  if(!estadoMobile.mesa || !estadoMobile.pedido){
+    estadoMobile.vista = "pedido";
+    renderPedidoMobile();
+    return;
+  }
+
+  const lineasHtml = estadoMobile.lineas.map((linea)=>{
+    const nombre =
+      linea.nombre ||
+      linea.producto ||
+      textoMobile("producto");
+
+    const cantidad = Number(linea.cantidad || 0);
+    const precio = Number(linea.precio || 0);
+
+    const subtotal = Number(
+      linea.subtotal ||
+      (cantidad * precio)
+    );
+
+    const nota = linea.nota || "";
+
+    return `
+      <div class="mobile-preconto-linea">
+
+        <div class="mobile-preconto-linea-principal">
+          <strong>${cantidad} × ${escaparMobile(nombre)}</strong>
+          <span>${dineroMobile(subtotal)}</span>
+        </div>
+
+        <div class="mobile-preconto-precio">
+          ${dineroMobile(precio)}
+        </div>
+
+        ${nota
+          ? `<div class="mobile-preconto-nota">${escaparMobile(nota)}</div>`
+          : ""
+        }
+
+      </div>
+    `;
+  }).join("");
+
+  document.getElementById("mobile-app").innerHTML = `
+    <section class="mobile-preconto">
+
+      <div class="mobile-preconto-cabecera">
+        <strong>Restaurant Service</strong>
+
+        <h2>${textoMobile("precuenta")}</h2>
+
+        <div>
+          ${textoMobile("mesa")} ${escaparMobile(estadoMobile.mesa)}
+        </div>
+      </div>
+
+      <div class="mobile-preconto-lineas">
+        ${lineasHtml}
+      </div>
+
+      <div class="mobile-preconto-total">
+        <span>${textoMobile("totalPedido")}</span>
+        <strong>${dineroMobile(estadoMobile.total)}</strong>
+      </div>
+
+      <div class="mobile-preconto-actions">
+
+        <button
+          class="mobile-btn green full"
+          onclick="imprimirPrecuentaMobile()"
+        >
+          ${textoMobile("imprimirPrecuenta")}
+        </button>
+
+        <button
+          class="mobile-btn full"
+          onclick="volverPedidoDesdePrecuentaMobile()"
+        >
+          ${textoMobile("volverPedido")}
+        </button>
+
+      </div>
+
+    </section>
+  `;
+}
+
+
+function volverPedidoDesdePrecuentaMobile(){
+  estadoMobile.vista = "pedido";
+  renderMobile();
+}
+
+
+function imprimirPrecuentaMobile(){
+  if(!estadoMobile.mesa){
+    return;
+  }
+
+  try{
+    const vecchio =
+      document.getElementById("mobile-ticket-print-frame");
+
+    if(vecchio){
+      vecchio.remove();
+    }
+
+    const iframe = document.createElement("iframe");
+
+    iframe.id = "mobile-ticket-print-frame";
+
+    iframe.style.position = "fixed";
+    iframe.style.left = "-10000px";
+    iframe.style.top = "0";
+    iframe.style.width = "1px";
+    iframe.style.height = "1px";
+    iframe.style.border = "0";
+
+    iframe.src =
+      API_MOBILE +
+      "/ticket/" +
+      encodeURIComponent(estadoMobile.mesa);
+
+    iframe.onload = function(){
+      setTimeout(function(){
+        try{
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }catch(error){
+          toastMobile(
+            textoMobile("noImprimirPrecuenta"),
+            "error"
+          );
+        }
+      }, 400);
+    };
+
+    document.body.appendChild(iframe);
+
+    setTimeout(function(){
+      if(iframe.parentNode){
+        iframe.remove();
+      }
+    }, 30000);
+
+  }catch(error){
+    toastMobile(
+      textoMobile("noImprimirPrecuenta"),
+      "error"
+    );
+  }
+}
+
+
 async function generarPrecuentaMobile(){
   if(!estadoMobile.mesa || !estadoMobile.pedido){
     toastMobile(textoMobile("sinPedidoAbierto"), "error");
@@ -1174,9 +1349,9 @@ async function generarPrecuentaMobile(){
       body:{}
     });
 
-    window.open(API_MOBILE + "/ticket/" + encodeURIComponent(estadoMobile.mesa), "_blank");
+    estadoMobile.vista = "precuenta";
 
-    await cargarPedidoMobile(estadoMobile.mesa);
+await cargarPedidoMobile(estadoMobile.mesa);
     await cargarMesasMobile();
     renderMobile();
 

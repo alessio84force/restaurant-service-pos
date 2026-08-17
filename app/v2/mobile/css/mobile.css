@@ -520,3 +520,117 @@ button,input{
 .mobile-footer a[hidden]{
   display:none;
 }
+
+
+/* V2.10.0 - preconto mobile integrato */
+
+body.mobile-preconto-attivo .mobile-topbar,
+body.mobile-preconto-attivo .mobile-tabs,
+body.mobile-preconto-attivo .mobile-footer{
+  display:none;
+}
+
+body.mobile-preconto-attivo #mobile-app{
+  padding:10px;
+  max-width:680px;
+  margin:0 auto;
+}
+
+.mobile-preconto{
+  background:#fff;
+  border-radius:22px;
+  padding:18px;
+  min-height:calc(100vh - 20px);
+}
+
+.mobile-preconto-cabecera{
+  text-align:center;
+  border-bottom:2px solid var(--border);
+  padding-bottom:16px;
+  margin-bottom:10px;
+}
+
+.mobile-preconto-cabecera > strong{
+  display:block;
+  font-size:18px;
+  margin-bottom:5px;
+}
+
+.mobile-preconto-cabecera h2{
+  font-size:30px;
+  margin:4px 0 8px;
+}
+
+.mobile-preconto-cabecera div{
+  font-size:21px;
+  font-weight:900;
+}
+
+.mobile-preconto-linea{
+  padding:14px 2px;
+  border-bottom:1px solid var(--border);
+}
+
+.mobile-preconto-linea-principal{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:flex-start;
+}
+
+.mobile-preconto-linea-principal strong{
+  font-size:18px;
+  line-height:1.3;
+}
+
+.mobile-preconto-linea-principal span{
+  font-size:18px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.mobile-preconto-precio{
+  margin-top:4px;
+  font-size:14px;
+  color:#6b7280;
+}
+
+.mobile-preconto-nota{
+  margin-top:6px;
+  font-size:14px;
+  font-style:italic;
+}
+
+.mobile-preconto-total{
+  margin-top:18px;
+  background:#111827;
+  color:#fff;
+  border-radius:20px;
+  padding:18px;
+  text-align:center;
+}
+
+.mobile-preconto-total span{
+  display:block;
+  font-size:15px;
+  font-weight:900;
+}
+
+.mobile-preconto-total strong{
+  display:block;
+  font-size:40px;
+  line-height:1.15;
+  margin-top:4px;
+}
+
+.mobile-preconto-actions{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  margin-top:16px;
+}
+
+.mobile-preconto-actions .mobile-btn{
+  min-height:60px;
+  font-size:17px;
+}
