@@ -634,3 +634,248 @@ body.mobile-preconto-attivo #mobile-app{
   min-height:60px;
   font-size:17px;
 }
+
+/* =========================================================
+   V2.10.1 - Pagamento mobile Admin/Gerente
+   ========================================================= */
+
+.mobile-pagamento{
+  background:#fff;
+  border-radius:22px;
+  padding:18px;
+  min-height:calc(100vh - 20px);
+}
+
+.mobile-pagamento-cabecera{
+  text-align:center;
+  border-bottom:2px solid var(--border);
+  padding-bottom:16px;
+  margin-bottom:16px;
+}
+
+.mobile-pagamento-cabecera > strong{
+  display:block;
+  font-size:18px;
+  margin-bottom:5px;
+}
+
+.mobile-pagamento-cabecera h2{
+  font-size:30px;
+  margin:4px 0 8px;
+}
+
+.mobile-pagamento-cabecera div{
+  font-size:21px;
+  font-weight:900;
+}
+
+.mobile-pagamento-resumen{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-bottom:16px;
+}
+
+.mobile-pagamento-card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:12px 8px;
+  text-align:center;
+  background:#f9fafb;
+}
+
+.mobile-pagamento-card span{
+  display:block;
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:5px;
+}
+
+.mobile-pagamento-card strong{
+  display:block;
+  font-size:19px;
+}
+
+.mobile-pagamento-card.pendiente{
+  background:#111827;
+  color:#fff;
+  border-color:#111827;
+}
+
+.mobile-pagamento-bloque{
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:14px;
+  background:#fff;
+}
+
+.mobile-pagamento-bloque h3{
+  margin:0 0 12px;
+  font-size:16px;
+}
+
+.mobile-pagamento-metodos{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+.mobile-pagamento-metodos .mobile-btn{
+  min-height:58px;
+}
+
+.mobile-pagamento-input{
+  display:block;
+  width:100%;
+  min-height:62px;
+  box-sizing:border-box;
+  border:2px solid var(--border);
+  border-radius:16px;
+  padding:10px 14px;
+  font-size:26px;
+  font-weight:900;
+  text-align:center;
+  background:#fff;
+  color:var(--text);
+}
+
+.mobile-pagamento-input:focus{
+  outline:3px solid #111827;
+  border-color:#111827;
+}
+
+.mobile-pagamento-rapidi{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:7px;
+  margin-top:10px;
+}
+
+.mobile-pagamento-rapidi .mobile-btn{
+  min-height:48px;
+  padding:7px 5px;
+}
+
+.mobile-pagamento-conferma{
+  margin-top:12px;
+  min-height:64px;
+  font-size:18px;
+}
+
+.mobile-pagamento-historial{
+  display:grid;
+  gap:8px;
+}
+
+.mobile-pagamento-historial-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+  padding:10px 2px;
+}
+
+.mobile-pagamento-historial-item:last-child{
+  border-bottom:0;
+}
+
+.mobile-pagamento-historial-item strong{
+  font-size:15px;
+}
+
+.mobile-pagamento-historial-item span{
+  font-size:17px;
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.mobile-pagamento-vacio{
+  padding:12px;
+  text-align:center;
+  font-size:14px;
+}
+
+.mobile-pagamento-mensaje{
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:14px;
+  font-weight:900;
+  text-align:center;
+}
+
+.mobile-pagamento-mensaje.ok{
+  background:#dcfce7;
+  border:1px solid #86efac;
+}
+
+.mobile-pagamento-mensaje.error{
+  background:#fee2e2;
+  border:1px solid #fca5a5;
+}
+
+.mobile-pagamento-success{
+  text-align:center;
+  padding:24px 14px;
+  margin:18px 0;
+  border-radius:20px;
+  background:#dcfce7;
+  border:2px solid #86efac;
+}
+
+.mobile-pagamento-success strong{
+  display:block;
+  font-size:25px;
+  margin-bottom:8px;
+}
+
+.mobile-pagamento-success span{
+  display:block;
+  font-size:18px;
+  font-weight:900;
+}
+
+.mobile-pagamento-completato{
+  display:flex;
+  flex-direction:column;
+}
+
+.mobile-pagamento button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+@media (max-width:420px){
+
+  .mobile-pagamento{
+    padding:13px;
+  }
+
+  .mobile-pagamento-resumen{
+    grid-template-columns:1fr;
+  }
+
+  .mobile-pagamento-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    text-align:left;
+  }
+
+  .mobile-pagamento-card span{
+    margin:0;
+  }
+
+  .mobile-pagamento-metodos{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+
+  .mobile-pagamento-rapidi{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .mobile-pagamento-rapidi .mobile-btn:last-child{
+    grid-column:1 / -1;
+  }
+}

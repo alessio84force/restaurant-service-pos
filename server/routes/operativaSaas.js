@@ -13,6 +13,31 @@ function requiereLoginJson(req, res, next) {
   });
 }
 
+
+function requiereAdminGerenteJson(req, res, next) {
+  if (!req.session || !req.session.usuario) {
+    return res.status(401).json({
+      ok: false,
+      error: "No autenticado"
+    });
+  }
+
+  const rol = String(
+    req.session.usuario.rol ||
+    req.session.rol ||
+    ""
+  ).toLowerCase();
+
+  if (rol !== "admin" && rol !== "gerente") {
+    return res.status(403).json({
+      ok: false,
+      error: "Acceso no autorizado"
+    });
+  }
+
+  return next();
+}
+
 function all(db, sql, params) {
   return new Promise((resolve) => {
     db.all(sql, params || [], function(err, rows) {
@@ -1371,7 +1396,7 @@ module.exports = function operativaSaasRoutes(db) {
     });
   });
 
-  router.get("/pedido/:id/pagos", requiereLoginJson, async function(req, res) {
+  router.get("/pedido/:id/pagos", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const pedidoId = Number(req.params.id || 0);
     const pedido = await pedidoPropio(db, restauranteId, pedidoId);
@@ -1387,7 +1412,7 @@ module.exports = function operativaSaasRoutes(db) {
     res.json(pagos);
   });
 
-  router.get("/pedido/:id/pendiente", requiereLoginJson, async function(req, res) {
+  router.get("/pedido/:id/pendiente", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const pedidoId = Number(req.params.id || 0);
     const resumen = await resumenPendiente(db, restauranteId, pedidoId);
@@ -1407,7 +1432,7 @@ module.exports = function operativaSaasRoutes(db) {
     });
   });
 
-  router.post("/pedido/:id/pago", requiereLoginJson, async function(req, res) {
+  router.post("/pedido/:id/pago", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const pedidoId = Number(req.params.id || 0);
     const body = req.body || {};
@@ -1473,7 +1498,7 @@ module.exports = function operativaSaasRoutes(db) {
     });
   });
 
-  router.post("/cerrar-mesa/:mesa", requiereLoginJson, async function(req, res) {
+  router.post("/cerrar-mesa/:mesa", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const mesa = await buscarMesa(db, restauranteId, req.params.mesa);
 

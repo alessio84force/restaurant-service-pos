@@ -14,7 +14,8 @@ let estadoMobile = {
   cargando: false,
   usuario: null,
   rol: "",
-  idioma: "es"
+  idioma: "es",
+  pagamento: null
 };
 
 const TESTI_MOBILE = {
@@ -49,6 +50,29 @@ const TESTI_MOBILE = {
     totalPedido: "Total pedido",
     anadirProductos: "Añadir productos",
     precuenta: "Precuenta",
+    pagar: "Cobrar",
+    pago: "Pago",
+    totalCuenta: "Total",
+    pagado: "Pagado",
+    pendiente: "Pendiente",
+    metodoPago: "Método de pago",
+    tarjeta: "Tarjeta",
+    efectivo: "Efectivo",
+    bizum: "Bizum",
+    importeCobrar: "Importe a cobrar",
+    todo: "Todo",
+    mitad: "Mitad",
+    confirmarPago: "Confirmar pago",
+    pagosRealizados: "Pagos realizados",
+    sinPagos: "Todavía no hay pagos registrados.",
+    pagoRegistrado: "Pago registrado correctamente.",
+    pagoCompletado: "Pago completado",
+    mesaLiberada: "La mesa está libre.",
+    volverMesas: "Volver a mesas",
+    importeMayorCero: "El importe debe ser mayor que cero.",
+    importeSuperaPendiente: "El importe no puede superar lo pendiente.",
+    noCargarPago: "No se pudieron cargar los datos del pago.",
+    noRegistrarPago: "No se pudo registrar el pago.",
     imprimirPrecuenta: "Imprimir cuenta",
     volverPedido: "Volver al pedido",
     noImprimirPrecuenta: "No se pudo abrir la impresión",
@@ -121,6 +145,29 @@ const TESTI_MOBILE = {
     totalPedido: "Totale ordine",
     anadirProductos: "Aggiungi prodotti",
     precuenta: "Preconto",
+    pagar: "Paga",
+    pago: "Pagamento",
+    totalCuenta: "Totale",
+    pagado: "Pagato",
+    pendiente: "Da pagare",
+    metodoPago: "Metodo di pagamento",
+    tarjeta: "Carta",
+    efectivo: "Contanti",
+    bizum: "Bizum",
+    importeCobrar: "Importo da pagare",
+    todo: "Tutto",
+    mitad: "Metà",
+    confirmarPago: "Conferma pagamento",
+    pagosRealizados: "Pagamenti effettuati",
+    sinPagos: "Non ci sono ancora pagamenti registrati.",
+    pagoRegistrado: "Pagamento registrato correttamente.",
+    pagoCompletado: "Pagamento completato",
+    mesaLiberada: "Il tavolo è libero.",
+    volverMesas: "Torna ai tavoli",
+    importeMayorCero: "L'importo deve essere maggiore di zero.",
+    importeSuperaPendiente: "L'importo non può superare il saldo da pagare.",
+    noCargarPago: "Impossibile caricare i dati del pagamento.",
+    noRegistrarPago: "Impossibile registrare il pagamento.",
     imprimirPrecuenta: "Stampa conto",
     volverPedido: "Torna all'ordine",
     noImprimirPrecuenta: "Impossibile aprire la stampa",
@@ -193,6 +240,29 @@ const TESTI_MOBILE = {
     totalPedido: "Order total",
     anadirProductos: "Add products",
     precuenta: "Pre-bill",
+    pagar: "Pay",
+    pago: "Payment",
+    totalCuenta: "Total",
+    pagado: "Paid",
+    pendiente: "Remaining",
+    metodoPago: "Payment method",
+    tarjeta: "Card",
+    efectivo: "Cash",
+    bizum: "Bizum",
+    importeCobrar: "Amount to pay",
+    todo: "All",
+    mitad: "Half",
+    confirmarPago: "Confirm payment",
+    pagosRealizados: "Payments made",
+    sinPagos: "No payments recorded yet.",
+    pagoRegistrado: "Payment recorded successfully.",
+    pagoCompletado: "Payment completed",
+    mesaLiberada: "The table is free.",
+    volverMesas: "Back to tables",
+    importeMayorCero: "The amount must be greater than zero.",
+    importeSuperaPendiente: "The amount cannot exceed the remaining balance.",
+    noCargarPago: "Could not load payment data.",
+    noRegistrarPago: "Could not record the payment.",
     imprimirPrecuenta: "Print bill",
     volverPedido: "Back to order",
     noImprimirPrecuenta: "Could not open printing",
@@ -407,6 +477,11 @@ function dineroMobile(valor){
   return Number(valor || 0).toFixed(2) + " €";
 }
 
+function esAdminGerenteMobile(){
+  const rol = String(estadoMobile.rol || "").toLowerCase();
+  return rol === "admin" || rol === "gerente";
+}
+
 async function apiMobile(path, opciones){
   const opts = opciones || {};
   const respuesta = await fetch(API_MOBILE + path, {
@@ -614,7 +689,9 @@ function activarTabsMobile(){
 function renderMobile(){
   document.body.classList.toggle(
     "mobile-preconto-attivo",
-    estadoMobile.vista === "precuenta"
+    ["precuenta", "pagamento", "pagamento-completato"].includes(
+      estadoMobile.vista
+    )
   );
 
   activarTabsMobile();
@@ -637,6 +714,16 @@ function renderMobile(){
   }
   if(estadoMobile.vista === "precuenta"){
     renderPrecuentaMobile();
+    return;
+  }
+
+  if(estadoMobile.vista === "pagamento"){
+    renderPagamentoMobile();
+    return;
+  }
+
+  if(estadoMobile.vista === "pagamento-completato"){
+    renderPagamentoCompletatoMobile();
     return;
   }
 
@@ -684,6 +771,7 @@ function renderMesasMobile(){
 async function seleccionarMesaMobile(numeroMesa){
   try{
     estadoMobile.mesa = String(numeroMesa);
+    estadoMobile.pagamento = null;
     estadoMobile.vista = "pedido";
     estadoMobile.cargando = true;
     renderMobile();
@@ -1250,6 +1338,15 @@ function renderPrecuentaMobile(){
 
       <div class="mobile-preconto-actions">
 
+        ${esAdminGerenteMobile() ? `
+          <button
+            class="mobile-btn primary full"
+            onclick="aprirePagamentoMobile()"
+          >
+            ${textoMobile("pagar")}
+          </button>
+        ` : ""}
+
         <button
           class="mobile-btn green full"
           onclick="imprimirPrecuentaMobile()"
@@ -1268,6 +1365,654 @@ function renderPrecuentaMobile(){
 
     </section>
   `;
+}
+
+
+
+function arrotondarePagamentoMobile(valor){
+  return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
+}
+
+
+function leggereImportoPagamentoMobile(){
+  const input = document.getElementById("mobile-pagamento-importe");
+
+  if(!input){
+    return 0;
+  }
+
+  const valore = String(input.value || "")
+    .trim()
+    .replace(",", ".");
+
+  const numero = Number(valore);
+
+  if(!Number.isFinite(numero)){
+    return 0;
+  }
+
+  return arrotondarePagamentoMobile(numero);
+}
+
+
+function nomeMetodoPagamentoMobile(metodo){
+  if(metodo === "tarjeta"){
+    return textoMobile("tarjeta");
+  }
+
+  if(metodo === "efectivo"){
+    return textoMobile("efectivo");
+  }
+
+  if(metodo === "bizum"){
+    return textoMobile("bizum");
+  }
+
+  return metodo || textoMobile("pago");
+}
+
+
+async function aprirePagamentoMobile(){
+  if(!esAdminGerenteMobile()){
+    toastMobile(textoMobile("errorApi"), "error");
+    return;
+  }
+
+  if(!estadoMobile.mesa || !estadoMobile.pedido){
+    toastMobile(textoMobile("sinPedidoAbierto"), "error");
+    return;
+  }
+
+  estadoMobile.pagamento = {
+    pedidoId: Number(estadoMobile.pedido),
+    mesa: String(estadoMobile.mesa),
+    total: arrotondarePagamentoMobile(estadoMobile.total),
+    pagado: 0,
+    pendiente: arrotondarePagamentoMobile(estadoMobile.total),
+    pagos: [],
+    metodo: "tarjeta",
+    importeActual: "",
+    procesando: false,
+    mensaje: "",
+    tipoMensaje: ""
+  };
+
+  estadoMobile.vista = "pagamento";
+  renderMobile();
+
+  await caricarePagamentoMobile();
+}
+
+
+async function caricarePagamentoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    !pagamento.pedidoId ||
+    !esAdminGerenteMobile()
+  ){
+    return;
+  }
+
+  try{
+    const resultados = await Promise.all([
+      apiMobile(
+        "/pedido/" +
+        encodeURIComponent(pagamento.pedidoId) +
+        "/pagos"
+      ),
+      apiMobile(
+        "/pedido/" +
+        encodeURIComponent(pagamento.pedidoId) +
+        "/pendiente"
+      )
+    ]);
+
+    const pagos = resultados[0];
+    const resumen = resultados[1] || {};
+
+    pagamento.pagos = Array.isArray(pagos) ? pagos : [];
+    pagamento.total = arrotondarePagamentoMobile(
+      resumen.total != null
+        ? resumen.total
+        : pagamento.total
+    );
+
+    pagamento.pagado = arrotondarePagamentoMobile(
+      resumen.pagado != null
+        ? resumen.pagado
+        : pagamento.pagos.reduce(
+            (suma, pago)=>suma + Number(pago.importe || 0),
+            0
+          )
+    );
+
+    pagamento.pendiente = Math.max(
+      0,
+      arrotondarePagamentoMobile(
+        resumen.pendiente != null
+          ? resumen.pendiente
+          : pagamento.total - pagamento.pagado
+      )
+    );
+
+    if(pagamento.pendiente <= 0.005){
+      await completarePagamentoMobile();
+      return;
+    }
+
+    if(estadoMobile.vista === "pagamento"){
+      renderMobile();
+    }
+
+  }catch(error){
+    console.error(
+      "Error cargando pagamento mobile:",
+      error
+    );
+
+    pagamento.mensaje = textoMobile("noCargarPago");
+    pagamento.tipoMensaje = "error";
+
+    if(estadoMobile.vista === "pagamento"){
+      renderMobile();
+    }
+  }
+}
+
+
+function renderPagamentoMobile(){
+  if(!esAdminGerenteMobile()){
+    estadoMobile.vista = "pedido";
+    renderMobile();
+    return;
+  }
+
+  const pagamento = estadoMobile.pagamento;
+
+  if(!pagamento){
+    estadoMobile.vista = "precuenta";
+    renderMobile();
+    return;
+  }
+
+  const importeInput =
+    pagamento.importeActual !== null &&
+    pagamento.importeActual !== undefined
+      ? String(pagamento.importeActual)
+      : "";
+
+  const desactivado =
+    pagamento.procesando ||
+    pagamento.pendiente <= 0.005;
+
+  const historialHtml =
+    pagamento.pagos.length > 0
+      ? pagamento.pagos.map((pago)=>{
+          return `
+            <div class="mobile-pagamento-historial-item">
+              <strong>
+                ${escaparMobile(
+                  nomeMetodoPagamentoMobile(pago.metodo)
+                )}
+              </strong>
+
+              <span>
+                ${dineroMobile(pago.importe)}
+              </span>
+            </div>
+          `;
+        }).join("")
+      : `
+          <div class="mobile-pagamento-vacio">
+            ${textoMobile("sinPagos")}
+          </div>
+        `;
+
+  const mensajeHtml = pagamento.mensaje
+    ? `
+        <div class="mobile-pagamento-mensaje ${pagamento.tipoMensaje || ""}">
+          ${escaparMobile(pagamento.mensaje)}
+        </div>
+      `
+    : "";
+
+  document.getElementById("mobile-app").innerHTML = `
+    <section class="mobile-pagamento">
+
+      <div class="mobile-pagamento-cabecera">
+        <strong>Restaurant Service</strong>
+        <h2>${textoMobile("pago")}</h2>
+        <div>
+          ${textoMobile("mesa")}
+          ${escaparMobile(pagamento.mesa)}
+        </div>
+      </div>
+
+      <div class="mobile-pagamento-resumen">
+
+        <div class="mobile-pagamento-card">
+          <span>${textoMobile("totalCuenta")}</span>
+          <strong>${dineroMobile(pagamento.total)}</strong>
+        </div>
+
+        <div class="mobile-pagamento-card">
+          <span>${textoMobile("pagado")}</span>
+          <strong>${dineroMobile(pagamento.pagado)}</strong>
+        </div>
+
+        <div class="mobile-pagamento-card pendiente">
+          <span>${textoMobile("pendiente")}</span>
+          <strong>${dineroMobile(pagamento.pendiente)}</strong>
+        </div>
+
+      </div>
+
+      ${mensajeHtml}
+
+      <div class="mobile-pagamento-bloque">
+
+        <h3>${textoMobile("metodoPago")}</h3>
+
+        <div class="mobile-pagamento-metodos">
+
+          <button
+            class="mobile-btn ${pagamento.metodo === "tarjeta" ? "primary" : ""}"
+            onclick="selezionareMetodoPagamentoMobile('tarjeta')"
+            ${desactivado ? "disabled" : ""}
+          >
+            ${textoMobile("tarjeta")}
+          </button>
+
+          <button
+            class="mobile-btn ${pagamento.metodo === "efectivo" ? "primary" : ""}"
+            onclick="selezionareMetodoPagamentoMobile('efectivo')"
+            ${desactivado ? "disabled" : ""}
+          >
+            ${textoMobile("efectivo")}
+          </button>
+
+          <button
+            class="mobile-btn ${pagamento.metodo === "bizum" ? "primary" : ""}"
+            onclick="selezionareMetodoPagamentoMobile('bizum')"
+            ${desactivado ? "disabled" : ""}
+          >
+            ${textoMobile("bizum")}
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="mobile-pagamento-bloque">
+
+        <h3>${textoMobile("importeCobrar")}</h3>
+
+        <input
+          id="mobile-pagamento-importe"
+          class="mobile-pagamento-input"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          value="${escaparMobile(importeInput)}"
+          ${desactivado ? "disabled" : ""}
+        >
+
+        <div class="mobile-pagamento-rapidi">
+
+          <button
+            class="mobile-btn"
+            onclick="impostareImportoPagamentoMobile('todo')"
+            ${desactivado ? "disabled" : ""}
+          >
+            ${textoMobile("todo")}
+          </button>
+
+          <button
+            class="mobile-btn"
+            onclick="impostareImportoPagamentoMobile('mitad')"
+            ${desactivado ? "disabled" : ""}
+          >
+            ${textoMobile("mitad")}
+          </button>
+
+          <button
+            class="mobile-btn"
+            onclick="impostareImportoPagamentoMobile(5)"
+            ${desactivado ? "disabled" : ""}
+          >
+            5 €
+          </button>
+
+          <button
+            class="mobile-btn"
+            onclick="impostareImportoPagamentoMobile(10)"
+            ${desactivado ? "disabled" : ""}
+          >
+            10 €
+          </button>
+
+          <button
+            class="mobile-btn"
+            onclick="impostareImportoPagamentoMobile(20)"
+            ${desactivado ? "disabled" : ""}
+          >
+            20 €
+          </button>
+
+        </div>
+
+        <button
+          class="mobile-btn green full mobile-pagamento-conferma"
+          onclick="confermarePagamentoMobile()"
+          ${desactivado ? "disabled" : ""}
+        >
+          ${pagamento.procesando
+            ? textoMobile("cargando")
+            : textoMobile("confirmarPago")
+          }
+        </button>
+
+      </div>
+
+      <div class="mobile-pagamento-bloque">
+
+        <h3>${textoMobile("pagosRealizados")}</h3>
+
+        <div class="mobile-pagamento-historial">
+          ${historialHtml}
+        </div>
+
+      </div>
+
+      <button
+        class="mobile-btn full"
+        onclick="tornarePrecontoDaPagamentoMobile()"
+        ${pagamento.procesando ? "disabled" : ""}
+      >
+        ${textoMobile("precuenta")}
+      </button>
+
+    </section>
+  `;
+}
+
+
+function selezionareMetodoPagamentoMobile(metodo){
+  const pagamento = estadoMobile.pagamento;
+
+  if(!pagamento || pagamento.procesando){
+    return;
+  }
+
+  const valoreAttuale =
+    document.getElementById("mobile-pagamento-importe");
+
+  pagamento.importeActual =
+    valoreAttuale ? valoreAttuale.value : "";
+
+  pagamento.metodo = metodo;
+  pagamento.mensaje = "";
+  pagamento.tipoMensaje = "";
+
+  renderPagamentoMobile();
+}
+
+
+function impostareImportoPagamentoMobile(valor){
+  const pagamento = estadoMobile.pagamento;
+
+  if(!pagamento || pagamento.procesando){
+    return;
+  }
+
+  const pendiente = Math.max(
+    0,
+    arrotondarePagamentoMobile(pagamento.pendiente)
+  );
+
+  let importe = 0;
+
+  if(valor === "todo"){
+    importe = pendiente;
+  }else if(valor === "mitad"){
+    importe = pendiente / 2;
+  }else{
+    importe = Math.min(
+      Number(valor || 0),
+      pendiente
+    );
+  }
+
+  pagamento.importeActual =
+    arrotondarePagamentoMobile(importe).toFixed(2);
+
+  const input =
+    document.getElementById("mobile-pagamento-importe");
+
+  if(input){
+    input.value = pagamento.importeActual;
+  }
+}
+
+
+async function confermarePagamentoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    pagamento.procesando ||
+    !esAdminGerenteMobile()
+  ){
+    return;
+  }
+
+  const importe = leggereImportoPagamentoMobile();
+
+  pagamento.importeActual =
+    importe > 0 ? importe.toFixed(2) : "";
+
+  if(importe <= 0){
+    pagamento.mensaje =
+      textoMobile("importeMayorCero");
+
+    pagamento.tipoMensaje = "error";
+
+    renderPagamentoMobile();
+    return;
+  }
+
+  if(importe > pagamento.pendiente + 0.005){
+    pagamento.mensaje =
+      textoMobile("importeSuperaPendiente");
+
+    pagamento.tipoMensaje = "error";
+
+    renderPagamentoMobile();
+    return;
+  }
+
+  try{
+    pagamento.procesando = true;
+    pagamento.mensaje = "";
+    pagamento.tipoMensaje = "";
+
+    renderPagamentoMobile();
+
+    const risposta = await apiMobile(
+      "/pedido/" +
+      encodeURIComponent(pagamento.pedidoId) +
+      "/pago",
+      {
+        method: "POST",
+        body: {
+          metodo: pagamento.metodo,
+          importe: importe
+        }
+      }
+    );
+
+    pagamento.procesando = false;
+    pagamento.importeActual = "";
+
+    const pendienteServidor =
+      arrotondarePagamentoMobile(
+        risposta && risposta.pendiente
+      );
+
+    if(pendienteServidor <= 0.005){
+      pagamento.pagado =
+        arrotondarePagamentoMobile(pagamento.total);
+
+      pagamento.pendiente = 0;
+
+      await completarePagamentoMobile();
+      return;
+    }
+
+    pagamento.mensaje =
+      textoMobile("pagoRegistrado");
+
+    pagamento.tipoMensaje = "ok";
+
+    await caricarePagamentoMobile();
+
+  }catch(error){
+    console.error(
+      "Error registrando pagamento mobile:",
+      error
+    );
+
+    pagamento.procesando = false;
+    pagamento.mensaje =
+      textoMobile("noRegistrarPago");
+
+    pagamento.tipoMensaje = "error";
+
+    renderPagamentoMobile();
+  }
+}
+
+
+async function completarePagamentoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(!pagamento){
+    return;
+  }
+
+  const mesaChiusa = pagamento.mesa;
+
+  pagamento.procesando = false;
+  pagamento.pendiente = 0;
+
+  estadoMobile.vista = "pagamento-completato";
+
+  /*
+   * Evita che la sincronizzazione automatica ricarichi
+   * il pedido appena chiuso mentre mostriamo la conferma.
+   */
+  estadoMobile.mesa = null;
+  estadoMobile.pedido = null;
+  estadoMobile.lineas = [];
+  estadoMobile.total = 0;
+
+  try{
+    await cargarMesasMobile();
+  }catch(error){
+    console.warn(
+      "Tavoli non aggiornati dopo pagamento:",
+      error.message || error
+    );
+  }
+
+  pagamento.mesa = mesaChiusa;
+
+  renderMobile();
+}
+
+
+function renderPagamentoCompletatoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(!pagamento){
+    statoFinalePagamentoVersoMesasMobile();
+    return;
+  }
+
+  document.getElementById("mobile-app").innerHTML = `
+    <section class="mobile-pagamento mobile-pagamento-completato">
+
+      <div class="mobile-pagamento-cabecera">
+        <strong>Restaurant Service</strong>
+        <h2>${textoMobile("pagoCompletado")}</h2>
+      </div>
+
+      <div class="mobile-pagamento-success">
+        <strong>
+          ${textoMobile("mesa")}
+          ${escaparMobile(pagamento.mesa)}
+        </strong>
+
+        <span>
+          ${textoMobile("mesaLiberada")}
+        </span>
+      </div>
+
+      <div class="mobile-pagamento-resumen">
+
+        <div class="mobile-pagamento-card">
+          <span>${textoMobile("totalCuenta")}</span>
+          <strong>${dineroMobile(pagamento.total)}</strong>
+        </div>
+
+        <div class="mobile-pagamento-card">
+          <span>${textoMobile("pagado")}</span>
+          <strong>${dineroMobile(pagamento.total)}</strong>
+        </div>
+
+        <div class="mobile-pagamento-card pendiente">
+          <span>${textoMobile("pendiente")}</span>
+          <strong>0.00 €</strong>
+        </div>
+
+      </div>
+
+      <button
+        class="mobile-btn green full mobile-pagamento-conferma"
+        onclick="statoFinalePagamentoVersoMesasMobile()"
+      >
+        ${textoMobile("volverMesas")}
+      </button>
+
+    </section>
+  `;
+}
+
+
+function statoFinalePagamentoVersoMesasMobile(){
+  estadoMobile.pagamento = null;
+  estadoMobile.mesa = null;
+  estadoMobile.pedido = null;
+  estadoMobile.lineas = [];
+  estadoMobile.total = 0;
+  estadoMobile.vista = "mesas";
+
+  renderMobile();
+}
+
+
+function tornarePrecontoDaPagamentoMobile(){
+  if(
+    !estadoMobile.pagamento ||
+    estadoMobile.pagamento.procesando
+  ){
+    return;
+  }
+
+  estadoMobile.vista = "precuenta";
+  renderMobile();
 }
 
 
@@ -1418,7 +2163,15 @@ async function sincronizarAutomaticamenteMobile(){
 
     await cargarMesasMobile();
 
-    if(estadoMobile.mesa){
+    if(
+      estadoMobile.vista === "pagamento" &&
+      estadoMobile.pagamento
+    ){
+      await caricarePagamentoMobile();
+    }else if(
+      estadoMobile.mesa &&
+      estadoMobile.vista !== "pagamento-completato"
+    ){
       await cargarPedidoMobile(estadoMobile.mesa);
     }
 
