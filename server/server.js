@@ -377,6 +377,31 @@ function renderLoginPagina(idiomaValor) {
       privacidad: "Privacy",
       cookies: "Cookies",
       terminos: "Terms"
+    },
+
+    "pt-br": {
+      htmlLang: "pt-BR",
+      title: "Restaurant Service POS - Acesso",
+      acceso: "Acesso",
+      subtitulo: "Entre com seu usuário para continuar.",
+      email: "E-mail",
+      emailPlaceholder: "voce@email.com.br",
+      password: "Senha",
+      passwordPlaceholder: "Senha",
+      entrar: "Entrar no POS",
+      crear: "Criar nova conta",
+      gestion: "Gerencie seu restaurante",
+      descripcion: "Um POS pensado para restaurantes reais: mesas, comandas, comprovantes, pagamentos e caixa em uma única ferramenta.",
+      mesas: "Mesas e ambientes",
+      comandas: "Comandas",
+      tickets: "Comprovantes",
+      caja: "Caixa diário",
+      prueba: "Teste grátis por 7 dias. Se você tiver um código promocional, poderá informá-lo durante o cadastro.",
+      legal: "Todos os direitos reservados.",
+      aviso: "Aviso legal",
+      privacidad: "Privacidade",
+      cookies: "Cookies",
+      terminos: "Termos"
     }
   };
 
@@ -429,6 +454,7 @@ function renderLoginPagina(idiomaValor) {
     '<a href="/login?idioma=es" class="' + (idioma === "es" ? "active" : "") + '">ES</a>',
     '<a href="/login?idioma=it" class="' + (idioma === "it" ? "active" : "") + '">IT</a>',
     '<a href="/login?idioma=en" class="' + (idioma === "en" ? "active" : "") + '">EN</a>',
+    '<a href="/login?idioma=pt-br" class="' + (idioma === "pt-br" ? "active" : "") + '">PT-BR</a>',
     '</div>',
     '</div>',
     '<h2>' + t.acceso + '</h2>',
@@ -584,6 +610,41 @@ function renderRegistroPropietario(error, valores) {
       provinciaPlaceholder: "State / Province",
       paisPlaceholder: "Country",
       facturaPlaceholder: "billing@restaurant.com"
+    },
+
+    "pt-br": {
+      htmlLang: "pt-BR",
+      title: "Criar conta - Restaurant Service POS",
+      heading: "Criar conta do restaurante",
+      intro: "Cadastre seu restaurante e crie o usuário proprietário. O teste grátis começará imediatamente.",
+      restaurante: "Nome do restaurante",
+      propietario: "Nome do proprietário",
+      telefono: "Telefone",
+      email: "E-mail de acesso",
+      password: "Senha",
+      promo: "Código promocional opcional",
+      trial: "O teste grátis será ativado automaticamente ao criar a conta.",
+      fiscalTitle: "Dados para faturamento",
+      fiscalIntro: "Estes dados serão utilizados para faturamento quando a assinatura for ativada.",
+      razon: "Razão social / nome empresarial",
+      nif: "CNPJ / CPF",
+      direccion: "Endereço",
+      cp: "CEP",
+      ciudad: "Cidade",
+      provincia: "Estado",
+      pais: "País",
+      emailFactura: "E-mail de faturamento",
+      crear: "Criar conta e iniciar teste grátis",
+      volver: "Voltar ao login",
+      paisValue: "Brasil",
+      razonPlaceholder: "Ex.: Restaurante Sabor Brasileiro Ltda.",
+      nifPlaceholder: "Ex.: 12.345.678/0001-90",
+      direccionPlaceholder: "Rua, número e complemento",
+      cpPlaceholder: "Ex.: 01310-100",
+      ciudadPlaceholder: "Ex.: São Paulo",
+      provinciaPlaceholder: "Ex.: SP",
+      paisPlaceholder: "Brasil",
+      facturaPlaceholder: "financeiro@restaurante.com.br"
     }
   };
 
@@ -632,6 +693,7 @@ function renderRegistroPropietario(error, valores) {
     '<a href="/registro?idioma=es" class="' + (idioma === "es" ? "active" : "") + '">ES</a>',
     '<a href="/registro?idioma=it" class="' + (idioma === "it" ? "active" : "") + '">IT</a>',
     '<a href="/registro?idioma=en" class="' + (idioma === "en" ? "active" : "") + '">EN</a>',
+    '<a href="/registro?idioma=pt-br" class="' + (idioma === "pt-br" ? "active" : "") + '">PT-BR</a>',
     '</div>',
     '</div>',
     '<h1>' + t.heading + '</h1>',

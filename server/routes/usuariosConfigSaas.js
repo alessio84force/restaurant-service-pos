@@ -813,7 +813,7 @@ module.exports = function usuariosConfigSaasRoutes(db) {
       "es"
     ).toLowerCase();
 
-    const idioma = ["es", "it", "en"].includes(idiomaSesion)
+    const idioma = ["es", "it", "en", "pt-br"].includes(idiomaSesion)
       ? idiomaSesion
       : "es";
 

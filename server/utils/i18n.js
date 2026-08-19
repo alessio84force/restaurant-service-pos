@@ -1,6 +1,6 @@
 "use strict";
 
-const IDIOMAS_SOPORTADOS = ["es", "it", "en"];
+const IDIOMAS_SOPORTADOS = ["es", "it", "en", "pt-br"];
 
 function normalizarIdioma(valor) {
   const idioma = String(valor || "").trim().toLowerCase();
