@@ -29,13 +29,23 @@
             menu: "Menu",
             cerrar_sesion: "Sign out",
             cargando_usuario: "Loading user..."
+        },
+
+        "pt-br": {
+            version: "Versão 2",
+            mesas: "Mesas",
+            bienvenida: "Bem-vindo",
+            seleccionar_mesa: "Selecione uma mesa para começar.",
+            menu: "Cardápio",
+            cerrar_sesion: "Sair",
+            cargando_usuario: "Carregando usuário..."
         }
     };
 
     function normalizzaLingua(valor){
         const lingua = String(valor || "").trim().toLowerCase();
 
-        if(["es","it","en"].includes(lingua)){
+        if(["es","it","en","pt-br"].includes(lingua)){
             return lingua;
         }
 

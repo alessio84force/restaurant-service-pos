@@ -426,27 +426,105 @@ async function resumenPendiente(db, restauranteId, pedidoId) {
   };
 }
 
-function formatearComanda(destino, mesa, lineas) {
+function formatearComanda(destino, mesa, lineas, idiomaValor) {
+  const idioma = normalizarIdioma(idiomaValor);
+
+  const dizionario = {
+    es: {
+      locale: "es-ES",
+      comanda: "COMANDA",
+      mesa: "MESA",
+      hora: "HORA",
+      nota: "NOTA",
+      producto: "PRODUCTO",
+      destinos: {
+        bar: "BAR",
+        cocina: "COCINA"
+      }
+    },
+
+    it: {
+      locale: "it-IT",
+      comanda: "COMANDA",
+      mesa: "TAVOLO",
+      hora: "ORA",
+      nota: "NOTA",
+      producto: "PRODOTTO",
+      destinos: {
+        bar: "BAR",
+        cocina: "CUCINA"
+      }
+    },
+
+    en: {
+      locale: "en-GB",
+      comanda: "ORDER",
+      mesa: "TABLE",
+      hora: "TIME",
+      nota: "NOTE",
+      producto: "PRODUCT",
+      destinos: {
+        bar: "BAR",
+        cocina: "KITCHEN"
+      }
+    },
+
+    "pt-br": {
+      locale: "pt-BR",
+      comanda: "COMANDA",
+      mesa: "MESA",
+      hora: "HORA",
+      nota: "OBSERVAÇÃO",
+      producto: "PRODUTO",
+      destinos: {
+        bar: "BAR",
+        cocina: "COZINHA"
+      }
+    }
+  };
+
+  const textos = dizionario[idioma] || dizionario.es;
+
+  const destinoNormalizado = String(destino || "")
+    .trim()
+    .toLowerCase();
+
+  const destinoTexto =
+    textos.destinos[destinoNormalizado] ||
+    limpiarTexto(destino).toUpperCase();
+
   let texto = "";
+
   texto += "RESTAURANT SERVICE POS\n";
-  texto += "COMANDA " + limpiarTexto(destino).toUpperCase() + "\n";
-  texto += "MESA: " + limpiarTexto(mesa) + "\n";
-  texto += "HORA: " + new Date().toLocaleString("es-ES") + "\n";
+  texto += textos.comanda + " " + destinoTexto + "\n";
+  texto += textos.mesa + ": " + limpiarTexto(mesa) + "\n";
+  texto += textos.hora + ": " +
+    new Date().toLocaleString(textos.locale) + "\n";
   texto += "------------------------------\n";
 
   lineas.forEach((l) => {
-    texto += Number(l.cantidad || 0) + " x " + limpiarTexto(l.nombre || l.producto || "Producto").toUpperCase() + "\n";
+    texto += Number(l.cantidad || 0) +
+      " x " +
+      limpiarTexto(
+        l.nombre ||
+        l.producto ||
+        textos.producto
+      ).toUpperCase() +
+      "\n";
+
     if (l.nota) {
-      texto += "  >>> NOTA <<<\n";
-      texto += "  " + limpiarTexto(l.nota).toUpperCase() + "\n";
+      texto += "  >>> " + textos.nota + " <<<\n";
+      texto += "  " +
+        limpiarTexto(l.nota).toUpperCase() +
+        "\n";
     }
   });
 
   texto += "------------------------------\n";
-  texto += "TOTAL LINEAS: " + lineas.length + "\n";
 
   return texto;
 }
+
 
 function guardarPrint(nombreArchivo, contenido) {
   const carpeta = path.join(process.cwd(), "prints");
@@ -462,6 +540,15 @@ function guardarPrint(nombreArchivo, contenido) {
 
 async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
   const destino = String(destinoRaw || "").trim().toLowerCase();
+
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
+    [restauranteId]
+  ) || {};
+
+  const idioma = normalizarIdioma(restaurante.idioma);
+
   const aliasesDestino = await aliasesDestinoComanda(db, restauranteId, destino);
 
   if (!aliasesDestino.length) aliasesDestino.push(destino || "cocina");
@@ -596,7 +683,7 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
     }
   }
 
-  const texto = formatearComanda(destino, mesa.numero, lineas);
+  const texto = formatearComanda(destino, mesa.numero, lineas, idioma);
   const archivo = "comanda_" + destino.replace(/[^a-z0-9_-]/g, "_") + ".txt";
   guardarPrint(archivo, texto);
 
@@ -622,6 +709,14 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
 }
 
 async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
+  const restaurante = await get(
+    db,
+    "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
+    [restauranteId]
+  ) || {};
+
+  const idioma = normalizarIdioma(restaurante.idioma);
+
   const mesa = await buscarMesa(db, restauranteId, mesaParam);
 
   if (!mesa) {
@@ -777,7 +872,7 @@ async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
       }
     }
 
-    const texto = formatearComanda(destino, mesa.numero, grupo);
+    const texto = formatearComanda(destino, mesa.numero, grupo, idioma);
     const archivo = "comanda_" + destino.replace(/[^a-z0-9_-]/g, "_") + ".txt";
     guardarPrint(archivo, texto);
 
@@ -931,6 +1026,22 @@ function textosPrecuentaBackend(idiomaValor) {
       total: "Total",
       gracias: "Thank you for visiting",
       mesaNoEncontrada: "Table not found"
+    },
+
+    "pt-br": {
+      idioma: "pt-BR",
+      locale: "pt-BR",
+      titulo: "Pré-conta",
+      mesa: "Mesa",
+      pedido: "Comanda",
+      fecha: "Data",
+      imprimir: "Imprimir",
+      cerrar: "Fechar janela",
+      producto: "Produto",
+      sinProductos: "Não há produtos nesta mesa.",
+      total: "Total",
+      gracias: "Obrigado pela preferência",
+      mesaNoEncontrada: "Mesa não encontrada"
     }
   };
 

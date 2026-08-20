@@ -59,6 +59,24 @@ function textosMenuV2(){
                 "Medium well",
                 "Well done"
             ]
+        },
+
+        "pt-br": {
+            volverCategorias: "← Categorias",
+            badgeCoccion: "Ponto da carne",
+            seleccionarCoccion:
+                "Selecione o ponto da carne",
+            cancelar: "Cancelar",
+            seleccionaMesa:
+                "Selecione uma mesa antes de adicionar produtos.",
+            prefijoPunto: "Ponto",
+            puntosCoccion: [
+                "Malpassada",
+                "Ao ponto para mal",
+                "Ao ponto",
+                "Ao ponto para bem",
+                "Bem-passada"
+            ]
         }
     };
 

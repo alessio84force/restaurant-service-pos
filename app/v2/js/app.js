@@ -34,7 +34,7 @@ function escaparHTMLTopbarV2(valor){
 
 function textosTopbarV2(idioma){
 
-    const lingua = ["es","it","en"].includes(String(idioma || "").toLowerCase())
+    const lingua = ["es","it","en","pt-br"].includes(String(idioma || "").toLowerCase())
         ? String(idioma).toLowerCase()
         : "es";
 
@@ -76,6 +76,19 @@ function textosTopbarV2(idioma){
             iniciarSesion: "Sign in",
             configuracion: "Settings",
             salir: "Sign out"
+        },
+
+        "pt-br": {
+            admin: "Administrador",
+            gerente: "Gerente",
+            camarero: "Garçom",
+            cocina: "Cozinha",
+            bar: "Bar",
+            usuario: "Usuário",
+            sinSesion: "Sessão não iniciada",
+            iniciarSesion: "Entrar",
+            configuracion: "Configurações",
+            salir: "Sair"
         }
     };
 
@@ -98,7 +111,7 @@ function obtenerIdiomaInicialTopbarV2(){
         "es"
     ).trim().toLowerCase();
 
-    return ["es","it","en"].includes(candidato)
+    return ["es","it","en","pt-br"].includes(candidato)
         ? candidato
         : "es";
 }
@@ -127,7 +140,7 @@ async function cargarUsuarioTopbarV2(){
 
         const usuario = await respuesta.json();
 
-        const idioma = ["es","it","en"].includes(
+        const idioma = ["es","it","en","pt-br"].includes(
             String(usuario.idioma || "").toLowerCase()
         )
             ? String(usuario.idioma).toLowerCase()

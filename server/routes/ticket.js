@@ -127,6 +127,44 @@ function ticketRoutes(db) {
           "There is no open order for this table",
         pedidoNoEncontradoTitulo:
           "Order not found"
+      },
+
+      "pt-br": {
+        lang: "pt-BR",
+        locale: "pt-BR",
+        restaurante: "Restaurante",
+        gracias: "Obrigado pela preferência",
+        ticketFinal: "Comprovante final",
+        precuenta: "Pré-conta",
+        mesa: "Mesa",
+        pedido: "Comanda",
+        fecha: "Data",
+        producto: "Produto",
+        cantidad: "Qtd.",
+        total: "Total",
+        nota: "Observação",
+        pagos: "Pagamentos",
+        pago: "Pagamento",
+        tarjeta: "Cartão",
+        efectivo: "Dinheiro",
+        bizum: "Bizum",
+        baseImponible: "Base tributável",
+        ivaIncluido: "IVA incluído",
+        imprimir: "Imprimir",
+        documentoPagado:
+          "Documento emitido após o pagamento.",
+        precuentaInformativa:
+          "Pré-conta informativa.",
+        revisarPedido:
+          "Confira a comanda antes do pagamento.",
+        nif: "CNPJ / CPF",
+        telefono: "Tel.",
+        logo: "Logo do restaurante",
+        sinPedidoTitulo: "Sem comanda",
+        sinPedidoMensaje:
+          "Não há comanda aberta para esta mesa",
+        pedidoNoEncontradoTitulo:
+          "Comanda não encontrada"
       }
     };
 

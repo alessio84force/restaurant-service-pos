@@ -6,7 +6,7 @@ function textosCobroV2(){
         document.documentElement.lang || "es"
     ).toLowerCase();
 
-    const idioma = ["es","it","en"].includes(idiomaDocumento)
+    const idioma = ["es","it","en","pt-br"].includes(idiomaDocumento)
         ? idiomaDocumento
         : "es";
 
@@ -168,6 +168,59 @@ function textosCobroV2(){
             cerrarVentanaReintentar:
                 "Close this window and try again.",
             cerrar: "Close"
+        },
+
+        "pt-br": {
+            locale: "pt-BR",
+            cobro: "Pagamento",
+            seleccionaMesaAntes: "Selecione uma mesa antes de receber o pagamento.",
+            cargandoDatosPedido: "Carregando dados da comanda...",
+            errorCobro: "Erro no pagamento",
+            noCargarDatos: "Não foi possível carregar os dados do pagamento.",
+            revisarServidor: "Verifique se o servidor está funcionando corretamente.",
+            volverPedido: "Voltar para a comanda",
+            tarjeta: "Cartão",
+            efectivo: "Dinheiro",
+            bizum: "Bizum",
+            pago: "Pagamento",
+            sinPagos: "Ainda não há pagamentos registrados.",
+            pagosSuperiores: "Os pagamentos superam o total da conta. A mesa será fechada automaticamente.",
+            registrandoPago: "Registrando pagamento...",
+            confirmarPago: "Confirmar pagamento",
+            pagoCompletadoCerrando: "Pagamento concluído. Fechando a mesa automaticamente...",
+            mesa: "Mesa",
+            pedido: "Comanda",
+            volver: "Voltar",
+            totalCuenta: "Total da conta",
+            pagado: "Pago",
+            pendiente: "Restante",
+            metodoPago: "Forma de pagamento",
+            importeCobrar: "Valor a receber",
+            todo: "Tudo",
+            mitad: "Metade",
+            pagosRealizados: "Pagamentos realizados",
+            cuentaYaPagada: "A conta já foi paga. Fechando a mesa...",
+            importeMayorCero: "Informe um valor maior que 0.",
+            importeSuperaPendiente: "O valor não pode superar o saldo restante.",
+            pagoRegistrado: "Pagamento registrado com sucesso.",
+            noRegistrarPago: "Não foi possível registrar o pagamento.",
+            cuentaPagadaCerrando: "Conta paga. Fechando a mesa automaticamente...",
+            pagoRegistradoNoCierra: "O pagamento foi registrado, mas não foi possível fechar a mesa automaticamente.",
+            cerrada: "fechada",
+            pedidoCobrado: "paga com sucesso.",
+            totalPagado: "Total pago",
+            imprimirTicketFinal: "Imprimir comprovante final",
+            volverMesas: "Voltar para as mesas",
+            bienvenida: "Bem-vindo",
+            seleccionaMesaComenzar: "Selecione uma mesa para começar.",
+            preparandoTicketFinal: "Preparando comprovante final...",
+            pedidoNoEncontradoTicketFinal: "Não foi possível encontrar a comanda para imprimir o comprovante final.",
+            noGenerarTicketFinal: "Não foi possível gerar o comprovante final",
+            popupBloqueadoTicket:
+                "O navegador bloqueou a janela do comprovante final. Permita janelas pop-up para este site.",
+            cerrarVentanaReintentar:
+                "Feche esta janela e tente novamente.",
+            cerrar: "Fechar"
         }
     };
 
@@ -1034,7 +1087,7 @@ async function imprimirTicketFinalCobroV2(pedidoId){
         document.documentElement.lang || "es"
     ).toLowerCase();
 
-    const idioma = ["es","it","en"].includes(
+    const idioma = ["es","it","en","pt-br"].includes(
         idiomaDocumento
     )
         ? idiomaDocumento

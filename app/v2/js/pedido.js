@@ -17,7 +17,7 @@ function textosPedidoV2(){
         document.documentElement.lang || "es"
     ).toLowerCase();
 
-    const idioma = ["es","it","en"].includes(idiomaDocumento)
+    const idioma = ["es","it","en","pt-br"].includes(idiomaDocumento)
         ? idiomaDocumento
         : "es";
 
@@ -60,6 +60,7 @@ function textosPedidoV2(){
             errorComandas: "No se pudieron enviar las comandas.",
             destinoBar: "Bar",
             destinoCocina: "Cocina",
+            conjuncionDestinos: "y",
             enviandoComandaA: "Enviando comanda a",
             sinProductosDestino: "No hay productos nuevos para enviar a",
             comandaEnviadaA: "Comanda enviada a",
@@ -129,6 +130,7 @@ function textosPedidoV2(){
             errorComandas: "Impossibile inviare le comande.",
             destinoBar: "Bar",
             destinoCocina: "Cucina",
+            conjuncionDestinos: "e",
             enviandoComandaA: "Invio comanda a",
             sinProductosDestino: "Nessun nuovo prodotto da inviare a",
             comandaEnviadaA: "Comanda inviata a",
@@ -198,6 +200,7 @@ function textosPedidoV2(){
             errorComandas: "The orders could not be sent.",
             destinoBar: "Bar",
             destinoCocina: "Kitchen",
+            conjuncionDestinos: "and",
             enviandoComandaA: "Sending order to",
             sinProductosDestino: "No new products to send to",
             comandaEnviadaA: "Order sent to",
@@ -227,6 +230,76 @@ function textosPedidoV2(){
             noImprimirPrecuenta: "The bill preview could not be generated",
             revisarServidorPrecuenta: "Check that the server is running.",
             noGenerarPrecuenta: "The bill preview could not be generated."
+        },
+
+        "pt-br": {
+            mesa: "Mesa",
+            noPedido: "Não há comanda aberta.",
+            abrirMesa: "Abrir mesa",
+            ayudaAbrir: "Abra a mesa para iniciar uma nova comanda.",
+            pedido: "Comanda",
+            abierto: "aberta",
+            cuenta: "conta solicitada",
+            pedidoAbierto: "Comanda aberta.",
+            anadirProductos: "Adicione produtos pelo cardápio.",
+            cantidad: "Quantidade",
+            unidad: "unidade",
+            editarNota: "Editar observação",
+            anadirNota: "Adicionar observação",
+            enviarComandas: "ENVIAR COMANDAS",
+            cuentaBoton: "CONTA",
+            cobrar: "COBRAR",
+            abriendo: "Abrindo mesa...",
+            errorAbrir: "Não foi possível abrir a mesa.",
+            reintentar: "Tentar novamente",
+            errorCantidad: "Não foi possível alterar a quantidade do produto.",
+            notaGuardada: "Observação salva.",
+            notaEliminada: "Observação removida.",
+            errorGuardarNota: "Não foi possível salvar a observação.",
+            tituloNota: "Observação do produto",
+            instruccionNota: "Digite exatamente o pedido do cliente.",
+            placeholderNota: "Ex.: Sem cebola, molho à parte, alergia a castanhas...",
+            maxCaracteres: "Máximo de 180 caracteres",
+            cancelar: "Cancelar",
+            quitarNota: "Remover observação",
+            guardarNota: "Salvar observação",
+            sinMesa: "Nenhuma mesa selecionada.",
+            enviandoComandas: "Enviando comandas...",
+            comandasEnviadas: "Comandas enviadas",
+            sinProductosNuevos: "Não há novos produtos para enviar.",
+            errorComandas: "Não foi possível enviar as comandas.",
+            destinoBar: "Bar",
+            destinoCocina: "Cozinha",
+            conjuncionDestinos: "e",
+            enviandoComandaA: "Enviando comanda para",
+            sinProductosDestino: "Não há novos produtos para enviar para",
+            comandaEnviadaA: "Comanda enviada para",
+            lineasEnviadas: "Itens enviados",
+            errorComandaDestino: "Não foi possível enviar a comanda para",
+            productoGenerico: "Produto",
+            localeFecha: "pt-BR",
+            comandaEtiqueta: "Comanda",
+            mesaEtiqueta: "Mesa",
+            pedidoEtiqueta: "Comanda",
+            horaEtiqueta: "Hora",
+            notaEtiqueta: "Observação",
+            sinLineasNuevasDestino: "Não há novos itens para enviar.",
+            totalLineasEtiqueta: "Total de itens",
+            imprimirPrueba: "Imprimir teste",
+            cerrarVentana: "Fechar",
+            popupVistaPreviaBloqueado: "O navegador bloqueou a visualização. Permita janelas pop-up para visualizar o comprovante.",
+            modoDirectoInicio: "Comanda enviada. Modo ",
+            modoDirectoFin: " preparado; a impressão direta estará disponível em uma fase posterior.",
+            idiomaHtmlPrecuenta: "pt-BR",
+            tituloPrecuenta: "Pré-conta",
+            mesaPrecuenta: "Mesa",
+            preparandoPrecuenta: "Preparando pré-conta...",
+            generandoPrecuenta: "Gerando pré-conta...",
+            precuentaGenerada: "Pré-conta gerada com sucesso.",
+            errorTituloPrecuenta: "Erro na pré-conta",
+            noImprimirPrecuenta: "Não foi possível gerar a pré-conta",
+            revisarServidorPrecuenta: "Verifique se o servidor está funcionando.",
+            noGenerarPrecuenta: "Não foi possível gerar a pré-conta."
         }
     };
 
@@ -743,7 +816,30 @@ async function enviarTodasComandasV2(numeroMesa){
         const respuesta = await apiPost("/saas/comandas/enviar-todas/" + encodeURIComponent(numeroMesa), {});
 
         if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
-            mostrarToastPedidoV2(textos.comandasEnviadas + ": " + respuesta.enviados.join(", ") + ".", "correcto");
+            const destinosVisibles = respuesta.enviados.map((destino) => {
+                const codigo = String(destino || "").trim().toLowerCase();
+
+                if(codigo === "bar") return textos.destinoBar;
+                if(codigo === "cocina") return textos.destinoCocina;
+
+                return String(destino || "");
+            });
+
+            let destinosTexto = destinosVisibles.join(", ");
+
+            if(destinosVisibles.length === 2){
+                destinosTexto =
+                    destinosVisibles[0] +
+                    " " +
+                    textos.conjuncionDestinos +
+                    " " +
+                    destinosVisibles[1];
+            }
+
+            mostrarToastPedidoV2(
+                textos.comandasEnviadas + ": " + destinosTexto + ".",
+                "correcto"
+            );
 
             if(typeof cargarPedidoV2 === "function"){
                 await cargarPedidoV2(numeroMesa);

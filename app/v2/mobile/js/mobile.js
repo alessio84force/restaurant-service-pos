@@ -106,6 +106,9 @@ const TESTI_MOBILE = {
     respuestaNoValida: "Respuesta no válida del servidor",
     errorEnviarComandas: "Error enviando comandas",
     comandasEnviadas: "Comandas enviadas",
+    destinoBar: "Bar",
+    destinoCocina: "Cocina",
+    conjuncionDestinos: "y",
     sinNuevosProductos: "No hay productos nuevos para enviar",
     noEnviarComanda: "No se pudo enviar la comanda",
     noEnviarComandas: "No se pudieron enviar las comandas",
@@ -201,6 +204,9 @@ const TESTI_MOBILE = {
     respuestaNoValida: "Risposta del server non valida",
     errorEnviarComandas: "Errore durante l'invio delle comande",
     comandasEnviadas: "Comande inviate",
+    destinoBar: "Bar",
+    destinoCocina: "Cucina",
+    conjuncionDestinos: "e",
     sinNuevosProductos: "Non ci sono nuovi prodotti da inviare",
     noEnviarComanda: "Impossibile inviare la comanda",
     noEnviarComandas: "Impossibile inviare le comande",
@@ -296,19 +302,120 @@ const TESTI_MOBILE = {
     respuestaNoValida: "Invalid server response",
     errorEnviarComandas: "Error sending orders",
     comandasEnviadas: "Orders sent",
+    destinoBar: "Bar",
+    destinoCocina: "Kitchen",
+    conjuncionDestinos: "and",
     sinNuevosProductos: "There are no new products to send",
     noEnviarComanda: "Could not send the order",
     noEnviarComandas: "Could not send the orders",
     sinPedidoAbierto: "There is no open order",
     precuentaGenerada: "Pre-bill generated",
     noGenerarPrecuenta: "Could not generate the pre-bill"
+  },
+
+  "pt-br": {
+    posMovil: "POS móvel",
+    camareroMovil: "Garçom móvel",
+    actualizar: "Atualizar",
+    mesas: "Mesas",
+    pedido: "Comanda",
+    productos: "Produtos",
+    configuracion: "Configurações",
+    salir: "Sair",
+    cargandoPos: "Carregando POS móvel...",
+    cargando: "Carregando...",
+    sesionNoIniciada: "Sessão não iniciada",
+    errorApi: "Erro de comunicação",
+    noCargarPos: "Não foi possível carregar o POS móvel",
+    reintentar: "Tentar novamente",
+    noMesas: "Não há mesas configuradas.",
+    libre: "LIVRE",
+    ocupada: "OCUPADA",
+    cuentaPedida: "CONTA SOLICITADA",
+    seleccionaMesa: "Selecione uma mesa para começar.",
+    verMesas: "Ver mesas",
+    mesa: "Mesa",
+    sinPedido: "Não há comanda aberta nesta mesa.",
+    abrirMesa: "Abrir mesa",
+    cambiarMesa: "Trocar mesa",
+    producto: "Produto",
+    editarNota: "Editar observação",
+    anadirNota: "Adicionar observação",
+    totalPedido: "Total da comanda",
+    anadirProductos: "Adicionar produtos",
+    precuenta: "Pré-conta",
+    pagar: "Pagar",
+    pago: "Pagamento",
+    totalCuenta: "Total",
+    pagado: "Pago",
+    pendiente: "Restante",
+    metodoPago: "Forma de pagamento",
+    tarjeta: "Cartão",
+    efectivo: "Dinheiro",
+    bizum: "Bizum",
+    importeCobrar: "Valor a pagar",
+    todo: "Tudo",
+    mitad: "Metade",
+    confirmarPago: "Confirmar pagamento",
+    pagosRealizados: "Pagamentos realizados",
+    sinPagos: "Ainda não há pagamentos registrados.",
+    pagoRegistrado: "Pagamento registrado com sucesso.",
+    pagoCompletado: "Pagamento concluído",
+    mesaLiberada: "A mesa está livre.",
+    volverMesas: "Voltar para as mesas",
+    importeMayorCero: "O valor deve ser maior que zero.",
+    importeSuperaPendiente: "O valor não pode superar o saldo restante.",
+    noCargarPago: "Não foi possível carregar os dados do pagamento.",
+    noRegistrarPago: "Não foi possível registrar o pagamento.",
+    imprimirPrecuenta: "Imprimir pré-conta",
+    volverPedido: "Voltar para a comanda",
+    noImprimirPrecuenta: "Não foi possível abrir a impressão",
+    enviarComandas: "Enviar comandas",
+    lineasPedido: "Itens da comanda",
+    sinProductosPedido: "Ainda não há produtos.",
+    mesaAbierta: "Mesa aberta com sucesso",
+    noAbrirMesa: "Não foi possível abrir a mesa",
+    cantidadActualizada: "Quantidade atualizada",
+    noCambiarCantidad: "Não foi possível alterar a quantidade",
+    notaPrompt: "Observação para cozinha/bar:",
+    notaGuardada: "Observação salva",
+    noGuardarNota: "Não foi possível salvar a observação",
+    seleccionaMesaAntes: "Selecione uma mesa antes de adicionar produtos.",
+    buscarProducto: "Buscar produto...",
+    puntoCoccion: "Ponto da carne",
+    sinProductosCategoria: "Não há produtos nesta categoria.",
+    pocoHecho: "Malpassada",
+    alPuntoMenos: "Ao ponto para mal",
+    alPunto: "Ao ponto",
+    alPuntoMas: "Ao ponto para bem",
+    muyHecho: "Bem-passada",
+    puntoPrefijo: "Ponto",
+    sinPunto: "Sem preferência",
+    cancelar: "Cancelar",
+    seleccionaMesaPrimero: "Selecione uma mesa primeiro",
+    productoAnadido: "Produto adicionado",
+    noAnadirProducto: "Não foi possível adicionar o produto",
+    seleccionaMesaComanda: "Selecione uma mesa",
+    enviandoComandas: "Enviando comandas...",
+    respuestaNoValida: "Resposta inválida do servidor",
+    errorEnviarComandas: "Erro ao enviar comandas",
+    comandasEnviadas: "Comandas enviadas",
+    destinoBar: "Bar",
+    destinoCocina: "Cozinha",
+    conjuncionDestinos: "e",
+    sinNuevosProductos: "Não há novos produtos para enviar",
+    noEnviarComanda: "Não foi possível enviar a comanda",
+    noEnviarComandas: "Não foi possível enviar as comandas",
+    sinPedidoAbierto: "Não há comanda aberta",
+    precuentaGenerada: "Pré-conta gerada",
+    noGenerarPrecuenta: "Não foi possível gerar a pré-conta"
   }
 };
 
 function normalizarIdiomaMobile(valor){
   const idioma = String(valor || "").trim().toLowerCase();
 
-  if(["es","it","en"].includes(idioma)){
+  if(["es","it","en","pt-br"].includes(idioma)){
     return idioma;
   }
 
@@ -1178,10 +1285,30 @@ async function enviarComandaMobile(destino){
     }
 
     if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
+      const destinosVisibles = respuesta.enviados.map((destino) => {
+        const codigo = String(destino || "").trim().toLowerCase();
+
+        if(codigo === "bar") return textoMobile("destinoBar");
+        if(codigo === "cocina") return textoMobile("destinoCocina");
+
+        return String(destino || "");
+      });
+
+      let destinosTexto = destinosVisibles.join(", ");
+
+      if(destinosVisibles.length === 2){
+        destinosTexto =
+          destinosVisibles[0] +
+          " " +
+          textoMobile("conjuncionDestinos") +
+          " " +
+          destinosVisibles[1];
+      }
+
       toastMobile(
         textoMobile("comandasEnviadas") +
         ": " +
-        respuesta.enviados.join(", "),
+        destinosTexto,
         "ok"
       );
 
@@ -1243,10 +1370,30 @@ async function enviarTodasComandasMobile(){
     }
 
     if(respuesta && Array.isArray(respuesta.enviados) && respuesta.enviados.length > 0){
+      const destinosVisibles = respuesta.enviados.map((destino) => {
+        const codigo = String(destino || "").trim().toLowerCase();
+
+        if(codigo === "bar") return textoMobile("destinoBar");
+        if(codigo === "cocina") return textoMobile("destinoCocina");
+
+        return String(destino || "");
+      });
+
+      let destinosTexto = destinosVisibles.join(", ");
+
+      if(destinosVisibles.length === 2){
+        destinosTexto =
+          destinosVisibles[0] +
+          " " +
+          textoMobile("conjuncionDestinos") +
+          " " +
+          destinosVisibles[1];
+      }
+
       toastMobile(
         textoMobile("comandasEnviadas") +
         ": " +
-        respuesta.enviados.join(", "),
+        destinosTexto,
         "ok"
       );
 
