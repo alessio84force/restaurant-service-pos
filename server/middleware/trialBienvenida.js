@@ -40,7 +40,8 @@ function formatearFecha(fecha, idiomaValor) {
   const locales = {
     es: "es-ES",
     it: "it-IT",
-    en: "en-GB"
+    en: "en-GB",
+    "pt-br": "pt-BR"
   };
 
   try {
@@ -102,6 +103,18 @@ function textosTrialBienvenida(idiomaValor) {
       diaPlural: "days",
       entendido: "Got it",
       suscripcion: "View subscription"
+    },
+
+    "pt-br": {
+      badge: "Teste gratuito ativo",
+      titulo: "Seu restaurante está em período de teste",
+      descripcion: "Durante o período de teste, você pode configurar mesas, produtos, comandas, caixa e usuários.",
+      finaliza: "Termina em",
+      quedan: "Restam",
+      diaSingular: "dia",
+      diaPlural: "dias",
+      entendido: "Entendi",
+      suscripcion: "Ver assinatura"
     }
   };
 

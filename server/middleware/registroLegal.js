@@ -60,6 +60,22 @@ function textosRegistroLegal(idiomaValor) {
       terminos: "Terms",
       privacidad: "Privacy",
       suscripcion: "Subscription"
+    },
+
+    "pt-br": {
+      htmlLang: "pt-BR",
+      acepto: "Aceito os",
+      terminosLargos: "Termos e Condições",
+      privacidadLarga: "Política de Privacidade",
+      suscripcionLarga: "Condições de Assinatura",
+      la: "a",
+      yLas: "e as",
+      titulo: "Aceite legal obrigatório",
+      mensaje: "Para criar uma conta no Restaurant Service POS, você deve aceitar os Termos de Serviço, a Política de Privacidade e as Condições de Assinatura.",
+      volver: "Voltar ao cadastro",
+      terminos: "Termos",
+      privacidad: "Privacidade",
+      suscripcion: "Assinatura"
     }
   };
 
@@ -140,7 +156,7 @@ function paginaAceptacionRequerida(idiomaValor) {
   const idioma = t.idioma;
 
   return `<!doctype html>
-<html lang="${escapar(idioma)}">
+<html lang="${escapar(t.htmlLang || idioma)}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(t.titulo)} - Restaurant Service POS</title>

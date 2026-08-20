@@ -115,6 +115,41 @@ function textosRegistroSaas(idiomaValor) {
       restaurante: "Restaurant",
       entrar: "Sign in",
       suscripcion: "Subscription"
+    },
+
+    "pt-br": {
+      htmlLang: "pt-BR",
+      volverRegistro: "Voltar ao cadastro",
+      faltanTitulo: "Dados obrigatórios ausentes",
+      faltanMensaje: "Para iniciar o período de teste gratuito, informe o nome do restaurante, o proprietário, o e-mail e a senha.",
+      passwordTitulo: "Senha muito curta",
+      passwordMensaje: "A senha deve ter pelo menos 4 caracteres.",
+      errorTitulo: "Erro",
+      errorEmail: "Não foi possível verificar o e-mail.",
+      emailExisteTitulo: "E-mail já cadastrado",
+      emailExisteMensaje: "Já existe uma conta com este e-mail. Tente fazer login.",
+      promoTitulo: "Código promocional inválido",
+      promoMensaje: "Verifique o código promocional ou deixe o campo em branco.",
+      errorRestaurante: "Não foi possível criar o restaurante.",
+      errorUsuario: "Não foi possível criar o usuário.",
+      emailSubject: "Teste gratuito iniciado - Restaurant Service POS",
+      emailTitulo: "Seu teste do Restaurant Service POS está ativo",
+      saludo: "Olá",
+      restaurantePrefijo: "seu restaurante",
+      restauranteSufijo: "já foi criado.",
+      estado: "Status",
+      finPrueba: "Fim do período de teste",
+      promocion: "Promoção aplicada",
+      accesoTexto: "Você pode acessar o POS por este link:",
+      accesoBoton: "Acessar o POS",
+      cuentaNoCreada: "Se você não criou esta conta, responda a este e-mail para que possamos verificar.",
+      gratisVida: "Acesso gratuito vitalício",
+      diasPrueba: "dias de teste gratuito",
+      sinCaducidad: "Sem data de expiração",
+      noAplicada: "Não aplicada",
+      restaurante: "Restaurante",
+      entrar: "Entrar",
+      suscripcion: "Assinatura"
     }
   };
 
@@ -125,7 +160,7 @@ function renderError(titulo, mensaje, idiomaValor) {
   const t = textosRegistroSaas(idiomaValor);
 
   return `<!doctype html>
-<html lang="${escapar(t.idioma)}">
+<html lang="${escapar(t.htmlLang || t.idioma)}">
 <head>
   <meta charset="utf-8">
   <title>${escapar(titulo)} - Restaurant Service POS</title>
@@ -328,7 +363,8 @@ function fechaEmailRegistroSaas(valor, idiomaValor) {
   const locales = {
     es: "es-ES",
     it: "it-IT",
-    en: "en-GB"
+    en: "en-GB",
+    "pt-br": "pt-BR"
   };
 
   return fecha.toLocaleDateString(locales[idioma] || "es-ES", {
