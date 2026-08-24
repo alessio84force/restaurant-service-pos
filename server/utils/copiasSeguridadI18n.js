@@ -149,6 +149,33 @@ function textosBackupsConfig(idiomaValor) {
         "Invalid backup name.",
       backupEliminado:
         "Backup deleted."
+    },
+    "pt-br": {
+          "lang": "pt-BR",
+          "locale": "pt-BR",
+          "backups": "Backups",
+          "descripcion": "Backups separados contendo apenas os dados do restaurante atual.",
+          "volverConfiguracion": "Voltar às configurações",
+          "reportes": "Relatórios",
+          "crearBackup": "Criar backup",
+          "descripcionCrear": "O backup inclui os dados operacionais do restaurante atual sem misturar informações de outros restaurantes.",
+          "crearAhora": "Criar backup agora",
+          "backupsDisponibles": "Backups disponíveis",
+          "archivo": "Arquivo",
+          "tamano": "Tamanho",
+          "fecha": "Data",
+          "acciones": "Ações",
+          "descargar": "Baixar",
+          "eliminar": "Excluir",
+          "confirmarEliminar": "Excluir este backup?",
+          "sinBackups": "Ainda não há backups.",
+          "sinPermisos": "Você não tem permissão para gerenciar backups.",
+          "backupCreado": "Backup criado:",
+          "errorCrear": "Não foi possível criar o backup.",
+          "backupNoValido": "Backup inválido.",
+          "backupNoEncontrado": "Backup não encontrado.",
+          "nombreNoValido": "Nome de backup inválido.",
+          "backupEliminado": "Backup excluído."
     }
   };
 
