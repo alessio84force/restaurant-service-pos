@@ -1330,7 +1330,19 @@ module.exports = function operativaSaasRoutes(db) {
 
     const producto = await get(
       db,
-      "SELECT id, precio FROM productos WHERE id=? AND COALESCE(restaurante_id,1)=? AND COALESCE(disponible,1)=1",
+      `SELECT
+         p.id,
+         p.precio,
+         p.iva AS iva_producto,
+         c.iva AS iva_default,
+         COALESCE(p.iva, c.iva) AS iva_efectiva
+       FROM productos p
+       LEFT JOIN configurazione c
+         ON c.restaurante_id = COALESCE(p.restaurante_id,1)
+       WHERE p.id=?
+       AND COALESCE(p.restaurante_id,1)=?
+       AND COALESCE(p.disponible,1)=1
+       LIMIT 1`,
       [productoId, restauranteId]
     );
 
@@ -1338,6 +1350,23 @@ module.exports = function operativaSaasRoutes(db) {
       return res.status(404).json({
         ok: false,
         error: "Producto no encontrado para este restaurante"
+      });
+    }
+
+    const ivaEfectiva =
+      producto.iva_efectiva == null
+        ? null
+        : Number(producto.iva_efectiva);
+
+    if (
+      ivaEfectiva === null ||
+      !Number.isFinite(ivaEfectiva) ||
+      ivaEfectiva < 0 ||
+      ivaEfectiva > 100
+    ) {
+      return res.status(500).json({
+        ok: false,
+        error: "IVA no configurado correctamente para este producto"
       });
     }
 
@@ -1360,9 +1389,11 @@ module.exports = function operativaSaasRoutes(db) {
          AND producto_id=?
          AND COALESCE(restaurante_id,1)=?
          AND (nota IS NULL OR TRIM(nota)='')
+         AND iva IS NOT NULL
+         AND ABS(iva - ?) < 0.000001
          ORDER BY id DESC
          LIMIT 1`,
-        [pedido.id, productoId, restauranteId]
+        [pedido.id, productoId, restauranteId, ivaEfectiva]
       );
 
     if (lineaExistente) {
@@ -1375,9 +1406,17 @@ module.exports = function operativaSaasRoutes(db) {
       await run(
         db,
         `INSERT INTO pedido_lineas
-         (pedido_id, producto_id, cantidad, precio, nota, restaurante_id)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [pedido.id, productoId, cantidad, Number(producto.precio || 0), nota, restauranteId]
+         (pedido_id, producto_id, cantidad, precio, nota, restaurante_id, iva)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          pedido.id,
+          productoId,
+          cantidad,
+          Number(producto.precio || 0),
+          nota,
+          restauranteId,
+          ivaEfectiva
+        ]
       );
     }
 
