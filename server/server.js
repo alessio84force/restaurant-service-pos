@@ -77,6 +77,7 @@ const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
 const configuracionChicSaasRoutes = require("./routes/configuracionChicSaas");
 const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
+const { prepararRtItalia } = require("./migrations/rtItalia");
 
 const app = express();
 
@@ -1783,6 +1784,20 @@ app.get('/mesas', (req, res) => {
 });
 
 
-app.listen(PUERTO_RESTAURANT_SERVICE, () => {
-  console.log("Restaurant Service POS activo en http://localhost:" + PUERTO_RESTAURANT_SERVICE);
-});
+prepararRtItalia(db)
+  .then(function() {
+    app.listen(PUERTO_RESTAURANT_SERVICE, () => {
+      console.log(
+        "Restaurant Service POS activo en http://localhost:" +
+          PUERTO_RESTAURANT_SERVICE
+      );
+    });
+  })
+  .catch(function(err) {
+    console.error(
+      "[RT Italia] Error preparando schema RT:",
+      err && err.message ? err.message : err
+    );
+
+    process.exit(1);
+  });
