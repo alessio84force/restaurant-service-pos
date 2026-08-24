@@ -1148,6 +1148,16 @@ function renderLoginError(idiomaValor, tipo) {
       passwordTitulo: "Incorrect password",
       passwordTexto: "Check your email and password.",
       volver: "Back to login"
+    },
+
+    "pt-br": {
+      lang: "pt-BR",
+      title: "Falha no login",
+      usuarioTitulo: "Falha no login",
+      usuarioTexto: "E-mail ou senha incorretos, ou usuário desativado.",
+      passwordTitulo: "Senha incorreta",
+      passwordTexto: "Verifique o e-mail e a senha.",
+      volver: "Voltar ao login"
     }
   };
 

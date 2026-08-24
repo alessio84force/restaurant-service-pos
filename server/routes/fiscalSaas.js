@@ -1019,6 +1019,15 @@ module.exports = function fiscalSaasRoutes(db) {
       restaurante && restaurante.idioma
     );
 
+    const localeStripe =
+      String(
+        restaurante &&
+        restaurante.idioma ||
+        ""
+      ).toLowerCase() === "pt-br"
+        ? "pt"
+        : "es";
+
     if (!fiscalesCompletos(config)) {
       return res.redirect("/configuracion-restaurante?error=" + encodeURIComponent(textos.completaDatosAntesPagar));
     }
@@ -1035,7 +1044,7 @@ module.exports = function fiscalSaasRoutes(db) {
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
-        locale: "es",
+        locale: localeStripe,
         customer_email: config.email_facturacion || config.email || config.propietario_email || req.session.usuario.email,
         line_items: [
           {
