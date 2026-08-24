@@ -28,6 +28,9 @@ function textosProductosConfig(idiomaValor) {
       nombreProducto: "Nombre producto",
       placeholderProducto: "Coca-Cola, Pizza margarita...",
       precio: "Precio",
+      ivaProducto: "IVA del producto (%)",
+      ivaProductoAyuda:
+        "Déjalo vacío para usar el IVA por defecto del restaurante.",
       categoria: "Categoría",
       primeroCategoria: "Primero crea una categoría",
       requiereCoccion: "Requiere punto de cocción",
@@ -88,6 +91,9 @@ function textosProductosConfig(idiomaValor) {
       nombreProducto: "Nome del prodotto",
       placeholderProducto: "Coca-Cola, Pizza margherita...",
       precio: "Prezzo",
+      ivaProducto: "IVA del prodotto (%)",
+      ivaProductoAyuda:
+        "Lascia vuoto per usare l'IVA predefinita del ristorante.",
       categoria: "Categoria",
       primeroCategoria: "Prima crea una categoria",
       requiereCoccion: "Richiede il punto di cottura",
@@ -149,6 +155,9 @@ function textosProductosConfig(idiomaValor) {
       nombreProducto: "Product name",
       placeholderProducto: "Coca-Cola, Margherita pizza...",
       precio: "Price",
+      ivaProducto: "Product VAT (%)",
+      ivaProductoAyuda:
+        "Leave blank to use the restaurant's default VAT rate.",
       categoria: "Category",
       primeroCategoria: "Create a category first",
       requiereCoccion: "Requires cooking level",
@@ -205,6 +214,8 @@ function textosProductosConfig(idiomaValor) {
           "nombreProducto": "Nome do produto",
           "placeholderProducto": "Coca-Cola, Pizza Margherita...",
           "precio": "Preço",
+          "ivaProducto": "IVA do produto (%)",
+          "ivaProductoAyuda": "Deixe em branco para usar o IVA padrão do restaurante.",
           "categoria": "Categoria",
           "primeroCategoria": "Crie uma categoria primeiro",
           "requiereCoccion": "Exige ponto de cozimento",

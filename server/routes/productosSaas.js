@@ -167,6 +167,20 @@ ${opcionesDestinosHtml(destinos, cat.destino || "cocina")}
           <form method="POST" action="/configuracion-productos/productos/${p.id}" class="producto-form">
             <input name="nombre" value="${escapar(p.nombre)}" required>
             <input name="precio" type="number" step="0.01" min="0" value="${Number(p.precio || 0).toFixed(2)}" required>
+
+            <div class="field">
+              <label>${escapar(textos.ivaProducto)}</label>
+              <input
+                name="iva"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                value="${p.iva == null ? "" : Number(p.iva).toFixed(2)}"
+              >
+              <small>${escapar(textos.ivaProductoAyuda)}</small>
+            </div>
+
             <select name="categoria_id" required>
               ${categorias.map((cat) => `<option value="${cat.id}" ${Number(cat.id) === Number(p.categoria_id) ? "selected" : ""}>${escapar(cat.nombre)} · ${escapar(nombreDestinoVisible(cat.destino || "cocina", textos))}</option>`).join("")}
             </select>
@@ -397,6 +411,20 @@ ${opcionesDestinosHtml(destinos, "cocina")}
               <label>${escapar(textos.precio)}</label>
               <input name="precio" type="number" step="0.01" min="0" placeholder="0.00" required>
             </div>
+
+            <div class="field">
+              <label>${escapar(textos.ivaProducto)}</label>
+              <input
+                name="iva"
+                type="number"
+                step="0.01"
+                min="0"
+                max="100"
+                placeholder=""
+              >
+              <small>${escapar(textos.ivaProductoAyuda)}</small>
+            </div>
+
             <div class="field">
               <label>${escapar(textos.categoria)}</label>
               <select name="categoria_id" required>
@@ -456,6 +484,7 @@ module.exports = function productosSaasRoutes(db) {
         productos.id,
         productos.nombre,
         productos.precio,
+        productos.iva,
         productos.categoria_id,
         COALESCE(productos.disponible,1) AS disponible,
         COALESCE(productos.requiere_coccion,0) AS requiere_coccion,
@@ -528,10 +557,17 @@ module.exports = function productosSaasRoutes(db) {
     const body = req.body || {};
     const nombre = String(body.nombre || "").trim();
     const precio = Number(body.precio || 0);
+    const ivaTexto = String(body.iva == null ? "" : body.iva).trim();
+    const iva = ivaTexto === "" ? null : Number(ivaTexto);
     const categoriaId = Number(body.categoria_id || 0);
     const requiereCoccion = body.requiere_coccion ? 1 : 0;
 
-    if (!nombre || !categoriaId || Number.isNaN(precio)) {
+    if (
+      !nombre ||
+      !categoriaId ||
+      Number.isNaN(precio) ||
+      (iva !== null && (Number.isNaN(iva) || iva < 0 || iva > 100))
+    ) {
       return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.faltanDatosProducto));
     }
 
@@ -547,8 +583,8 @@ module.exports = function productosSaasRoutes(db) {
 
     await run(
       db,
-      "INSERT INTO productos(nombre, precio, categoria_id, requiere_coccion, disponible, restaurante_id) VALUES(?, ?, ?, ?, 1, ?)",
-      [nombre, precio, categoriaId, requiereCoccion, restauranteId]
+      "INSERT INTO productos(nombre, precio, iva, categoria_id, requiere_coccion, disponible, restaurante_id) VALUES(?, ?, ?, ?, ?, 1, ?)",
+      [nombre, precio, iva, categoriaId, requiereCoccion, restauranteId]
     );
 
     res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.productoCreado));
@@ -561,10 +597,18 @@ module.exports = function productosSaasRoutes(db) {
     const id = Number(req.params.id || 0);
     const nombre = String(body.nombre || "").trim();
     const precio = Number(body.precio || 0);
+    const ivaTexto = String(body.iva == null ? "" : body.iva).trim();
+    const iva = ivaTexto === "" ? null : Number(ivaTexto);
     const categoriaId = Number(body.categoria_id || 0);
     const requiereCoccion = body.requiere_coccion ? 1 : 0;
 
-    if (!id || !nombre || !categoriaId || Number.isNaN(precio)) {
+    if (
+      !id ||
+      !nombre ||
+      !categoriaId ||
+      Number.isNaN(precio) ||
+      (iva !== null && (Number.isNaN(iva) || iva < 0 || iva > 100))
+    ) {
       return res.redirect("/configuracion-productos?error=" + encodeURIComponent(textos.faltanDatosProducto));
     }
 
@@ -580,8 +624,8 @@ module.exports = function productosSaasRoutes(db) {
 
     await run(
       db,
-      "UPDATE productos SET nombre=?, precio=?, categoria_id=?, requiere_coccion=? WHERE id=? AND COALESCE(restaurante_id,1)=?",
-      [nombre, precio, categoriaId, requiereCoccion, id, restauranteId]
+      "UPDATE productos SET nombre=?, precio=?, iva=?, categoria_id=?, requiere_coccion=? WHERE id=? AND COALESCE(restaurante_id,1)=?",
+      [nombre, precio, iva, categoriaId, requiereCoccion, id, restauranteId]
     );
 
     res.redirect("/configuracion-productos?ok=" + encodeURIComponent(textos.productoActualizado));
