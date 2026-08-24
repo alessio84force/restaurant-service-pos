@@ -992,6 +992,458 @@ function textosManualCliente(idiomaValor) {
       footer:
         "Manual updated for Restaurant Service POS Self-Service SaaS."
 
+    },
+
+    "pt-br": {
+      lang: "pt-BR",
+
+      tituloPagina: "Manual de uso",
+
+      descripcionManual(nombre) {
+        return (
+          "Guia prático para usar " +
+          nombre +
+          " em modo self-service: criar uma conta, iniciar o período de teste, " +
+          "configurar o restaurante, trabalhar com o POS, " +
+          "controlar o caixa e gerenciar a assinatura."
+        );
+      },
+
+      volverConfiguracion:
+        "Voltar às configurações",
+
+      abrirPos:
+        "Abrir POS",
+
+      imprimirManual:
+        "Imprimir manual",
+
+      indice:
+        "Índice",
+
+      enlaces: {
+        inicio:
+          "1. Fluxo self-service",
+
+        registro:
+          "2. Criar conta e período de teste",
+
+        fiscales:
+          "3. Dados fiscais",
+
+        configuracion:
+          "4. Configuração inicial",
+
+        mesas:
+          "5. Salões e mesas",
+
+        productos:
+          "6. Produtos e destinos",
+
+        impresion:
+          "7. Impressão",
+
+        pos:
+          "8. Operação diária do POS",
+
+        cobro:
+          "9. Conta e pagamento",
+
+        caja:
+          "10. Caixa e relatórios",
+
+        usuarios:
+          "11. Usuários e funções",
+
+        backups:
+          "12. Backups",
+
+        suscripcion:
+          "13. Assinatura",
+
+        ayuda:
+          "14. Ajuda"
+      },
+
+      inicio: {
+        titulo:
+          "1. Fluxo self-service",
+
+        introduccion:
+          "O Restaurant Service POS foi desenvolvido para que o proprietário possa começar sem assistência técnica obrigatória. O fluxo normal é:",
+
+        pasos: [
+          "Criar uma nova conta pela página de cadastro.",
+          "Iniciar o período de teste gratuito.",
+          "Preencher os dados fiscais e os dados do restaurante.",
+          "Configurar salões, mesas, produtos, destinos e impressão.",
+          "Usar o POS durante o serviço.",
+          "Quando o período de teste terminar, ativar a assinatura mensal."
+        ],
+
+        recomendacion:
+          "Recomendação: antes do primeiro serviço real, crie pelo menos um salão, uma mesa, uma categoria e um produto e teste uma conta."
+      },
+
+      registro: {
+        titulo:
+          "2. Criar conta e período de teste",
+
+        introduccion:
+          "O proprietário cria a conta do restaurante em /registro. Durante o cadastro, o sistema cria um restaurante próprio e mantém seus dados separados dos demais clientes.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Conta do proprietário",
+
+            texto:
+              "E-mail, senha e dados de acesso do administrador principal."
+          },
+          {
+            titulo:
+              "Período de teste gratuito",
+
+            texto:
+              "Período inicial para configurar e testar o sistema antes do pagamento."
+          }
+        ],
+
+        alerta:
+          "O proprietário deve guardar com segurança seu e-mail e sua senha. A partir dessa conta, poderá criar usuários garçons ou gerentes."
+      },
+
+      fiscales: {
+        titulo:
+          "3. Dados fiscais obrigatórios",
+
+        introduccion:
+          "Antes de ativar a assinatura paga, o restaurante deve preencher os dados fiscais necessários para o faturamento.",
+
+        lista: [
+          "Nome comercial",
+          "Razão social ou nome registrado",
+          "Número de identificação fiscal ou número de IVA/VAT",
+          "Endereço completo de faturamento",
+          "CEP, cidade, estado, província ou região e país",
+          "E-mail de faturamento"
+        ],
+
+        cierre:
+          "Esses dados são alterados em Configurações → Restaurante. Se faltarem dados fiscais, o pagamento da assinatura permanecerá bloqueado até que sejam preenchidos."
+      },
+
+      configuracion: {
+        titulo:
+          "4. Configuração inicial",
+
+        introduccion:
+          "As Configurações dão acesso às principais áreas do sistema.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Restaurante",
+
+            texto:
+              "Dados fiscais, logotipo, comprovante e mensagem da conta."
+          },
+          {
+            titulo:
+              "Produtos",
+
+            texto:
+              "Categorias, preços e disponibilidade."
+          },
+          {
+            titulo:
+              "Mesas",
+
+            texto:
+              "Salões, áreas e numeração das mesas do restaurante."
+          },
+          {
+            titulo:
+              "Impressoras e destinos",
+
+            texto:
+              "Comprovante, bar, cozinha e outros destinos de comandas."
+          }
+        ]
+      },
+
+      mesas: {
+        titulo:
+          "5. Salões, áreas e mesas",
+
+        introduccion:
+          "O restaurante pode criar seus próprios espaços de acordo com sua organização real: salão principal, terraço, piso inferior, sala privativa ou qualquer outra área.",
+
+        pasos: [
+          "Abra Configurações → Mesas.",
+          "Crie um salão ou uma área.",
+          "Crie as mesas usando o número ou nome utilizado pelo restaurante.",
+          "Salve e volte ao POS."
+        ],
+
+        coloresTitulo:
+          "Estados comuns das mesas",
+
+        colores: [
+          "Livre",
+          "Ocupada",
+          "Conta solicitada"
+        ]
+      },
+
+      productos: {
+        titulo:
+          "6. Produtos, categorias e destinos",
+
+        introduccion:
+          "Os produtos são organizados em categorias. Cada produto possui preço, estado de disponibilidade e destino da comanda.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Bar",
+
+            texto:
+              "Bebidas, cafés, coquetéis ou produtos que não passam pela cozinha."
+          },
+          {
+            titulo:
+              "Cozinha",
+
+            texto:
+              "Pratos, porções ou produtos que precisam ser preparados na cozinha."
+          },
+          {
+            titulo:
+              "Outros destinos",
+
+            texto:
+              "Pizzaria, churrasqueira, bar externo ou qualquer destino personalizado."
+          },
+          {
+            titulo:
+              "Disponibilidade",
+
+            texto:
+              "Permite ocultar produtos que não estão sendo vendidos naquele dia."
+          }
+        ]
+      },
+
+      impresion: {
+        titulo:
+          "7. Impressão e destinos",
+
+        introduccion:
+          "O sistema pode usar a impressão simples pela janela do navegador ou impressoras configuradas quando o restaurante precisar.",
+
+        pasos: [
+          "Abra Configurações → Destinos para revisar bar, cozinha e destinos personalizados.",
+          "Abra Configurações → Impressoras.",
+          "Teste a impressão do comprovante, do bar e da cozinha.",
+          "Ajuste o modo de impressão de acordo com os equipamentos do restaurante."
+        ],
+
+        recomendacion:
+          "Para começar, podem ser usadas as visualizações do comprovante e das comandas. A conexão com impressoras físicas pode ser preparada posteriormente."
+      },
+
+      pos: {
+        titulo:
+          "8. Operação diária do POS",
+
+        introduccion:
+          "Durante o serviço, o garçom trabalha pelo POS do salão.",
+
+        pasos: [
+          "Abra o POS.",
+          "Selecione uma mesa livre.",
+          "Adicione bebidas, pratos ou produtos.",
+          "Envie as comandas para o bar, cozinha ou outros destinos.",
+          "Adicione mais produtos quando o cliente fizer outro pedido.",
+          "Solicite a conta, registre o pagamento e feche a mesa."
+        ]
+      },
+
+      cobro: {
+        titulo:
+          "9. Conta, pré-conta e pagamento",
+
+        introduccion:
+          "Ao finalizar o pedido, o sistema pode gerar a conta, mostrar uma prévia e registrar o pagamento.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Conta",
+
+            texto:
+              "Gera o comprovante usando os dados fiscais, o logotipo e a mensagem do restaurante."
+          },
+          {
+            titulo:
+              "Pagamento",
+
+            texto:
+              "Registra dinheiro, cartão ou outros métodos de pagamento disponíveis."
+          },
+          {
+            titulo:
+              "Fechamento da mesa",
+
+            texto:
+              "Quando o pedido é totalmente pago, a mesa volta a ficar livre."
+          },
+          {
+            titulo:
+              "Pagamentos divididos",
+
+            texto:
+              "O restaurante pode registrar diferentes pagamentos para a mesma mesa."
+          }
+        ]
+      },
+
+      caja: {
+        titulo:
+          "10. Caixa e relatórios",
+
+        introduccion:
+          "O caixa permite revisar vendas, métodos de pagamento e fechamentos diários ou mensais.",
+
+        pasos: [
+          "Abra Configurações → Caixa.",
+          "Revise as vendas do dia e os pagamentos registrados.",
+          "Salve o fechamento diário quando o serviço terminar.",
+          "Use Relatórios para exportar arquivos CSV de pagamentos, produtos ou pedidos."
+        ]
+      },
+
+      usuarios: {
+        titulo:
+          "11. Usuários e funções",
+
+        introduccion:
+          "O proprietário pode criar usuários para a equipe. Cada função possui permissões diferentes.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Administrador",
+
+            texto:
+              "Controle completo das configurações, usuários, assinatura, caixa e dados fiscais."
+          },
+          {
+            titulo:
+              "Gerente",
+
+            texto:
+              "Pode gerenciar a maior parte da configuração operacional do restaurante."
+          },
+          {
+            titulo:
+              "Garçom",
+
+            texto:
+              "Usa o POS para mesas, pedidos e comprovantes sem alterar as configurações gerais."
+          },
+          {
+            titulo:
+              "Usuários inativos",
+
+            texto:
+              "Os usuários podem ser desativados quando um membro da equipe deixar o restaurante."
+          }
+        ]
+      },
+
+      backups: {
+        titulo:
+          "12. Backups",
+
+        introduccion:
+          "Os backups permitem baixar uma cópia de segurança dos dados do restaurante atual.",
+
+        pasos: [
+          "Abra Configurações → Backups.",
+          "Crie um backup.",
+          "Baixe o arquivo gerado.",
+          "Guarde a cópia em um local seguro."
+        ],
+
+        recomendacion:
+          "Cada backup é separado por restaurante e não mistura dados pertencentes a outros clientes."
+      },
+
+      suscripcion: {
+        titulo:
+          "13. Assinatura",
+
+        introduccion:
+          "Configurações → Assinatura mostra o estado do período de teste e do pagamento mensal.",
+
+        tarjetas: [
+          {
+            titulo:
+              "Período de teste gratuito",
+
+            texto:
+              "Período para configurar e verificar o funcionamento do sistema."
+          },
+          {
+            titulo:
+              "Dados fiscais",
+
+            texto:
+              "O pagamento permanece bloqueado quando faltam os dados fiscais obrigatórios."
+          },
+          {
+            titulo:
+              "Pagamento com Stripe",
+
+            texto:
+              "Quando o Stripe está configurado, o cliente pode pagar por esta página."
+          },
+          {
+            titulo:
+              "Estado",
+
+            texto:
+              "Mostra se a assinatura está ativa, pendente ou em período de teste."
+          }
+        ]
+      },
+
+      ayuda: {
+        titulo:
+          "14. Ajuda e suporte",
+
+        introduccion:
+          "Quando algo não funcionar, siga estas etapas:",
+
+        pasos: [
+          "Verifique se o usuário iniciou a sessão.",
+          "Verifique se os dados fiscais estão completos.",
+          "Faça primeiro um teste com uma mesa e um produto de exemplo.",
+          "Crie um backup antes de fazer alterações importantes.",
+          "Entre em contato com o suporte se o erro continuar."
+        ],
+
+        soporte:
+          "Suporte",
+
+        email:
+          "E-mail"
+      },
+
+      footer:
+        "Manual atualizado para o Restaurant Service POS SaaS self-service."
     }
   };
 
