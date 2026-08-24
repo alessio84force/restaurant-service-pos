@@ -106,6 +106,17 @@ function pagina(idiomaValor, titulo, subtitulo, contenido) {
       suscripcion: "Subscription",
       tratamiento: "Data processing",
       volver: "Back to login"
+    },
+
+    "pt-br": {
+      lang: "pt-BR",
+      aviso: "Aviso legal",
+      privacidad: "Privacidade",
+      cookies: "Cookies",
+      terminos: "Termos",
+      suscripcion: "Assinatura",
+      tratamiento: "Tratamento de dados",
+      volver: "Voltar ao login"
     }
   };
 
@@ -348,6 +359,17 @@ function bloqueDatosTitular(idiomaValor) {
       dominio: "Domain",
       email: "Legal email",
       soporte: "Support"
+    },
+
+    "pt-br": {
+      comercial: "Nome comercial",
+      titular: "Titular do serviço",
+      forma: "Forma jurídica",
+      nif: "Identificação fiscal",
+      domicilio: "Endereço fiscal",
+      dominio: "Domínio",
+      email: "E-mail legal",
+      soporte: "Suporte"
     }
   };
 
@@ -447,6 +469,31 @@ module.exports = function legalProfesionalRoutes() {
 
           <h2>6. Applicable law</h2>
           <p>The service is initially aimed at the Spanish market and is governed by applicable Spanish and European legislation, without prejudice to any mandatory rules that may apply to the user.</p>
+        `
+      },
+
+      "pt-br": {
+        titulo: "Aviso legal",
+        subtitulo: "Informações de identificação do titular do Restaurant Service POS.",
+        contenido: `
+          <h2>1. Titular do serviço</h2>
+          <p>Em cumprimento das obrigações de informação aplicáveis aos serviços prestados por meios eletrônicos, são apresentados os dados de identificação do titular deste site e do serviço Restaurant Service POS.</p>
+          ${bloqueDatosTitular("pt-br")}
+
+          <h2>2. Objeto do serviço</h2>
+          <p>${escapar(d.nombreComercial)} é um sistema de gestão para restaurantes, bares e estabelecimentos de alimentação. O serviço permite gerenciar mesas, produtos, comandas, impressão, caixa, usuários operacionais, períodos de teste gratuitos, assinaturas e comunicações transacionais relacionadas ao uso do software.</p>
+
+          <h2>3. Condições de uso</h2>
+          <p>O acesso e o uso do serviço implicam a aceitação dos termos e condições publicados neste site. O usuário se compromete a utilizar o sistema de forma lícita, diligente e de acordo com a legislação aplicável à sua atividade de restauração.</p>
+
+          <h2>4. Propriedade intelectual</h2>
+          <p>O software, o design, a estrutura, o código, os textos, os elementos gráficos e o nome comercial Restaurant Service POS pertencem ao respectivo titular ou são utilizados com autorização suficiente. Não é permitido copiar, distribuir, revender, modificar ou explorar o software sem autorização expressa.</p>
+
+          <h2>5. Comunicações</h2>
+          <p>Para questões legais ou gerais, entre em contato pelo e-mail ${escapar(d.email)}. Para suporte técnico, entre em contato pelo e-mail ${escapar(d.soporte)}.</p>
+
+          <h2>6. Legislação aplicável</h2>
+          <p>O serviço é inicialmente direcionado ao mercado espanhol e é regido pela legislação espanhola e europeia aplicável, sem prejuízo das normas obrigatórias que possam ser aplicáveis ao usuário.</p>
         `
       }
     };
@@ -605,6 +652,53 @@ module.exports = function legalProfesionalRoutes() {
           <h2>9. Security</h2>
           <p>The system applies reasonable technical measures including authentication, user roles, password hashing, permission separation, specialist service providers and limiting data processing to what is necessary for operation of the service.</p>
         `
+      },
+
+      "pt-br": {
+        titulo: "Política de Privacidade",
+        subtitulo: "Informações sobre o tratamento de dados pessoais no Restaurant Service POS.",
+        contenido: `
+          <h2>1. Responsável pelo tratamento</h2>
+          <p>O responsável pelos dados necessários para contratação, gerenciamento da conta, assinatura, suporte e comunicações do serviço é:</p>
+          ${bloqueDatosTitular("pt-br")}
+
+          <h2>2. Dados tratados</h2>
+          <p>Para prestar o serviço, podem ser tratadas as seguintes categorias de dados:</p>
+          <ul>
+            <li>Dados de identificação e contato do titular ou responsável pelo restaurante: nome, e-mail, telefone, endereço e identificação fiscal quando necessário.</li>
+            <li>Dados do restaurante: nome comercial, endereço, configuração de salões, mesas, produtos, categorias, destinos das comandas e impressoras.</li>
+            <li>Dados dos usuários internos criados pelo restaurante: e-mail ou identificador, função operacional e status de acesso.</li>
+            <li>Dados técnicos e de assinatura: status do período de teste gratuito, plano, identificadores de pagamento da ${escapar(d.pagos)}, eventos da assinatura e registros necessários para suporte.</li>
+            <li>Comunicações transacionais necessárias para o serviço, enviadas por meio da ${escapar(d.emails)} a partir de ${escapar(d.emailEnvio)}.</li>
+          </ul>
+
+          <h2>3. Finalidades</h2>
+          <p>Os dados são tratados para criar e gerenciar a conta do restaurante, permitir o uso do POS, administrar o período de teste gratuito e a assinatura, processar pagamentos, enviar comunicações transacionais, prestar suporte técnico, melhorar a segurança e cumprir obrigações legais.</p>
+
+          <h2>4. Base jurídica</h2>
+          <p>As principais bases jurídicas são a execução de uma relação contratual ou pré-contratual, o cumprimento de obrigações legais e o interesse legítimo em manter a segurança, o suporte e o funcionamento do serviço.</p>
+
+          <h2>5. Prestadores e destinatários</h2>
+          <p>Para prestar o serviço são utilizados os seguintes prestadores técnicos necessários:</p>
+          <ul>
+            <li>${escapar(d.pagos)} para pagamentos, assinaturas e identificadores de faturamento.</li>
+            <li>${escapar(d.emails)} para e-mails transacionais do sistema.</li>
+            <li>${escapar(d.dns)} para domínio, DNS e serviços técnicos relacionados.</li>
+          </ul>
+          <p>Os dados pessoais não são vendidos a terceiros.</p>
+
+          <h2>6. Dados operacionais do restaurante</h2>
+          <p>O restaurante é responsável pelos dados que insere e gerencia em sua atividade diária, incluindo dados relacionados a pedidos, mesas, caixa, funcionários ou clientes próprios, caso sejam inseridos no sistema. O Restaurant Service POS atua como prestador técnico nos termos indicados no documento de tratamento de dados.</p>
+
+          <h2>7. Conservação</h2>
+          <p>Os dados serão conservados enquanto existir relação contratual e durante os períodos necessários para suporte, responsabilidades legais, obrigações fiscais ou defesa de reclamações. Posteriormente, poderão ser bloqueados ou excluídos quando aplicável.</p>
+
+          <h2>8. Direitos</h2>
+          <p>É possível solicitar acesso, retificação, exclusão, oposição, limitação ou portabilidade escrevendo para ${escapar(d.email)}. Também é possível entrar em contato com a autoridade de controle competente caso o usuário considere que seus direitos não foram devidamente atendidos.</p>
+
+          <h2>9. Segurança</h2>
+          <p>O sistema aplica medidas técnicas razoáveis, incluindo autenticação, funções de usuário, hashing de senhas, separação de permissões, utilização de prestadores especializados e limitação do tratamento de dados ao necessário para o funcionamento do serviço.</p>
+        `
       }
     };
 
@@ -683,6 +777,27 @@ module.exports = function legalProfesionalRoutes() {
 
           <h2>5. Contact</h2>
           <p>For any questions about cookies or similar technologies, you can write to ${escapar(d.email)}.</p>
+        `
+      },
+
+      "pt-br": {
+        titulo: "Política de Cookies",
+        subtitulo: "Informações sobre cookies técnicos e tecnologias necessárias.",
+        contenido: `
+          <h2>1. Uso atual de cookies</h2>
+          <p>O Restaurant Service POS utiliza cookies ou mecanismos técnicos equivalentes necessários para o funcionamento do login, da sessão do usuário, da segurança e da navegação interna do sistema.</p>
+
+          <h2>2. Cookies técnicos</h2>
+          <p>Os cookies técnicos são necessários para permitir que o usuário faça login, mantenha sua sessão ativa, acesse áreas protegidas e utilize o POS com segurança. Esses cookies não têm finalidade publicitária.</p>
+
+          <h2>3. Análise e marketing</h2>
+          <p>Atualmente, o sistema não utiliza cookies de análise publicitária, remarketing, criação de perfis comerciais nem rastreamento de terceiros para fins publicitários.</p>
+
+          <h2>4. Alterações futuras</h2>
+          <p>Se no futuro forem incorporadas ferramentas de análise, pixels publicitários ou cookies não técnicos, esta política será atualizada e o mecanismo de consentimento correspondente será implementado antes de sua utilização.</p>
+
+          <h2>5. Contato</h2>
+          <p>Para qualquer dúvida sobre cookies ou tecnologias semelhantes, entre em contato pelo e-mail ${escapar(d.email)}.</p>
         `
       }
     };
@@ -808,6 +923,42 @@ module.exports = function legalProfesionalRoutes() {
           <h2>10. Amendments</h2>
           <p>These terms may be updated to reflect technical, commercial, legal or operational changes. The version in force will be the version published on this page.</p>
         `
+      },
+
+      "pt-br": {
+        titulo: "Termos e Condições",
+        subtitulo: "Condições gerais de uso do Restaurant Service POS.",
+        contenido: `
+          <h2>1. Objeto</h2>
+          <p>Estes termos regulam o acesso e o uso do ${escapar(d.nombreComercial)}, um software de gestão para restaurantes, bares e estabelecimentos de alimentação.</p>
+
+          <h2>2. Cadastro e conta</h2>
+          <p>O restaurante deve fornecer informações verdadeiras para criar sua conta. O titular do restaurante ou a pessoa autorizada é responsável por proteger suas credenciais e criar somente usuários internos autorizados.</p>
+
+          <h2>3. Uso permitido</h2>
+          <p>O sistema deve ser utilizado para a gestão habitual do restaurante. É proibido acessar o sistema sem autorização, tentar comprometer sua segurança, revender o serviço, copiar o software ou utilizá-lo para fins ilícitos.</p>
+
+          <h2>4. Período de teste gratuito</h2>
+          <p>O serviço pode oferecer um período de teste gratuito temporário. Após o término do período de teste, a continuidade do acesso poderá exigir a ativação de uma assinatura paga.</p>
+
+          <h2>5. Preço e assinatura</h2>
+          <p>O preço mensal previsto é de ${escapar(d.precio)} € por mês, salvo promoções, acordos específicos ou alterações comunicadas antes da contratação. Os pagamentos são processados por meio da ${escapar(d.pagos)}.</p>
+
+          <h2>6. Cancelamento</h2>
+          <p>O cliente pode solicitar o cancelamento da assinatura escrevendo para ${escapar(d.soporte)} ou utilizando os mecanismos disponíveis no painel quando estiverem habilitados. O cancelamento não afetará valores já devidos, salvo quando a legislação aplicável determinar o contrário.</p>
+
+          <h2>7. Suporte</h2>
+          <p>O suporte será prestado de forma razoável por meio de ${escapar(d.soporte)}. O serviço está em constante evolução e pode receber melhorias, alterações técnicas ou atualizações.</p>
+
+          <h2>8. Responsabilidade do restaurante</h2>
+          <p>O restaurante é responsável pela exatidão de seus dados, configurações, preços, produtos, impostos, fechamentos de caixa, cumprimento de suas obrigações fiscais, uso por funcionários e tratamento dos dados de seus próprios clientes.</p>
+
+          <h2>9. Disponibilidade</h2>
+          <p>Serão realizados esforços razoáveis para manter o sistema operacional, mas não é garantida a ausência absoluta de erros, interrupções, incidentes técnicos ou necessidades de manutenção. O usuário deve manter cópias e controles internos adequados para sua atividade.</p>
+
+          <h2>10. Alterações</h2>
+          <p>Estes termos podem ser atualizados para refletir alterações técnicas, comerciais, legais ou operacionais. A versão vigente será aquela publicada nesta página.</p>
+        `
       }
     };
 
@@ -895,6 +1046,30 @@ module.exports = function legalProfesionalRoutes() {
 
           <h2>6. Promotions</h2>
           <p>Promotions, extended trial codes or special access arrangements apply according to the conditions communicated in each case.</p>
+        `
+      },
+
+      "pt-br": {
+        titulo: "Condições de Assinatura",
+        subtitulo: "Informações sobre período de teste gratuito, preço, pagamentos e cancelamento.",
+        contenido: `
+          <h2>1. Período de teste gratuito</h2>
+          <p>O Restaurant Service POS pode oferecer um período de teste gratuito inicial para que o restaurante avalie o funcionamento do sistema antes de ativar a assinatura.</p>
+
+          <h2>2. Preço mensal</h2>
+          <p>O preço base previsto é de ${escapar(d.precio)} € por mês, salvo promoção, acordo especial ou alteração comunicada antes da contratação.</p>
+
+          <h2>3. Forma de pagamento</h2>
+          <p>Os pagamentos e o gerenciamento das assinaturas são realizados por meio da ${escapar(d.pagos)}. O Restaurant Service POS não armazena os dados completos do cartão bancário.</p>
+
+          <h2>4. Renovação</h2>
+          <p>A assinatura é renovada mensalmente enquanto permanecer ativa. Em caso de falta de pagamento, falha no cartão ou cancelamento, o acesso poderá ser limitado até que a situação seja regularizada.</p>
+
+          <h2>5. Cancelamento</h2>
+          <p>O cancelamento pode ser solicitado escrevendo para ${escapar(d.soporte)}. Quando houver um painel de gerenciamento automatizado disponível, o cancelamento também poderá ser realizado por meio desse painel.</p>
+
+          <h2>6. Promoções</h2>
+          <p>Promoções, códigos de período de teste ampliado ou acessos especiais serão aplicados de acordo com as condições comunicadas em cada caso.</p>
         `
       }
     };
@@ -1033,6 +1208,47 @@ module.exports = function legalProfesionalRoutes() {
 
           <div class="nota">
             Recommendation: before significantly expanding the commercial use of the service or entering into agreements with larger customers, this document should be reviewed by a legal adviser specialising in data protection.
+          </div>
+        `
+      },
+
+      "pt-br": {
+        titulo: "Acordo de Tratamento de Dados",
+        subtitulo: "Informações básicas sobre o tratamento de dados entre o restaurante e o Restaurant Service POS.",
+        contenido: `
+          <h2>1. Partes</h2>
+          <p>O restaurante que utiliza o software atua como responsável pelo tratamento em relação aos dados pessoais que insere ou gerencia em sua atividade diária.</p>
+          <p>O ${escapar(d.nombreComercial)}, de titularidade de ${escapar(d.titular)}, atua como prestador técnico e, quando aplicável, como operador de dados para prestar suporte, manutenção e garantir o funcionamento do software.</p>
+
+          <h2>2. Objeto do tratamento</h2>
+          <p>O tratamento consiste em possibilitar o uso técnico do POS e manter as funcionalidades relacionadas à conta, usuários, assinatura, comunicações transacionais, suporte e gerenciamento de incidentes relacionados ao serviço.</p>
+
+          <h2>3. Dados envolvidos</h2>
+          <p>Podem ser tratados dados do restaurante, usuários internos, configuração do negócio, informações técnicas da assinatura e, caso o restaurante os insira, dados operacionais relacionados a pedidos, mesas, funcionários ou clientes.</p>
+
+          <h2>4. Finalidade</h2>
+          <p>Os dados serão tratados exclusivamente para prestar o serviço contratado, manter a segurança, gerenciar o suporte, realizar as comunicações necessárias e cumprir obrigações legais ou contratuais relacionadas ao serviço.</p>
+
+          <h2>5. Obrigações do prestador</h2>
+          <ul>
+            <li>Tratar os dados de acordo com as instruções do restaurante e para as finalidades do serviço.</li>
+            <li>Não utilizar os dados para finalidades próprias incompatíveis.</li>
+            <li>Aplicar medidas técnicas e organizacionais razoáveis.</li>
+            <li>Limitar o acesso ao pessoal ou aos prestadores necessários.</li>
+            <li>Colaborar de forma razoável no atendimento de direitos dos titulares ou de incidentes de segurança.</li>
+          </ul>
+
+          <h2>6. Subcontratados e prestadores</h2>
+          <p>Para prestar o serviço podem participar prestadores técnicos necessários, como ${escapar(d.pagos)} para pagamentos, ${escapar(d.emails)} para comunicações transacionais e ${escapar(d.dns)} para domínio, DNS ou serviços técnicos relacionados.</p>
+
+          <h2>7. Devolução ou exclusão</h2>
+          <p>Ao término da relação, os dados poderão ser excluídos, bloqueados ou conservados somente durante os períodos necessários para responsabilidades legais, técnicas, fiscais ou de segurança.</p>
+
+          <h2>8. Documento base</h2>
+          <p>Esta página funciona como um documento informativo inicial. Quando um cliente necessitar de um acordo específico de tratamento de dados, poderá ser formalizado um documento individual assinado entre as partes.</p>
+
+          <div class="nota">
+            Recomendação: antes de ampliar significativamente a comercialização do serviço ou firmar contratos com clientes de maior porte, este documento deve ser revisado por um profissional jurídico especializado em proteção de dados.
           </div>
         `
       }

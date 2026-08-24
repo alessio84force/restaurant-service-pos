@@ -115,6 +115,16 @@ function footerLegal(idiomaValor) {
       terminos: "Terms",
       suscripcion: "Subscription terms",
       tratamiento: "Data Processing Agreement"
+    },
+
+    "pt-br": {
+      info: "Informações legais sobre o serviço.",
+      aviso: "Aviso legal",
+      privacidad: "Privacidade",
+      cookies: "Cookies",
+      terminos: "Termos",
+      suscripcion: "Condições de assinatura",
+      tratamiento: "Acordo de tratamento de dados"
     }
   };
 
