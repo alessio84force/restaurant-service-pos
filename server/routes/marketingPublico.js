@@ -14,6 +14,53 @@ function esc(texto) {
     .replace(/"/g, "&quot;");
 }
 
+function hreflangLinks(pathUrl) {
+  const equivalencias = {
+    "/": {
+      es: "/",
+      it: "/it",
+      en: "/en",
+      ptBr: "/pt-br"
+    },
+
+    "/funciones": {
+      es: "/funciones",
+      it: "/it/funzionalita",
+      en: "/en/features",
+      ptBr: "/pt-br/funcionalidades"
+    },
+
+    "/precios": {
+      es: "/precios",
+      it: "/it/prezzi",
+      en: "/en/pricing",
+      ptBr: "/pt-br/precos"
+    },
+
+    "/contacto": {
+      es: "/contacto",
+      it: "/it/contatto",
+      en: "/en/contact",
+      ptBr: "/pt-br/contato"
+    }
+  };
+
+  const rutas =
+    equivalencias[pathUrl];
+
+  if (!rutas) {
+    return "";
+  }
+
+  return [
+    '<link rel="alternate" hreflang="es" href="' + BASE_URL + rutas.es + '">',
+    '<link rel="alternate" hreflang="it" href="' + BASE_URL + rutas.it + '">',
+    '<link rel="alternate" hreflang="en" href="' + BASE_URL + rutas.en + '">',
+    '<link rel="alternate" hreflang="pt-BR" href="' + BASE_URL + rutas.ptBr + '">',
+    '<link rel="alternate" hreflang="x-default" href="' + BASE_URL + rutas.es + '">'
+  ].join("\n");
+}
+
 function html({ title, description, body, pathUrl }) {
   const canonical = BASE_URL + pathUrl;
   const schema = {
@@ -39,6 +86,7 @@ function html({ title, description, body, pathUrl }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}">
+${hreflangLinks(pathUrl)}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(canonical)}">
@@ -95,6 +143,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
         <a href="/" class="active">ES</a>
         <a href="/it">IT</a>
         <a href="/en">EN</a>
+        <a href="/pt-br">PT-BR</a>
       </div>
     </nav>
   </div>

@@ -255,6 +255,22 @@ function sitemapXml() {
     "/contacto",
     "/privacidad",
     "/terminos",
+
+    "/it",
+    "/it/funzionalita",
+    "/it/prezzi",
+    "/it/contatto",
+
+    "/en",
+    "/en/features",
+    "/en/pricing",
+    "/en/contact",
+
+    "/pt-br",
+    "/pt-br/funcionalidades",
+    "/pt-br/precos",
+    "/pt-br/contato",
+
     ...Object.keys(paginas)
   ];
 

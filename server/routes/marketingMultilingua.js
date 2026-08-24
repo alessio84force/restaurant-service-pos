@@ -179,6 +179,89 @@ const idiomas = {
         ["Trial", "Create an account and try the system free of charge."]
       ]
     }
+  },
+
+  "pt-br": {
+    lang: "pt-BR",
+    prefix: "/pt-br",
+
+    nav: {
+      home: "Início",
+      features: "Funcionalidades",
+      pricing: "Preços",
+      contact: "Contato",
+      login: "Entrar",
+      trial: "Teste grátis"
+    },
+
+    footer: {
+      text: "Software POS para restaurantes",
+      trial: "Teste grátis",
+      login: "Entrar"
+    },
+
+    home: {
+      path: "/pt-br",
+      title: "Software POS para restaurantes simples e acessível | Restaurant Service POS",
+      description: "Gerencie mesas, comandas, pagamentos, caixa e equipe pelo computador e pelo celular com o Restaurant Service POS.",
+      badge: "POS online para restaurantes, bares e cafeterias",
+      h1: "Gerencie seu restaurante pelo computador e pelo celular.",
+      lead: "O Restaurant Service POS é um sistema simples para abrir mesas, enviar comandas, registrar pagamentos, controlar o caixa e trabalhar com sua equipe diretamente pelo navegador.",
+      primary: "Teste grátis por 7 dias",
+      secondary: "Entrar no POS",
+      sectionTitle: "Um POS pensado para o serviço real",
+      sectionText: "Abra mesas, adicione produtos, envie comandas para o bar ou para a cozinha, imprima a conta, registre pagamentos e acompanhe o caixa diário.",
+      cards: [
+        ["Mesas e ambientes", "Crie salões, áreas externas e mesas usando a organização do seu próprio restaurante."],
+        ["Comandas", "Envie ao bar ou à cozinha somente os novos itens adicionados, evitando duplicações."],
+        ["Equipe pelo celular", "A equipe pode registrar comandas pelo celular ou por um dispositivo do restaurante."],
+        ["Caixa diário", "Acompanhe pagamentos, fechamentos e relatórios do dia."],
+        ["Usuários", "Administrador, gerente e equipe com permissões separadas."],
+        ["Preço simples", "Teste grátis por 7 dias e depois uma assinatura mensal acessível."]
+      ],
+      ctaTitle: "Comece com um teste grátis",
+      ctaText: "Configure seu restaurante, crie mesas e produtos e teste o POS antes de assinar.",
+      ctaButton: "Criar conta grátis"
+    },
+
+    features: {
+      path: "/pt-br/funcionalidades",
+      title: "Funcionalidades do POS para restaurantes | Restaurant Service POS",
+      description: "Mesas, ambientes, comandas, produtos, usuários, pagamentos, caixa e relatórios em um único POS para restaurantes.",
+      h1: "Tudo o que você precisa para gerenciar o serviço",
+      text: "O Restaurant Service POS reúne as funções essenciais para administrar o dia a dia de um restaurante de forma simples.",
+      cards: [
+        ["Mesas", "Gerencie mesas livres e ocupadas durante o serviço."],
+        ["Comandas", "Envie pedidos para o bar ou para a cozinha."],
+        ["Caixa", "Acompanhe pagamentos, fechamentos e relatórios."]
+      ]
+    },
+
+    pricing: {
+      path: "/pt-br/precos",
+      title: "Preços do Restaurant Service POS",
+      description: "Conheça o preço do Restaurant Service POS e teste grátis o software POS para restaurantes.",
+      h1: "Um preço simples e transparente",
+      text: "Teste o Restaurant Service POS grátis por 7 dias. Depois, continue com uma assinatura mensal simples e acessível.",
+      cards: [
+        ["Teste grátis", "7 dias para configurar e testar o sistema."],
+        ["Assinatura", "Uma mensalidade simples para manter o POS ativo."],
+        ["Sem complicação", "Um sistema pensado para restaurantes independentes e pequenos negócios de alimentação."]
+      ]
+    },
+
+    contact: {
+      path: "/pt-br/contato",
+      title: "Contato Restaurant Service POS",
+      description: "Entre em contato com o Restaurant Service POS para informações, suporte ou dúvidas sobre o software POS para restaurantes.",
+      h1: "Contato",
+      text: "Para suporte, informações comerciais ou dúvidas sobre o Restaurant Service POS, escreva para info@restaurantservicepos.com.",
+      cards: [
+        ["E-mail", "info@restaurantservicepos.com"],
+        ["Produto", "POS online para restaurantes, bares e cafeterias."],
+        ["Teste", "Crie uma conta e teste o sistema gratuitamente."]
+      ]
+    }
   }
 };
 
@@ -204,10 +287,18 @@ function hreflangLinks(pageKey) {
     contact: "/en/contact"
   };
 
+  const ptBrPaths = {
+    home: "/pt-br",
+    features: "/pt-br/funcionalidades",
+    pricing: "/pt-br/precos",
+    contact: "/pt-br/contato"
+  };
+
   return `
 <link rel="alternate" hreflang="es" href="${BASE_URL}${esPaths[pageKey]}">
 <link rel="alternate" hreflang="it" href="${BASE_URL}${itPaths[pageKey]}">
 <link rel="alternate" hreflang="en" href="${BASE_URL}${enPaths[pageKey]}">
+<link rel="alternate" hreflang="pt-BR" href="${BASE_URL}${ptBrPaths[pageKey]}">
 <link rel="alternate" hreflang="x-default" href="${BASE_URL}${esPaths[pageKey]}">`;
 }
 
@@ -215,19 +306,32 @@ function layout({ idioma, pageKey, page, body }) {
   const t = idiomas[idioma];
   const canonical = BASE_URL + page.path;
 
-  const links = idioma === "it"
-    ? {
-        home: "/it",
-        features: "/it/funzionalita",
-        pricing: "/it/prezzi",
-        contact: "/it/contatto"
-      }
-    : {
-        home: "/en",
-        features: "/en/features",
-        pricing: "/en/pricing",
-        contact: "/en/contact"
-      };
+  const linksPorIdioma = {
+    it: {
+      home: "/it",
+      features: "/it/funzionalita",
+      pricing: "/it/prezzi",
+      contact: "/it/contatto"
+    },
+
+    en: {
+      home: "/en",
+      features: "/en/features",
+      pricing: "/en/pricing",
+      contact: "/en/contact"
+    },
+
+    "pt-br": {
+      home: "/pt-br",
+      features: "/pt-br/funcionalidades",
+      pricing: "/pt-br/precos",
+      contact: "/pt-br/contato"
+    }
+  };
+
+  const links =
+    linksPorIdioma[idioma] ||
+    linksPorIdioma.en;
 
   const schema = {
     "@context": "https://schema.org",
@@ -471,6 +575,7 @@ footer{
         <a href="/">ES</a>
         <a href="/it" class="${idioma === "it" ? "active" : ""}">IT</a>
         <a href="/en" class="${idioma === "en" ? "active" : ""}">EN</a>
+        <a href="/pt-br" class="${idioma === "pt-br" ? "active" : ""}">PT-BR</a>
       </div>
     </nav>
 
@@ -661,6 +766,29 @@ router.get("/en/pricing", function(req, res) {
 
 router.get("/en/contact", function(req, res) {
   res.send(renderSimple("en", "contact"));
+});
+
+
+/* PORTUGUÊS DO BRASIL */
+
+router.get(/^\/pt-br\/$/, function(req, res) {
+  res.redirect(301, "/pt-br");
+});
+
+router.get("/pt-br", function(req, res) {
+  res.send(renderHome("pt-br"));
+});
+
+router.get("/pt-br/funcionalidades", function(req, res) {
+  res.send(renderSimple("pt-br", "features"));
+});
+
+router.get("/pt-br/precos", function(req, res) {
+  res.send(renderSimple("pt-br", "pricing"));
+});
+
+router.get("/pt-br/contato", function(req, res) {
+  res.send(renderSimple("pt-br", "contact"));
 });
 
 
