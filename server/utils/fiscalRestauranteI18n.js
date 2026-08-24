@@ -383,6 +383,268 @@ function textosFiscalRestaurante(idiomaValor) {
         "In Stripe LIVE, APP_BASE_URL cannot be localhost.",
       stripeLiveWebhook:
         "In Stripe LIVE, STRIPE_WEBHOOK_SECRET must be configured."
+    },
+
+    "pt-br": {
+      lang: "pt-BR",
+
+      datosRestaurante:
+        "Dados do restaurante",
+
+      descripcion:
+        "Dados gerais, de faturamento e do comprovante do restaurante atual.",
+
+      volverConfiguracion:
+        "Voltar às configurações",
+
+      suscripcion:
+        "Assinatura",
+
+      vistaPreviaTicket:
+        "Pré-visualização do comprovante",
+
+      fiscalesCompletos:
+        "Dados de faturamento preenchidos no sistema.",
+
+      fiscalesFaltan:
+        "Faltam dados de faturamento. Eles devem ser preenchidos antes de pagar a assinatura.",
+
+      datosFiscalesFacturacion:
+        "Dados para faturamento",
+
+      datosFiscalesDescripcion:
+        "Esses dados serão usados nas faturas da assinatura quando o restaurante começar a pagar.",
+
+      nombreComercial:
+        "Nome comercial",
+
+      razonSocial:
+        "Razão social / nome legal",
+
+      identificacionFiscal:
+        "CNPJ / CPF / identificação fiscal",
+
+      emailFacturacion:
+        "E-mail de faturamento",
+
+      direccionFiscal:
+        "Endereço de faturamento",
+
+      codigoPostal:
+        "CEP",
+
+      ciudad:
+        "Cidade",
+
+      provincia:
+        "Estado / região",
+
+      pais:
+        "País",
+
+      ivaDefecto:
+        "Imposto padrão (%)",
+
+      contactoTicket:
+        "Contato e comprovante",
+
+      telefonoRestaurante:
+        "Telefone do restaurante",
+
+      emailRestaurante:
+        "E-mail do restaurante",
+
+      nombrePropietario:
+        "Nome do proprietário",
+
+      emailPropietario:
+        "E-mail do proprietário",
+
+      telefonoPropietario:
+        "Telefone do proprietário",
+
+      logoTicket:
+        "Logo do comprovante",
+
+      elegirImagen:
+        "Clique para escolher uma imagem do computador.",
+
+      seleccionarArchivo:
+        "Selecionar arquivo",
+
+      ningunArchivoSeleccionado:
+        "Nenhum arquivo selecionado",
+
+      mensajeTicket:
+        "Mensagem do comprovante",
+
+      guardarDatos:
+        "Salvar dados do restaurante",
+
+      vistaPreviaRapida:
+        "Pré-visualização rápida do comprovante",
+
+      productoEjemplo:
+        "Produto de exemplo",
+
+      total:
+        "Total",
+
+      mensajeVisita:
+        "Obrigado pela visita",
+
+      guardadoCorrecto:
+        "Dados do restaurante salvos com sucesso",
+
+      imprimirPrueba:
+        "Imprimir teste",
+
+      mesa:
+        "Mesa",
+
+      fecha:
+        "Data",
+
+      cafeEjemplo:
+        "Café",
+
+      menuEjemplo:
+        "Menu",
+
+      localeFecha:
+        "pt-BR",
+
+      sinPermisosConfiguracion:
+        "Você não tem permissão para acessar esta configuração.",
+
+      soloAdminSuscripcion:
+        "Somente o administrador pode gerenciar a assinatura.",
+
+      cerrarSesion:
+        "Sair",
+
+      archivoNoImagen:
+        "O arquivo selecionado não é uma imagem.",
+
+      descripcionSuscripcion:
+        "Status do período de teste, pagamento e dados de faturamento do restaurante atual.",
+
+      datosFiscales:
+        "Dados de faturamento",
+
+      estado:
+        "Status",
+
+      plan:
+        "Plano",
+
+      diasTrial:
+        "Dias de teste",
+
+      finTrial:
+        "Fim do período de teste",
+
+      promocionAplicada:
+        "Promoção aplicada",
+
+      noAplicada:
+        "Não aplicada",
+
+      restauranteId:
+        "ID do restaurante",
+
+      completos:
+        "Completos",
+
+      incompletos:
+        "Incompletos",
+
+      datosFiscalesFacturas:
+        "Dados para faturamento",
+
+      fiscalesFacturasCompletos:
+        "O restaurante possui todos os dados de faturamento exigidos pelo sistema.",
+
+      fiscalesFacturasFaltan:
+        "Faltam dados de faturamento. Preencha-os antes de pagar a assinatura.",
+
+      completarDatosFiscales:
+        "Preencher dados de faturamento",
+
+      pagoMensual:
+        "Pagamento mensal",
+
+      pagoDisponible:
+        "Os dados de faturamento estão completos. O pagamento poderá ser ativado quando o Stripe estiver configurado.",
+
+      pagoBloqueado:
+        "O pagamento permanece bloqueado até que os dados de faturamento sejam preenchidos.",
+
+      pagarSuscripcion:
+        "Pagar assinatura",
+
+      noConfigurado:
+        "Não configurado",
+
+      pagoConfirmado:
+        "Pagamento confirmado com sucesso.",
+
+      pagoCancelado:
+        "Pagamento cancelado.",
+
+      estadoGratisVida:
+        "Gratuito vitalício",
+
+      estadoActiva:
+        "Ativa",
+
+      estadoPrueba:
+        "Período de teste gratuito",
+
+      estadoPendientePago:
+        "Pagamento pendente",
+
+      estadoCancelada:
+        "Cancelada",
+
+      estadoNoDefinido:
+        "Não definido",
+
+      planMensualStripe:
+        "Mensal com Stripe",
+
+      planGratisVida:
+        "Gratuito vitalício",
+
+      planPrueba:
+        "Período de teste gratuito",
+
+      completaDatosAntesPagar:
+        "Preencha os dados de faturamento antes de pagar a assinatura",
+
+      stripeNoConfiguradoEnv:
+        "O Stripe não está configurado. Verifique o arquivo .env.",
+
+      stripeNoConfigurado:
+        "O Stripe não está configurado.",
+
+      errorCreandoPago:
+        "Erro ao criar o pagamento com Stripe: ",
+
+      errorConfirmandoStripe:
+        "Erro ao confirmar o Stripe: ",
+
+      stripeLiveNoConfirmado:
+        "O Stripe LIVE está configurado, mas STRIPE_LIVE_CONFIRMADO não está definido como SI.",
+
+      stripeLiveHttps:
+        "No Stripe LIVE, APP_BASE_URL deve usar https.",
+
+      stripeLiveNoLocalhost:
+        "No Stripe LIVE, APP_BASE_URL não pode ser localhost.",
+
+      stripeLiveWebhook:
+        "No Stripe LIVE, STRIPE_WEBHOOK_SECRET deve estar configurado."
     }
   };
 
