@@ -482,6 +482,192 @@ function textosOnboardingCliente(idiomaValor) {
         "Recommendation",
       recomendacionTexto:
         "Before the first real service, run a test using a fictitious table and check that every product reaches the correct destination."
+    },
+    "pt-br": {
+      lang: "pt-BR",
+
+      tituloPagina:
+        "Primeiros passos",
+
+      titulo:
+        "Guia de configuração do restaurante",
+
+      descripcion:
+        "Conclua este guia antes de usar o Restaurant Service POS em um serviço real. Quando todas as etapas estiverem prontas, o restaurante estará preparado para operar.",
+
+      progresoInicial:
+        "Progresso inicial",
+
+      progreso(completados, total, porcentaje) {
+        return (
+          completados +
+          "/" +
+          total +
+          " etapas · " +
+          porcentaje +
+          "%"
+        );
+      },
+
+      completado:
+        "Concluído",
+
+      pendiente:
+        "Pendente",
+
+      configuracion:
+        "Configurações",
+
+      abrirPos:
+        "Abrir POS",
+
+      verAyuda:
+        "Ver ajuda",
+
+      verFlujo:
+        "Ver fluxo",
+
+      estados: {
+        restauranteOk:
+          "Os dados básicos do restaurante foram configurados.",
+
+        restaurantePendiente:
+          "Ainda faltam os dados básicos do restaurante ou o e-mail do proprietário.",
+
+        mesasOk(zonas, mesas) {
+          return (
+            "Áreas ativas: " +
+            zonas +
+            ". Mesas ativas: " +
+            mesas +
+            "."
+          );
+        },
+
+        mesasPendiente:
+          "Ainda faltam áreas, salões ou mesas ativas.",
+
+        productosOk(categorias, productos) {
+          return (
+            "Categorias configuradas: " +
+            categorias +
+            ". Produtos ativos: " +
+            productos +
+            "."
+          );
+        },
+
+        productosPendiente:
+          "Ainda faltam categorias ou produtos ativos.",
+
+        destinosOk(destinos) {
+          return (
+            "Destinos de comandas ativos: " +
+            destinos +
+            "."
+          );
+        },
+
+        destinosPendiente:
+          "Faltam destinos para as comandas. Pelo menos bar e cozinha devem existir.",
+
+        impresionOk:
+          "A central de impressão possui uma configuração salva.",
+
+        impresionPendiente:
+          "A configuração de impressão ainda não foi salva.",
+
+        pruebaOk:
+          "Agora já é possível realizar um teste completo de uma mesa.",
+
+        pruebaPendiente:
+          "É necessário ter mesas, produtos e destinos antes de testar uma mesa.",
+
+        manualOk:
+          "O manual está disponível em Configurações.",
+
+        manualPendiente:
+          "Manual opcional."
+      },
+
+      pasos: {
+        restaurante: {
+          titulo:
+            "Dados do restaurante",
+
+          descripcion:
+            "Configure o nome do restaurante, proprietário, e-mail e principais dados. Essas informações são utilizadas em comprovantes, contas e nas configurações gerais.",
+
+          accion:
+            "Abrir configurações"
+        },
+
+        mesas: {
+          titulo:
+            "Criar salões e mesas",
+
+          descripcion:
+            "Crie a estrutura real do restaurante: salão, terraço, bar, sala privativa ou qualquer outra área utilizada.",
+
+          accion:
+            "Configurar mesas"
+        },
+
+        productos: {
+          titulo:
+            "Criar categorias e produtos",
+
+          descripcion:
+            "Adicione bebidas, pratos, cafés, sobremesas e preços. Organize os produtos em categorias para que os garçons possam trabalhar rapidamente.",
+
+          accion:
+            "Configurar produtos"
+        },
+
+        destinos: {
+          titulo:
+            "Configurar destinos das comandas",
+
+          descripcion:
+            "Defina para onde cada comanda deve ser enviada: bar, cozinha, pizzaria ou outros destinos. Isso ajuda a evitar erros durante o serviço.",
+
+          accion:
+            "Configurar destinos"
+        },
+
+        impresion: {
+          titulo:
+            "Testar impressão",
+
+          descripcion:
+            "Comece no modo de visualização. Gere comprovantes de teste para o caixa, bar e cozinha antes de conectar impressoras físicas.",
+
+          accion:
+            "Central de impressão"
+        },
+
+        prueba: {
+          titulo:
+            "Testar uma mesa completa",
+
+          descripcion:
+            "Antes de atender clientes, faça um teste: abra uma mesa, adicione bebidas e pratos, envie as comandas, imprima a conta, registre o pagamento e feche a mesa."
+        },
+
+        manual: {
+          titulo:
+            "Manual disponível em Configurações",
+
+          descripcion:
+            "O manual explica a operação diária do POS, comandas, pagamentos, caixa, usuários e perguntas frequentes."
+        }
+      },
+
+      recomendacion:
+        "Recomendação",
+
+      recomendacionTexto:
+        "Antes do primeiro serviço real, faça um teste usando uma mesa fictícia e verifique se cada produto chega ao destino correto."
     }
   };
 

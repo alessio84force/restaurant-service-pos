@@ -22,7 +22,42 @@ function rutaConOnboarding(path) {
   );
 }
 
-function boton() {
+function idiomaReq(req) {
+  const sessione = req && req.session ? req.session : {};
+  const usuario = sessione.usuario || {};
+
+  const idioma = String(
+    sessione.idioma ||
+    usuario.idioma ||
+    "es"
+  ).toLowerCase();
+
+  if (
+    idioma === "es" ||
+    idioma === "it" ||
+    idioma === "en" ||
+    idioma === "pt-br"
+  ) {
+    return idioma;
+  }
+
+  return "es";
+}
+
+function textoBoton(idioma) {
+  const textos = {
+    es: "Primeros pasos",
+    it: "Primi passi",
+    en: "Getting started",
+    "pt-br": "Primeiros passos"
+  };
+
+  return textos[idioma] || textos.es;
+}
+
+function boton(idioma) {
+  const texto = textoBoton(idioma);
+
   return `
 <style>
 .rs-onboarding-btn{
@@ -56,15 +91,15 @@ function boton() {
   .rs-onboarding-btn{display:none;}
 }
 </style>
-<a class="rs-onboarding-btn" href="/primeros-pasos">🚀 Primeros pasos</a>`;
+<a class="rs-onboarding-btn" href="/primeros-pasos">🚀 ${texto}</a>`;
 }
 
-function insertar(html) {
+function insertar(html, idioma) {
   if (!html || typeof html !== "string") return html;
   if (!html.toLowerCase().includes("<html")) return html;
   if (html.includes("rs-onboarding-btn")) return html;
 
-  const bloque = boton();
+  const bloque = boton(idioma);
 
   if (/<\/body>/i.test(html)) {
     return html.replace(/<\/body>/i, bloque + "\n</body>");
@@ -90,7 +125,9 @@ module.exports = function onboardingClienteLinkMiddleware() {
         return originalSend(body);
       }
 
-      return originalSend(insertar(body));
+      return originalSend(
+        insertar(body, idiomaReq(req))
+      );
     };
 
     return next();
