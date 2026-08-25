@@ -67,6 +67,9 @@ const TESTI_MOBILE = {
     sinPagos: "Todavía no hay pagos registrados.",
     pagoRegistrado: "Pago registrado correctamente.",
     pagoRegistradoRtPendiente: "Pago registrado. La fiscalización RT no se ha completado y la mesa permanece abierta.",
+    rtReintentar: "Reintentar fiscalización RT",
+    rtRevisionManual: "El resultado de la fiscalización RT es incierto. Se requiere una verificación manual antes de continuar.",
+    rtEnCurso: "Fiscalización RT en curso. No repita la operación.",
     pagoCompletado: "Pago completado",
     mesaLiberada: "La mesa está libre.",
     volverMesas: "Volver a mesas",
@@ -166,6 +169,9 @@ const TESTI_MOBILE = {
     sinPagos: "Non ci sono ancora pagamenti registrati.",
     pagoRegistrado: "Pagamento registrato correttamente.",
     pagoRegistradoRtPendiente: "Pagamento registrato. La fiscalizzazione RT non è stata completata e il tavolo resta aperto.",
+    rtReintentar: "Riprova fiscalizzazione RT",
+    rtRevisionManual: "L'esito della fiscalizzazione RT è incerto. È necessaria una verifica manuale prima di continuare.",
+    rtEnCurso: "Fiscalizzazione RT in corso. Non ripetere l'operazione.",
     pagoCompletado: "Pagamento completato",
     mesaLiberada: "Il tavolo è libero.",
     volverMesas: "Torna ai tavoli",
@@ -265,6 +271,9 @@ const TESTI_MOBILE = {
     sinPagos: "No payments recorded yet.",
     pagoRegistrado: "Payment recorded successfully.",
     pagoRegistradoRtPendiente: "Payment recorded. RT fiscalization was not completed and the table remains open.",
+    rtReintentar: "Retry RT fiscalization",
+    rtRevisionManual: "The RT fiscalization result is uncertain. Manual verification is required before continuing.",
+    rtEnCurso: "RT fiscalization is in progress. Do not repeat the operation.",
     pagoCompletado: "Payment completed",
     mesaLiberada: "The table is free.",
     volverMesas: "Back to tables",
@@ -364,6 +373,9 @@ const TESTI_MOBILE = {
     sinPagos: "Ainda não há pagamentos registrados.",
     pagoRegistrado: "Pagamento registrado com sucesso.",
     pagoRegistradoRtPendiente: "Pagamento registrado. A fiscalização RT não foi concluída e a mesa permanece aberta.",
+    rtReintentar: "Tentar novamente a fiscalização RT",
+    rtRevisionManual: "O resultado da fiscalização RT é incerto. É necessária uma verificação manual antes de continuar.",
+    rtEnCurso: "Fiscalização RT em andamento. Não repita a operação.",
     pagoCompletado: "Pagamento concluído",
     mesaLiberada: "A mesa está livre.",
     volverMesas: "Voltar para as mesas",
@@ -1581,6 +1593,8 @@ async function aprirePagamentoMobile(){
     pagado: 0,
     pendiente: arrotondarePagamentoMobile(estadoMobile.total),
     pagos: [],
+    rtEstado: "no_requerido",
+    cerrado: false,
     metodo: "tarjeta",
     importeActual: "",
     procesando: false,
@@ -1622,6 +1636,12 @@ async function caricarePagamentoMobile(){
 
     const pagos = resultados[0];
     const resumen = resultados[1] || {};
+
+    pagamento.rtEstado =
+      resumen.rt_estado || "no_requerido";
+
+    pagamento.cerrado =
+      resumen.cerrado === true;
 
     pagamento.pagos = Array.isArray(pagos) ? pagos : [];
     pagamento.total = arrotondarePagamentoMobile(
@@ -1742,6 +1762,43 @@ function renderPagamentoMobile(){
       `
     : "";
 
+  let rtHtml = "";
+
+  if(
+    pagamento.pendiente <= 0.005 &&
+    pagamento.cerrado !== true
+  ){
+    if(pagamento.rtEstado === "error"){
+      rtHtml = `
+        <div class="mobile-pagamento-bloque">
+          <button
+            class="mobile-btn green full"
+            onclick="reintentarFiscalizacionRtMobile()"
+            ${pagamento.procesando ? "disabled" : ""}
+          >
+            ${textoMobile("rtReintentar")}
+          </button>
+        </div>
+      `;
+    }else if(pagamento.rtEstado === "incerto"){
+      rtHtml = `
+        <div class="mobile-pagamento-mensaje error">
+          ${escaparMobile(
+            textoMobile("rtRevisionManual")
+          )}
+        </div>
+      `;
+    }else if(pagamento.rtEstado === "enviando"){
+      rtHtml = `
+        <div class="mobile-pagamento-mensaje">
+          ${escaparMobile(
+            textoMobile("rtEnCurso")
+          )}
+        </div>
+      `;
+    }
+  }
+
   document.getElementById("mobile-app").innerHTML = `
     <section class="mobile-pagamento">
 
@@ -1774,6 +1831,7 @@ function renderPagamentoMobile(){
       </div>
 
       ${mensajeHtml}
+      ${rtHtml}
 
       <div class="mobile-pagamento-bloque">
 
@@ -2047,6 +2105,85 @@ async function confermarePagamentoMobile(){
     pagamento.mensaje =
       textoMobile("noRegistrarPago");
 
+    pagamento.tipoMensaje = "error";
+
+    renderPagamentoMobile();
+  }
+}
+
+
+async function reintentarFiscalizacionRtMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    !pagamento.pedidoId ||
+    pagamento.procesando
+  ){
+    return;
+  }
+
+  if(
+    pagamento.pendiente > 0.005 ||
+    pagamento.rtEstado !== "error"
+  ){
+    return;
+  }
+
+  pagamento.procesando = true;
+  pagamento.mensaje = "";
+  pagamento.tipoMensaje = "";
+
+  renderPagamentoMobile();
+
+  try{
+    const risposta = await apiMobile(
+      "/pedido/" +
+      encodeURIComponent(pagamento.pedidoId) +
+      "/rt/reintentar",
+      {
+        method: "POST",
+        body: {}
+      }
+    );
+
+    pagamento.procesando = false;
+
+    if(
+      risposta &&
+      risposta.rt &&
+      risposta.rt.estado
+    ){
+      pagamento.rtEstado =
+        risposta.rt.estado;
+    }
+
+    if(
+      risposta &&
+      risposta.cerrado === true
+    ){
+      pagamento.cerrado = true;
+      pagamento.rtEstado = "emitido";
+      pagamento.pagado =
+        arrotondarePagamentoMobile(
+          pagamento.total
+        );
+      pagamento.pendiente = 0;
+
+      await completarePagamentoMobile();
+      return;
+    }
+
+    await caricarePagamentoMobile();
+  }catch(error){
+    console.error(
+      "Error reintentando fiscalizacion RT mobile:",
+      error
+    );
+
+    pagamento.procesando = false;
+    pagamento.mensaje =
+      textoMobile("pagoRegistradoRtPendiente");
     pagamento.tipoMensaje = "error";
 
     renderPagamentoMobile();
