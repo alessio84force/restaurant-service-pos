@@ -134,6 +134,38 @@ async function prepararRtItalia(db) {
     ]
   );
 
+  await run(
+    db,
+    `CREATE TABLE IF NOT EXISTS rt_eventos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      restaurante_id INTEGER NOT NULL,
+      pedido_id INTEGER NOT NULL,
+      usuario_id INTEGER,
+      tipo TEXT NOT NULL,
+      estado_anterior TEXT,
+      estado_nuevo TEXT,
+      documento_id TEXT,
+      idempotency_key TEXT,
+      nota TEXT,
+      creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_rt_eventos_pedido
+     ON rt_eventos(restaurante_id, pedido_id, id)`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_rt_eventos_fecha
+     ON rt_eventos(restaurante_id, creado_en)`,
+    []
+  );
+
   console.log(
     "[RT Italia] Schema RT preparado correctamente"
   );
