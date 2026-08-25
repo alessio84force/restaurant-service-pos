@@ -5,6 +5,9 @@ const {
 const simulacion =
   require("./adapters/simulacion");
 
+const sqlite3 =
+  require("sqlite3").verbose();
+
 function get(db, sql, params) {
   return new Promise(function(resolve, reject) {
     db.get(sql, params || [], function(err, row) {
@@ -25,6 +28,174 @@ function run(db, sql, params) {
       });
     });
   });
+}
+
+function cerrarDb(db) {
+  return new Promise(function(resolve, reject) {
+    db.close(function(err) {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
+function abrirDbDedicado(filename) {
+  return new Promise(function(resolve, reject) {
+    const conexion =
+      new sqlite3.Database(
+        filename,
+        function(err) {
+          if (err) {
+            return reject(err);
+          }
+
+          conexion.configure(
+            "busyTimeout",
+            5000
+          );
+
+          resolve(conexion);
+        }
+      );
+  });
+}
+
+async function conTransaccionReconciliacion(
+  dbPrincipal,
+  trabajo
+) {
+  const filename =
+    dbPrincipal &&
+    typeof dbPrincipal.filename === "string"
+      ? dbPrincipal.filename
+      : "";
+
+  if (
+    !filename ||
+    filename === ":memory:"
+  ) {
+    throw new Error(
+      "Database RT non valido per riconciliazione"
+    );
+  }
+
+  if (typeof trabajo !== "function") {
+    throw new Error(
+      "Operazione di riconciliazione non valida"
+    );
+  }
+
+  const conexion =
+    await abrirDbDedicado(filename);
+
+  let iniziata = false;
+
+  try {
+    await run(
+      conexion,
+      "BEGIN IMMEDIATE",
+      []
+    );
+
+    iniziata = true;
+
+    const risultato =
+      await trabajo(conexion);
+
+    await run(
+      conexion,
+      "COMMIT",
+      []
+    );
+
+    iniziata = false;
+
+    await cerrarDb(conexion);
+
+    return risultato;
+  } catch (err) {
+    if (iniziata) {
+      try {
+        await run(
+          conexion,
+          "ROLLBACK",
+          []
+        );
+      } catch (rollbackErr) {
+        console.error(
+          "[RT Italia] Errore rollback riconciliazione:",
+          mensajeError(rollbackErr)
+        );
+      }
+    }
+
+    try {
+      await cerrarDb(conexion);
+    } catch (closeErr) {
+      console.error(
+        "[RT Italia] Errore chiusura DB riconciliazione:",
+        mensajeError(closeErr)
+      );
+    }
+
+    throw err;
+  }
+}
+
+async function registrarEventoRt(
+  db,
+  datos
+) {
+  const evento = datos || {};
+
+  const resultado = await run(
+    db,
+    `INSERT INTO rt_eventos
+     (
+       restaurante_id,
+       pedido_id,
+       usuario_id,
+       tipo,
+       estado_anterior,
+       estado_nuevo,
+       documento_id,
+       idempotency_key,
+       nota
+     )
+     VALUES
+     (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      Number(evento.restauranteId),
+      Number(evento.pedidoId),
+      evento.usuarioId
+        ? Number(evento.usuarioId)
+        : null,
+      String(evento.tipo || ""),
+      evento.estadoAnterior == null
+        ? null
+        : String(evento.estadoAnterior),
+      evento.estadoNuevo == null
+        ? null
+        : String(evento.estadoNuevo),
+      evento.documentoId == null
+        ? null
+        : String(evento.documentoId),
+      evento.idempotencyKey == null
+        ? null
+        : String(evento.idempotencyKey),
+      evento.nota == null
+        ? null
+        : String(evento.nota)
+    ]
+  );
+
+  if (!resultado.id) {
+    throw new Error(
+      "Impossibile registrare evento RT"
+    );
+  }
+
+  return resultado.id;
 }
 
 function mensajeError(err) {
@@ -148,6 +319,545 @@ async function guardarError(
   );
 
   return mensaje;
+}
+
+async function confirmarRtEmitidoManualmente(
+  dbPrincipal,
+  restauranteId,
+  pedidoId,
+  usuarioId,
+  datos
+) {
+  const rid = Number(restauranteId || 0);
+  const pid = Number(pedidoId || 0);
+  const uid = Number(usuarioId || 0);
+  const entrada = datos || {};
+
+  const documentoId =
+    String(
+      entrada.documentoId || ""
+    ).trim();
+
+  const nota =
+    String(
+      entrada.nota || ""
+    ).trim();
+
+  const emitidoEnEntrada =
+    entrada.emitidoEn == null
+      ? ""
+      : String(
+          entrada.emitidoEn
+        ).trim();
+
+  if (rid <= 0 || pid <= 0 || uid <= 0) {
+    throw new Error(
+      "Identificadores non validi per riconciliazione RT"
+    );
+  }
+
+  if (!documentoId) {
+    throw new Error(
+      "Documento RT obbligatorio"
+    );
+  }
+
+  if (!nota) {
+    throw new Error(
+      "Nota di verifica obbligatoria"
+    );
+  }
+
+  return conTransaccionReconciliacion(
+    dbPrincipal,
+    async function(db) {
+      const pedido = await get(
+        db,
+        `SELECT
+           id,
+           mesa_id,
+           estado,
+           total,
+           COALESCE(rt_estado,'no_requerido')
+             AS rt_estado,
+           rt_documento_id,
+           rt_emitido_en,
+           rt_idempotency_key
+         FROM pedidos
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+         LIMIT 1`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      if (!pedido) {
+        throw new Error(
+          "Pedido non trovato"
+        );
+      }
+
+      if (pedido.rt_estado !== "incerto") {
+        throw new Error(
+          "La riconciliazione manuale richiede stato incerto"
+        );
+      }
+
+      if (
+        pedido.rt_documento_id &&
+        String(pedido.rt_documento_id) !==
+          documentoId
+      ) {
+        throw new Error(
+          "Documento RT diverso da quello già registrato"
+        );
+      }
+
+      const rowPagos = await get(
+        db,
+        `SELECT
+           COALESCE(SUM(importe),0) AS pagado
+         FROM pagos
+         WHERE pedido_id=?
+           AND COALESCE(restaurante_id,1)=?`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      const total =
+        Number(pedido.total || 0);
+
+      const pagado =
+        Number(
+          rowPagos &&
+          rowPagos.pagado || 0
+        );
+
+      const pendiente =
+        Math.max(
+          0,
+          total - pagado
+        );
+
+      if (pendiente > 0.005) {
+        throw new Error(
+          "Il pedido ha ancora saldo pendente"
+        );
+      }
+
+      const mesaId =
+        Number(pedido.mesa_id || 0);
+
+      if (mesaId <= 0) {
+        throw new Error(
+          "Mesa non valida per il pedido"
+        );
+      }
+
+      const emitidoEn =
+        emitidoEnEntrada ||
+        pedido.rt_emitido_en ||
+        new Date().toISOString();
+
+      const cambio = await run(
+        db,
+        `UPDATE pedidos
+         SET
+           rt_estado='emitido',
+           rt_documento_id=?,
+           rt_emitido_en=?,
+           rt_ultimo_error=NULL,
+           rt_enviando_desde=NULL,
+           estado='cerrado',
+           pagado_en=COALESCE(
+             pagado_en,
+             CURRENT_TIMESTAMP
+           )
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+           AND rt_estado='incerto'`,
+        [
+          documentoId,
+          emitidoEn,
+          pid,
+          rid
+        ]
+      );
+
+      if (cambio.changes !== 1) {
+        throw new Error(
+          "Stato RT modificato durante la riconciliazione"
+        );
+      }
+
+      const mesa = await run(
+        db,
+        `UPDATE mesas
+         SET estado='libre'
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?`,
+        [
+          mesaId,
+          rid
+        ]
+      );
+
+      if (mesa.changes !== 1) {
+        throw new Error(
+          "Impossibile liberare la mesa"
+        );
+      }
+
+      const eventoId =
+        await registrarEventoRt(
+          db,
+          {
+            restauranteId: rid,
+            pedidoId: pid,
+            usuarioId: uid,
+            tipo:
+              "reconciliacion_emitido_manual",
+            estadoAnterior:
+              "incerto",
+            estadoNuevo:
+              "emitido",
+            documentoId:
+              documentoId,
+            idempotencyKey:
+              pedido.rt_idempotency_key,
+            nota:
+              nota
+          }
+        );
+
+      return {
+        ok: true,
+        estado: "emitido",
+        cerrado: true,
+        documento_id:
+          documentoId,
+        emitido_en:
+          emitidoEn,
+        evento_id:
+          eventoId
+      };
+    }
+  );
+}
+
+async function confirmarRtNoEmitidoManualmente(
+  dbPrincipal,
+  restauranteId,
+  pedidoId,
+  usuarioId,
+  datos
+) {
+  const rid = Number(restauranteId || 0);
+  const pid = Number(pedidoId || 0);
+  const uid = Number(usuarioId || 0);
+  const entrada = datos || {};
+
+  const nota =
+    String(
+      entrada.nota || ""
+    ).trim();
+
+  if (rid <= 0 || pid <= 0 || uid <= 0) {
+    throw new Error(
+      "Identificadores non validi per riconciliazione RT"
+    );
+  }
+
+  if (!nota) {
+    throw new Error(
+      "Nota di verifica obbligatoria"
+    );
+  }
+
+  return conTransaccionReconciliacion(
+    dbPrincipal,
+    async function(db) {
+      const pedido = await get(
+        db,
+        `SELECT
+           id,
+           estado,
+           total,
+           COALESCE(rt_estado,'no_requerido')
+             AS rt_estado,
+           rt_documento_id,
+           rt_emitido_en,
+           rt_idempotency_key
+         FROM pedidos
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+         LIMIT 1`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      if (!pedido) {
+        throw new Error(
+          "Pedido non trovato"
+        );
+      }
+
+      if (pedido.rt_estado !== "incerto") {
+        throw new Error(
+          "La riconciliazione manuale richiede stato incerto"
+        );
+      }
+
+      if (
+        pedido.rt_documento_id ||
+        pedido.rt_emitido_en
+      ) {
+        throw new Error(
+          "Il pedido contiene già dati di un possibile documento RT emesso"
+        );
+      }
+
+      const rowPagos = await get(
+        db,
+        `SELECT
+           COALESCE(SUM(importe),0) AS pagado
+         FROM pagos
+         WHERE pedido_id=?
+           AND COALESCE(restaurante_id,1)=?`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      const total =
+        Number(pedido.total || 0);
+
+      const pagado =
+        Number(
+          rowPagos &&
+          rowPagos.pagado || 0
+        );
+
+      const pendiente =
+        Math.max(
+          0,
+          total - pagado
+        );
+
+      if (pendiente > 0.005) {
+        throw new Error(
+          "Il pedido ha ancora saldo pendente"
+        );
+      }
+
+      const cambio = await run(
+        db,
+        `UPDATE pedidos
+         SET
+           rt_estado='error',
+           rt_ultimo_error=
+             'Verificato manualmente: documento RT non emesso',
+           rt_enviando_desde=NULL
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+           AND rt_estado='incerto'
+           AND rt_documento_id IS NULL
+           AND rt_emitido_en IS NULL`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      if (cambio.changes !== 1) {
+        throw new Error(
+          "Stato RT modificato durante la riconciliazione"
+        );
+      }
+
+      const eventoId =
+        await registrarEventoRt(
+          db,
+          {
+            restauranteId: rid,
+            pedidoId: pid,
+            usuarioId: uid,
+            tipo:
+              "reconciliacion_no_emitido_manual",
+            estadoAnterior:
+              "incerto",
+            estadoNuevo:
+              "error",
+            documentoId:
+              null,
+            idempotencyKey:
+              pedido.rt_idempotency_key,
+            nota:
+              nota
+          }
+        );
+
+      return {
+        ok: true,
+        estado: "error",
+        cerrado: false,
+        retry_permitido: true,
+        idempotency_key:
+          pedido.rt_idempotency_key,
+        evento_id:
+          eventoId
+      };
+    }
+  );
+}
+
+async function marcarRtEnviandoComoIncertoManualmente(
+  dbPrincipal,
+  restauranteId,
+  pedidoId,
+  usuarioId,
+  datos
+) {
+  const rid = Number(restauranteId || 0);
+  const pid = Number(pedidoId || 0);
+  const uid = Number(usuarioId || 0);
+  const entrada = datos || {};
+
+  const nota =
+    String(
+      entrada.nota || ""
+    ).trim();
+
+  if (rid <= 0 || pid <= 0 || uid <= 0) {
+    throw new Error(
+      "Identificadores non validi per riconciliazione RT"
+    );
+  }
+
+  if (!nota) {
+    throw new Error(
+      "Nota di verifica obbligatoria"
+    );
+  }
+
+  return conTransaccionReconciliacion(
+    dbPrincipal,
+    async function(db) {
+      const pedido = await get(
+        db,
+        `SELECT
+           id,
+           estado,
+           COALESCE(rt_estado,'no_requerido')
+             AS rt_estado,
+           rt_documento_id,
+           rt_emitido_en,
+           rt_idempotency_key,
+           rt_enviando_desde
+         FROM pedidos
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+         LIMIT 1`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      if (!pedido) {
+        throw new Error(
+          "Pedido non trovato"
+        );
+      }
+
+      if (pedido.rt_estado !== "enviando") {
+        throw new Error(
+          "La riconciliazione richiede stato enviando"
+        );
+      }
+
+      const enviandoDesde =
+        pedido.rt_enviando_desde == null
+          ? null
+          : String(
+              pedido.rt_enviando_desde
+            );
+
+      const cambio = await run(
+        db,
+        `UPDATE pedidos
+         SET
+           rt_estado='incerto',
+           rt_ultimo_error=
+             'Invio RT interrotto per verifica manuale',
+           rt_enviando_desde=NULL
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+           AND rt_estado='enviando'`,
+        [
+          pid,
+          rid
+        ]
+      );
+
+      if (cambio.changes !== 1) {
+        throw new Error(
+          "Stato RT modificato durante la riconciliazione"
+        );
+      }
+
+      const notaAudit =
+        enviandoDesde
+          ? nota +
+            " | enviando_desde=" +
+            enviandoDesde
+          : nota +
+            " | enviando_desde=non_disponibile";
+
+      const eventoId =
+        await registrarEventoRt(
+          db,
+          {
+            restauranteId: rid,
+            pedidoId: pid,
+            usuarioId: uid,
+            tipo:
+              "reconciliacion_enviando_incerto_manual",
+            estadoAnterior:
+              "enviando",
+            estadoNuevo:
+              "incerto",
+            documentoId:
+              pedido.rt_documento_id,
+            idempotencyKey:
+              pedido.rt_idempotency_key,
+            nota:
+              notaAudit
+          }
+        );
+
+      return {
+        ok: true,
+        estado: "incerto",
+        cerrado: false,
+        requiere_revision: true,
+        retry_permitido: false,
+        enviando_desde:
+          enviandoDesde,
+        idempotency_key:
+          pedido.rt_idempotency_key,
+        evento_id:
+          eventoId
+      };
+    }
+  );
 }
 
 async function emitirPedidoRt(
@@ -565,5 +1275,8 @@ async function emitirPedidoRt(
 }
 
 module.exports = {
-  emitirPedidoRt
+  emitirPedidoRt,
+  confirmarRtEmitidoManualmente,
+  confirmarRtNoEmitidoManualmente,
+  marcarRtEnviandoComoIncertoManualmente
 };
