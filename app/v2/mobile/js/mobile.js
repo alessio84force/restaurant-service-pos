@@ -66,6 +66,7 @@ const TESTI_MOBILE = {
     pagosRealizados: "Pagos realizados",
     sinPagos: "Todavía no hay pagos registrados.",
     pagoRegistrado: "Pago registrado correctamente.",
+    pagoRegistradoRtPendiente: "Pago registrado. La fiscalización RT no se ha completado y la mesa permanece abierta.",
     pagoCompletado: "Pago completado",
     mesaLiberada: "La mesa está libre.",
     volverMesas: "Volver a mesas",
@@ -164,6 +165,7 @@ const TESTI_MOBILE = {
     pagosRealizados: "Pagamenti effettuati",
     sinPagos: "Non ci sono ancora pagamenti registrati.",
     pagoRegistrado: "Pagamento registrato correttamente.",
+    pagoRegistradoRtPendiente: "Pagamento registrato. La fiscalizzazione RT non è stata completata e il tavolo resta aperto.",
     pagoCompletado: "Pagamento completato",
     mesaLiberada: "Il tavolo è libero.",
     volverMesas: "Torna ai tavoli",
@@ -262,6 +264,7 @@ const TESTI_MOBILE = {
     pagosRealizados: "Payments made",
     sinPagos: "No payments recorded yet.",
     pagoRegistrado: "Payment recorded successfully.",
+    pagoRegistradoRtPendiente: "Payment recorded. RT fiscalization was not completed and the table remains open.",
     pagoCompletado: "Payment completed",
     mesaLiberada: "The table is free.",
     volverMesas: "Back to tables",
@@ -360,6 +363,7 @@ const TESTI_MOBILE = {
     pagosRealizados: "Pagamentos realizados",
     sinPagos: "Ainda não há pagamentos registrados.",
     pagoRegistrado: "Pagamento registrado com sucesso.",
+    pagoRegistradoRtPendiente: "Pagamento registrado. A fiscalização RT não foi concluída e a mesa permanece aberta.",
     pagoCompletado: "Pagamento concluído",
     mesaLiberada: "A mesa está livre.",
     volverMesas: "Voltar para as mesas",
@@ -1645,7 +1649,20 @@ async function caricarePagamentoMobile(){
     );
 
     if(pagamento.pendiente <= 0.005){
-      await completarePagamentoMobile();
+      if(resumen.cerrado === true){
+        await completarePagamentoMobile();
+        return;
+      }
+
+      pagamento.mensaje =
+        textoMobile("pagoRegistradoRtPendiente");
+
+      pagamento.tipoMensaje = "error";
+
+      if(estadoMobile.vista === "pagamento"){
+        renderMobile();
+      }
+
       return;
     }
 
@@ -2003,12 +2020,7 @@ async function confermarePagamentoMobile(){
     pagamento.procesando = false;
     pagamento.importeActual = "";
 
-    const pendienteServidor =
-      arrotondarePagamentoMobile(
-        risposta && risposta.pendiente
-      );
-
-    if(pendienteServidor <= 0.005){
+    if(risposta && risposta.cerrado === true){
       pagamento.pagado =
         arrotondarePagamentoMobile(pagamento.total);
 

@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
 const { normalizarIdioma } = require("../utils/i18n");
+const { emitirPedidoRt } = require("../rt/servicioRt");
 
 function requiereLoginJson(req, res, next) {
   if (req.session && req.session.usuario) return next();
@@ -1565,7 +1566,25 @@ module.exports = function operativaSaasRoutes(db) {
   router.get("/pedido/:id/pendiente", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const pedidoId = Number(req.params.id || 0);
-    const resumen = await resumenPendiente(db, restauranteId, pedidoId);
+
+    const pedido = await pedidoPropio(
+      db,
+      restauranteId,
+      pedidoId
+    );
+
+    if (!pedido) {
+      return res.status(404).json({
+        ok: false,
+        error: "Pedido no encontrado para este restaurante"
+      });
+    }
+
+    const resumen = await resumenPendiente(
+      db,
+      restauranteId,
+      pedidoId
+    );
 
     if (!resumen) {
       return res.status(404).json({
@@ -1578,7 +1597,11 @@ module.exports = function operativaSaasRoutes(db) {
       ok: true,
       total: resumen.total,
       pagado: resumen.pagado,
-      pendiente: resumen.pendiente
+      pendiente: resumen.pendiente,
+      estado: pedido.estado,
+      cerrado: pedido.estado === "cerrado",
+      rt_estado:
+        pedido.rt_estado || "no_requerido"
     });
   });
 
@@ -1627,24 +1650,63 @@ module.exports = function operativaSaasRoutes(db) {
 
     const resumen = await resumenPendiente(db, restauranteId, pedidoId);
 
-    if (resumen && resumen.pendiente <= 0.005) {
-      await run(
-        db,
-        "UPDATE pedidos SET estado='cerrado', pagado_en=CURRENT_TIMESTAMP WHERE id=? AND COALESCE(restaurante_id,1)=?",
-        [pedidoId, restauranteId]
-      );
+    let resultadoRt = null;
+    let mesaCerrada = false;
 
-      await run(
-        db,
-        "UPDATE mesas SET estado='libre' WHERE id=? AND COALESCE(restaurante_id,1)=?",
-        [pedido.mesa_id, restauranteId]
-      );
+    if (resumen && resumen.pendiente <= 0.005) {
+      try {
+        resultadoRt = await emitirPedidoRt(
+          db,
+          restauranteId,
+          pedidoId
+        );
+      } catch (err) {
+        console.error(
+          "[RT Italia] Errore dopo registrazione pagamento:",
+          err && err.message ? err.message : err
+        );
+
+        resultadoRt = {
+          ok: false,
+          requerido: true,
+          estado: "error",
+          error:
+            err && err.message
+              ? String(err.message)
+              : "Errore RT"
+        };
+      }
+
+      const puedeCerrar =
+        resultadoRt &&
+        (
+          resultadoRt.requerido === false ||
+          resultadoRt.estado === "emitido"
+        );
+
+      if (puedeCerrar) {
+        await run(
+          db,
+          "UPDATE pedidos SET estado='cerrado', pagado_en=CURRENT_TIMESTAMP WHERE id=? AND COALESCE(restaurante_id,1)=?",
+          [pedidoId, restauranteId]
+        );
+
+        await run(
+          db,
+          "UPDATE mesas SET estado='libre' WHERE id=? AND COALESCE(restaurante_id,1)=?",
+          [pedido.mesa_id, restauranteId]
+        );
+
+        mesaCerrada = true;
+      }
     }
 
     res.json({
       ok: true,
       pago_id: pago.id,
-      pendiente: resumen ? resumen.pendiente : 0
+      pendiente: resumen ? resumen.pendiente : 0,
+      cerrado: mesaCerrada,
+      rt: resultadoRt
     });
   });
 
@@ -1662,7 +1724,38 @@ module.exports = function operativaSaasRoutes(db) {
     const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
 
     if (pedido) {
-      await recalcularTotalPedido(db, restauranteId, pedido.id);
+      const configuracionRt = await get(
+        db,
+        `SELECT
+           COALESCE(rt_activo,0) AS rt_activo
+         FROM configurazione
+         WHERE restaurante_id=?
+         LIMIT 1`,
+        [restauranteId]
+      );
+
+      const rtActivo =
+        configuracionRt &&
+        Number(configuracionRt.rt_activo) === 1;
+
+      if (
+        rtActivo &&
+        pedido.rt_estado !== "emitido"
+      ) {
+        return res.status(409).json({
+          ok: false,
+          error:
+            "La mesa no puede cerrarse hasta completar la fiscalizacion RT",
+          rt_estado:
+            pedido.rt_estado || "no_requerido"
+        });
+      }
+
+      await recalcularTotalPedido(
+        db,
+        restauranteId,
+        pedido.id
+      );
 
       await run(
         db,
