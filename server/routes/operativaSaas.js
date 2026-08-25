@@ -1710,6 +1710,98 @@ module.exports = function operativaSaasRoutes(db) {
     });
   });
 
+  router.post("/pedido/:id/rt/reintentar", requiereAdminGerenteJson, async function(req, res) {
+    const restauranteId = restauranteIdFromReq(req);
+    const pedidoId = Number(req.params.id || 0);
+
+    const pedido = await pedidoPropio(
+      db,
+      restauranteId,
+      pedidoId
+    );
+
+    if (!pedido) {
+      return res.status(404).json({
+        ok: false,
+        error: "Pedido no encontrado para este restaurante"
+      });
+    }
+
+    const resumen = await resumenPendiente(
+      db,
+      restauranteId,
+      pedidoId
+    );
+
+    if (
+      !resumen ||
+      resumen.pendiente > 0.005
+    ) {
+      return res.status(409).json({
+        ok: false,
+        error:
+          "El pedido todavía tiene saldo pendiente",
+        pendiente:
+          resumen ? resumen.pendiente : null
+      });
+    }
+
+    let resultadoRt;
+
+    try {
+      resultadoRt = await emitirPedidoRt(
+        db,
+        restauranteId,
+        pedidoId
+      );
+    } catch (err) {
+      console.error(
+        "[RT Italia] Errore retry:",
+        err && err.message
+          ? err.message
+          : err
+      );
+
+      return res.status(500).json({
+        ok: false,
+        cerrado: false,
+        error:
+          err && err.message
+            ? String(err.message)
+            : "Errore RT"
+      });
+    }
+
+    if (
+      resultadoRt &&
+      resultadoRt.estado === "emitido"
+    ) {
+      await run(
+        db,
+        "UPDATE pedidos SET estado='cerrado', pagado_en=COALESCE(pagado_en,CURRENT_TIMESTAMP) WHERE id=? AND COALESCE(restaurante_id,1)=?",
+        [pedidoId, restauranteId]
+      );
+
+      await run(
+        db,
+        "UPDATE mesas SET estado='libre' WHERE id=? AND COALESCE(restaurante_id,1)=?",
+        [pedido.mesa_id, restauranteId]
+      );
+
+      return res.json({
+        ok: true,
+        cerrado: true,
+        rt: resultadoRt
+      });
+    }
+
+    res.json({
+      ok: false,
+      cerrado: false,
+      rt: resultadoRt
+    });
+  });
+
   router.post("/cerrar-mesa/:mesa", requiereAdminGerenteJson, async function(req, res) {
     const restauranteId = restauranteIdFromReq(req);
     const mesa = await buscarMesa(db, restauranteId, req.params.mesa);
