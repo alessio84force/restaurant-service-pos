@@ -3,7 +3,12 @@ const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
 const { normalizarIdioma } = require("../utils/i18n");
-const { emitirPedidoRt } = require("../rt/servicioRt");
+const {
+  emitirPedidoRt,
+  confirmarRtEmitidoManualmente,
+  confirmarRtNoEmitidoManualmente,
+  marcarRtEnviandoComoIncertoManualmente
+} = require("../rt/servicioRt");
 
 function requiereLoginJson(req, res, next) {
   if (req.session && req.session.usuario) return next();
@@ -1708,6 +1713,348 @@ module.exports = function operativaSaasRoutes(db) {
       cerrado: mesaCerrada,
       rt: resultadoRt
     });
+  });
+
+  router.post("/pedido/:id/rt/confirmar-no-emitido", requiereAdminGerenteJson, async function(req, res) {
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const pedidoId =
+      Number(req.params.id || 0);
+
+    const usuarioId =
+      req.session &&
+      req.session.usuario
+        ? Number(
+            req.session.usuario.id || 0
+          )
+        : 0;
+
+    const nota =
+      String(
+        (req.body || {}).nota || ""
+      ).trim();
+
+    const pedido =
+      await pedidoPropio(
+        db,
+        restauranteId,
+        pedidoId
+      );
+
+    if (!pedido) {
+      return res.status(404).json({
+        ok: false,
+        error:
+          "Pedido no encontrado para este restaurante"
+      });
+    }
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        ok: false,
+        error:
+          "Usuario autenticado no válido"
+      });
+    }
+
+    if (!nota) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "La nota de verificación es obligatoria"
+      });
+    }
+
+    try {
+      const resultado =
+        await confirmarRtNoEmitidoManualmente(
+          db,
+          restauranteId,
+          pedidoId,
+          usuarioId,
+          {
+            nota: nota
+          }
+        );
+
+      return res.json(
+        resultado
+      );
+    } catch (err) {
+      const mensaje =
+        err && err.message
+          ? String(err.message)
+          : "Errore RT";
+
+      console.error(
+        "[RT Italia] Errore confirmar no emitido:",
+        mensaje
+      );
+
+      const conflitto =
+        mensaje ===
+          "La riconciliazione manuale richiede stato incerto" ||
+        mensaje ===
+          "Il pedido contiene già dati di un possibile documento RT emesso" ||
+        mensaje ===
+          "Il pedido ha ancora saldo pendente";
+
+      if (conflitto) {
+        return res.status(409).json({
+          ok: false,
+          error: mensaje
+        });
+      }
+
+      return res.status(500).json({
+        ok: false,
+        error: mensaje
+      });
+    }
+  });
+
+  router.post("/pedido/:id/rt/confirmar-emitido", requiereAdminGerenteJson, async function(req, res) {
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const pedidoId =
+      Number(req.params.id || 0);
+
+    const usuarioId =
+      req.session &&
+      req.session.usuario
+        ? Number(
+            req.session.usuario.id || 0
+          )
+        : 0;
+
+    const body =
+      req.body || {};
+
+    const documentoId =
+      String(
+        body.documentoId || ""
+      ).trim();
+
+    const nota =
+      String(
+        body.nota || ""
+      ).trim();
+
+    const emitidoEnRaw =
+      body.emitidoEn == null
+        ? ""
+        : String(
+            body.emitidoEn
+          ).trim();
+
+    let emitidoEn = "";
+
+    if (emitidoEnRaw) {
+      const timestamp =
+        Date.parse(
+          emitidoEnRaw
+        );
+
+      if (!Number.isFinite(timestamp)) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            "La fecha de emisión RT no es válida"
+        });
+      }
+
+      emitidoEn =
+        new Date(
+          timestamp
+        ).toISOString();
+    }
+
+    const pedido =
+      await pedidoPropio(
+        db,
+        restauranteId,
+        pedidoId
+      );
+
+    if (!pedido) {
+      return res.status(404).json({
+        ok: false,
+        error:
+          "Pedido no encontrado para este restaurante"
+      });
+    }
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        ok: false,
+        error:
+          "Usuario autenticado no válido"
+      });
+    }
+
+    if (!documentoId) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "El documento RT es obligatorio"
+      });
+    }
+
+    if (!nota) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "La nota de verificación es obligatoria"
+      });
+    }
+
+    try {
+      const resultado =
+        await confirmarRtEmitidoManualmente(
+          db,
+          restauranteId,
+          pedidoId,
+          usuarioId,
+          {
+            documentoId:
+              documentoId,
+            emitidoEn:
+              emitidoEn,
+            nota:
+              nota
+          }
+        );
+
+      return res.json(
+        resultado
+      );
+    } catch (err) {
+      const mensaje =
+        err && err.message
+          ? String(err.message)
+          : "Errore RT";
+
+      console.error(
+        "[RT Italia] Errore confirmar emitido:",
+        mensaje
+      );
+
+      const conflitto =
+        mensaje ===
+          "La riconciliazione manuale richiede stato incerto" ||
+        mensaje ===
+          "Documento RT diverso da quello già registrato" ||
+        mensaje ===
+          "Il pedido ha ancora saldo pendente";
+
+      if (conflitto) {
+        return res.status(409).json({
+          ok: false,
+          error: mensaje
+        });
+      }
+
+      return res.status(500).json({
+        ok: false,
+        error: mensaje
+      });
+    }
+  });
+
+  router.post("/pedido/:id/rt/marcar-incerto", requiereAdminGerenteJson, async function(req, res) {
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const pedidoId =
+      Number(req.params.id || 0);
+
+    const usuarioId =
+      req.session &&
+      req.session.usuario
+        ? Number(
+            req.session.usuario.id || 0
+          )
+        : 0;
+
+    const nota =
+      String(
+        (req.body || {}).nota || ""
+      ).trim();
+
+    const pedido =
+      await pedidoPropio(
+        db,
+        restauranteId,
+        pedidoId
+      );
+
+    if (!pedido) {
+      return res.status(404).json({
+        ok: false,
+        error:
+          "Pedido no encontrado para este restaurante"
+      });
+    }
+
+    if (!usuarioId) {
+      return res.status(401).json({
+        ok: false,
+        error:
+          "Usuario autenticado no válido"
+      });
+    }
+
+    if (!nota) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "La nota de verificación es obligatoria"
+      });
+    }
+
+    try {
+      const resultado =
+        await marcarRtEnviandoComoIncertoManualmente(
+          db,
+          restauranteId,
+          pedidoId,
+          usuarioId,
+          {
+            nota: nota
+          }
+        );
+
+      return res.json(
+        resultado
+      );
+    } catch (err) {
+      const mensaje =
+        err && err.message
+          ? String(err.message)
+          : "Errore RT";
+
+      console.error(
+        "[RT Italia] Errore marcar incerto:",
+        mensaje
+      );
+
+      if (
+        mensaje ===
+        "La riconciliazione richiede stato enviando"
+      ) {
+        return res.status(409).json({
+          ok: false,
+          error: mensaje
+        });
+      }
+
+      return res.status(500).json({
+        ok: false,
+        error: mensaje
+      });
+    }
   });
 
   router.post("/pedido/:id/rt/reintentar", requiereAdminGerenteJson, async function(req, res) {
