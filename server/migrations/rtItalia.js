@@ -107,6 +107,10 @@ async function prepararRtItalia(db) {
       {
         nombre: "rt_idempotency_key",
         definicion: "TEXT"
+      },
+      {
+        nombre: "rt_enviando_desde",
+        definicion: "TEXT"
       }
     ]
   );

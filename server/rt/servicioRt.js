@@ -91,7 +91,8 @@ async function cargarPedidoRt(
        rt_documento_id,
        rt_emitido_en,
        rt_ultimo_error,
-       rt_idempotency_key
+       rt_idempotency_key,
+       rt_enviando_desde
      FROM pedidos
      WHERE id=?
        AND COALESCE(restaurante_id,1)=?
@@ -132,7 +133,8 @@ async function guardarError(
     `UPDATE pedidos
      SET
        rt_estado='error',
-       rt_ultimo_error=?
+       rt_ultimo_error=?,
+       rt_enviando_desde=NULL
      WHERE id=?
        AND COALESCE(restaurante_id,1)=?
        AND rt_idempotency_key=?
@@ -250,7 +252,8 @@ async function emitirPedidoRt(
      SET
        rt_estado='pendiente',
        rt_idempotency_key=?,
-       rt_ultimo_error=NULL
+       rt_ultimo_error=NULL,
+       rt_enviando_desde=NULL
      WHERE id=?
        AND COALESCE(restaurante_id,1)=?
        AND COALESCE(rt_estado,'no_requerido')
@@ -312,7 +315,8 @@ async function emitirPedidoRt(
     `UPDATE pedidos
      SET
        rt_estado='enviando',
-       rt_ultimo_error=NULL
+       rt_ultimo_error=NULL,
+       rt_enviando_desde=CURRENT_TIMESTAMP
      WHERE id=?
        AND COALESCE(restaurante_id,1)=?
        AND rt_idempotency_key=?
@@ -424,7 +428,8 @@ async function emitirPedidoRt(
          rt_estado='emitido',
          rt_documento_id=?,
          rt_emitido_en=?,
-         rt_ultimo_error=NULL
+         rt_ultimo_error=NULL,
+         rt_enviando_desde=NULL
        WHERE id=?
          AND COALESCE(restaurante_id,1)=?
          AND rt_idempotency_key=?
@@ -446,7 +451,8 @@ async function emitirPedidoRt(
            rt_estado='incerto',
            rt_documento_id=?,
            rt_emitido_en=?,
-           rt_ultimo_error=?
+           rt_ultimo_error=?,
+           rt_enviando_desde=NULL
          WHERE id=?
            AND COALESCE(restaurante_id,1)=?
            AND rt_idempotency_key=?
@@ -513,7 +519,8 @@ async function emitirPedidoRt(
         `UPDATE pedidos
          SET
            rt_estado='incerto',
-           rt_ultimo_error=?
+           rt_ultimo_error=?,
+           rt_enviando_desde=NULL
          WHERE id=?
            AND COALESCE(restaurante_id,1)=?
            AND rt_idempotency_key=?
