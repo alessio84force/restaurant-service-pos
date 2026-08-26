@@ -70,6 +70,11 @@ const TESTI_MOBILE = {
     rtReintentar: "Reintentar fiscalización RT",
     rtRevisionManual: "El resultado de la fiscalización RT es incierto. Se requiere una verificación manual antes de continuar.",
     rtEnCurso: "Fiscalización RT en curso. No repita la operación.",
+    rtAvviaVerifica: "Iniciar verificación manual RT",
+    rtDocumentoEmesso: "Documento RT emitido",
+    rtDocumentoNoEmesso: "Documento RT NO emitido",
+    rtDocumentoIdPrompt: "Introduzca el identificador del documento RT:",
+    rtNotaVerificaPrompt: "Introduzca una nota sobre la verificación realizada:",
     pagoCompletado: "Pago completado",
     mesaLiberada: "La mesa está libre.",
     volverMesas: "Volver a mesas",
@@ -172,6 +177,11 @@ const TESTI_MOBILE = {
     rtReintentar: "Riprova fiscalizzazione RT",
     rtRevisionManual: "L'esito della fiscalizzazione RT è incerto. È necessaria una verifica manuale prima di continuare.",
     rtEnCurso: "Fiscalizzazione RT in corso. Non ripetere l'operazione.",
+    rtAvviaVerifica: "Avvia verifica manuale RT",
+    rtDocumentoEmesso: "Documento RT emesso",
+    rtDocumentoNoEmesso: "Documento RT NON emesso",
+    rtDocumentoIdPrompt: "Inserisci l'identificativo del documento RT:",
+    rtNotaVerificaPrompt: "Inserisci una nota sulla verifica effettuata:",
     pagoCompletado: "Pagamento completato",
     mesaLiberada: "Il tavolo è libero.",
     volverMesas: "Torna ai tavoli",
@@ -274,6 +284,11 @@ const TESTI_MOBILE = {
     rtReintentar: "Retry RT fiscalization",
     rtRevisionManual: "The RT fiscalization result is uncertain. Manual verification is required before continuing.",
     rtEnCurso: "RT fiscalization is in progress. Do not repeat the operation.",
+    rtAvviaVerifica: "Start manual RT verification",
+    rtDocumentoEmesso: "RT document issued",
+    rtDocumentoNoEmesso: "RT document NOT issued",
+    rtDocumentoIdPrompt: "Enter the RT document identifier:",
+    rtNotaVerificaPrompt: "Enter a note about the verification performed:",
     pagoCompletado: "Payment completed",
     mesaLiberada: "The table is free.",
     volverMesas: "Back to tables",
@@ -376,6 +391,11 @@ const TESTI_MOBILE = {
     rtReintentar: "Tentar novamente a fiscalização RT",
     rtRevisionManual: "O resultado da fiscalização RT é incerto. É necessária uma verificação manual antes de continuar.",
     rtEnCurso: "Fiscalização RT em andamento. Não repita a operação.",
+    rtAvviaVerifica: "Iniciar verificação manual RT",
+    rtDocumentoEmesso: "Documento RT emitido",
+    rtDocumentoNoEmesso: "Documento RT NÃO emitido",
+    rtDocumentoIdPrompt: "Informe o identificador do documento RT:",
+    rtNotaVerificaPrompt: "Informe uma nota sobre a verificação realizada:",
     pagoCompletado: "Pagamento concluído",
     mesaLiberada: "A mesa está livre.",
     volverMesas: "Voltar para as mesas",
@@ -1594,6 +1614,8 @@ async function aprirePagamentoMobile(){
     pendiente: arrotondarePagamentoMobile(estadoMobile.total),
     pagos: [],
     rtEstado: "no_requerido",
+    rtEnviandoDesde: null,
+    rtPuedeMarcarIncerto: false,
     cerrado: false,
     metodo: "tarjeta",
     importeActual: "",
@@ -1639,6 +1661,12 @@ async function caricarePagamentoMobile(){
 
     pagamento.rtEstado =
       resumen.rt_estado || "no_requerido";
+
+    pagamento.rtEnviandoDesde =
+      resumen.rt_enviando_desde || null;
+
+    pagamento.rtPuedeMarcarIncerto =
+      resumen.rt_puede_marcar_incerto === true;
 
     pagamento.cerrado =
       resumen.cerrado === true;
@@ -1787,6 +1815,24 @@ function renderPagamentoMobile(){
             textoMobile("rtRevisionManual")
           )}
         </div>
+
+        <div class="mobile-pagamento-bloque">
+          <button
+            class="mobile-btn green full"
+            onclick="confirmarRtEmitidoMobile()"
+            ${pagamento.procesando ? "disabled" : ""}
+          >
+            ${textoMobile("rtDocumentoEmesso")}
+          </button>
+
+          <button
+            class="mobile-btn full"
+            onclick="confirmarRtNoEmitidoMobile()"
+            ${pagamento.procesando ? "disabled" : ""}
+          >
+            ${textoMobile("rtDocumentoNoEmesso")}
+          </button>
+        </div>
       `;
     }else if(pagamento.rtEstado === "enviando"){
       rtHtml = `
@@ -1795,6 +1841,23 @@ function renderPagamentoMobile(){
             textoMobile("rtEnCurso")
           )}
         </div>
+
+        ${
+          pagamento.rtPuedeMarcarIncerto === true &&
+          esAdminGerenteMobile()
+            ? `
+              <div class="mobile-pagamento-bloque">
+                <button
+                  class="mobile-btn full"
+                  onclick="marcarRtIncertoMobile()"
+                  ${pagamento.procesando ? "disabled" : ""}
+                >
+                  ${textoMobile("rtAvviaVerifica")}
+                </button>
+              </div>
+            `
+            : ""
+        }
       `;
     }
   }
@@ -2108,6 +2171,298 @@ async function confermarePagamentoMobile(){
     pagamento.tipoMensaje = "error";
 
     renderPagamentoMobile();
+  }
+}
+
+
+async function confirmarRtNoEmitidoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    !pagamento.pedidoId ||
+    pagamento.procesando ||
+    !esAdminGerenteMobile()
+  ){
+    return;
+  }
+
+  if(
+    pagamento.pendiente > 0.005 ||
+    pagamento.rtEstado !== "incerto"
+  ){
+    return;
+  }
+
+  const conferma =
+    window.confirm(
+      textoMobile("rtDocumentoNoEmesso") +
+      "?"
+    );
+
+  if(!conferma){
+    return;
+  }
+
+  const nota =
+    String(
+      window.prompt(
+        textoMobile("rtNotaVerificaPrompt")
+      ) || ""
+    ).trim();
+
+  if(!nota){
+    return;
+  }
+
+  pagamento.procesando = true;
+  pagamento.mensaje = "";
+  pagamento.tipoMensaje = "";
+
+  renderPagamentoMobile();
+
+  try{
+    const risposta =
+      await apiMobile(
+        "/pedido/" +
+        encodeURIComponent(pagamento.pedidoId) +
+        "/rt/confirmar-no-emitido",
+        {
+          method: "POST",
+          body: {
+            nota: nota
+          }
+        }
+      );
+
+    pagamento.procesando = false;
+
+    if(
+      risposta &&
+      risposta.estado
+    ){
+      pagamento.rtEstado =
+        risposta.estado;
+    }
+
+    pagamento.cerrado = false;
+    pagamento.rtEnviandoDesde = null;
+    pagamento.rtPuedeMarcarIncerto = false;
+
+    await caricarePagamentoMobile();
+
+  }catch(error){
+    console.error(
+      "Error confirmando documento RT non emesso mobile:",
+      error
+    );
+
+    pagamento.procesando = false;
+
+    await caricarePagamentoMobile();
+  }
+}
+
+
+async function confirmarRtEmitidoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    !pagamento.pedidoId ||
+    pagamento.procesando ||
+    !esAdminGerenteMobile()
+  ){
+    return;
+  }
+
+  if(
+    pagamento.pendiente > 0.005 ||
+    pagamento.rtEstado !== "incerto"
+  ){
+    return;
+  }
+
+  const conferma =
+    window.confirm(
+      textoMobile("rtDocumentoEmesso") +
+      "?"
+    );
+
+  if(!conferma){
+    return;
+  }
+
+  const documentoId =
+    String(
+      window.prompt(
+        textoMobile("rtDocumentoIdPrompt")
+      ) || ""
+    ).trim();
+
+  if(!documentoId){
+    return;
+  }
+
+  const nota =
+    String(
+      window.prompt(
+        textoMobile("rtNotaVerificaPrompt")
+      ) || ""
+    ).trim();
+
+  if(!nota){
+    return;
+  }
+
+  pagamento.procesando = true;
+  pagamento.mensaje = "";
+  pagamento.tipoMensaje = "";
+
+  renderPagamentoMobile();
+
+  try{
+    const risposta =
+      await apiMobile(
+        "/pedido/" +
+        encodeURIComponent(pagamento.pedidoId) +
+        "/rt/confirmar-emitido",
+        {
+          method: "POST",
+          body: {
+            documentoId: documentoId,
+            nota: nota
+          }
+        }
+      );
+
+    pagamento.procesando = false;
+
+    if(
+      risposta &&
+      risposta.estado
+    ){
+      pagamento.rtEstado =
+        risposta.estado;
+    }
+
+    if(
+      risposta &&
+      risposta.cerrado === true
+    ){
+      pagamento.cerrado = true;
+      pagamento.rtEstado = "emitido";
+      pagamento.pagado =
+        arrotondarePagamentoMobile(
+          pagamento.total
+        );
+      pagamento.pendiente = 0;
+
+      await completarePagamentoMobile();
+      return;
+    }
+
+    await caricarePagamentoMobile();
+
+  }catch(error){
+    console.error(
+      "Error confirmando documento RT emesso mobile:",
+      error
+    );
+
+    pagamento.procesando = false;
+
+    await caricarePagamentoMobile();
+  }
+}
+
+
+async function marcarRtIncertoMobile(){
+  const pagamento = estadoMobile.pagamento;
+
+  if(
+    !pagamento ||
+    !pagamento.pedidoId ||
+    pagamento.procesando ||
+    !esAdminGerenteMobile()
+  ){
+    return;
+  }
+
+  if(
+    pagamento.pendiente > 0.005 ||
+    pagamento.rtEstado !== "enviando" ||
+    pagamento.rtPuedeMarcarIncerto !== true
+  ){
+    return;
+  }
+
+  const conferma =
+    window.confirm(
+      textoMobile("rtEnCurso") +
+      "\n\n" +
+      textoMobile("rtAvviaVerifica") +
+      "?"
+    );
+
+  if(!conferma){
+    return;
+  }
+
+  const nota =
+    String(
+      window.prompt(
+        textoMobile("rtRevisionManual")
+      ) || ""
+    ).trim();
+
+  if(!nota){
+    return;
+  }
+
+  pagamento.procesando = true;
+  pagamento.mensaje = "";
+  pagamento.tipoMensaje = "";
+
+  renderPagamentoMobile();
+
+  try{
+    const risposta = await apiMobile(
+      "/pedido/" +
+      encodeURIComponent(pagamento.pedidoId) +
+      "/rt/marcar-incerto",
+      {
+        method: "POST",
+        body: {
+          nota: nota
+        }
+      }
+    );
+
+    pagamento.procesando = false;
+
+    if(
+      risposta &&
+      risposta.estado
+    ){
+      pagamento.rtEstado =
+        risposta.estado;
+    }
+
+    pagamento.rtEnviandoDesde = null;
+    pagamento.rtPuedeMarcarIncerto = false;
+
+    await caricarePagamentoMobile();
+
+  }catch(error){
+    console.error(
+      "Error marcando RT incerto mobile:",
+      error
+    );
+
+    pagamento.procesando = false;
+
+    await caricarePagamentoMobile();
   }
 }
 

@@ -760,7 +760,12 @@ async function marcarRtEnviandoComoIncertoManualmente(
            rt_documento_id,
            rt_emitido_en,
            rt_idempotency_key,
-           rt_enviando_desde
+           rt_enviando_desde,
+           (
+             julianday('now') -
+             julianday(rt_enviando_desde)
+           ) * 86400.0
+             AS rt_enviando_segundos
          FROM pedidos
          WHERE id=?
            AND COALESCE(restaurante_id,1)=?
@@ -780,6 +785,29 @@ async function marcarRtEnviandoComoIncertoManualmente(
       if (pedido.rt_estado !== "enviando") {
         throw new Error(
           "La riconciliazione richiede stato enviando"
+        );
+      }
+
+      const segundosEnviando =
+        pedido.rt_enviando_segundos == null
+          ? null
+          : Number(
+              pedido.rt_enviando_segundos
+            );
+
+      if (
+        segundosEnviando == null ||
+        !Number.isFinite(segundosEnviando) ||
+        segundosEnviando < 0
+      ) {
+        throw new Error(
+          "Timestamp RT enviando non disponibile o non valido"
+        );
+      }
+
+      if (segundosEnviando < 120) {
+        throw new Error(
+          "Invio RT ancora troppo recente per la riconciliazione manuale"
         );
       }
 

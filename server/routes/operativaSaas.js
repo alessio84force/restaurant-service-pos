@@ -1598,6 +1598,31 @@ module.exports = function operativaSaasRoutes(db) {
       });
     }
 
+    const permisoRt =
+      await get(
+        db,
+        `SELECT
+           CASE
+             WHEN
+               COALESCE(rt_estado,'no_requerido')='enviando'
+               AND rt_enviando_desde IS NOT NULL
+               AND (
+                 julianday('now') -
+                 julianday(rt_enviando_desde)
+               ) * 86400.0 >= 120
+             THEN 1
+             ELSE 0
+           END AS puede
+         FROM pedidos
+         WHERE id=?
+           AND COALESCE(restaurante_id,1)=?
+         LIMIT 1`,
+        [
+          pedidoId,
+          restauranteId
+        ]
+      );
+
     res.json({
       ok: true,
       total: resumen.total,
@@ -1606,7 +1631,14 @@ module.exports = function operativaSaasRoutes(db) {
       estado: pedido.estado,
       cerrado: pedido.estado === "cerrado",
       rt_estado:
-        pedido.rt_estado || "no_requerido"
+        pedido.rt_estado || "no_requerido",
+      rt_enviando_desde:
+        pedido.rt_enviando_desde || null,
+      rt_puede_marcar_incerto:
+        !!(
+          permisoRt &&
+          Number(permisoRt.puede) === 1
+        )
     });
   });
 
@@ -2042,7 +2074,11 @@ module.exports = function operativaSaasRoutes(db) {
 
       if (
         mensaje ===
-        "La riconciliazione richiede stato enviando"
+          "La riconciliazione richiede stato enviando" ||
+        mensaje ===
+          "Timestamp RT enviando non disponibile o non valido" ||
+        mensaje ===
+          "Invio RT ancora troppo recente per la riconciliazione manuale"
       ) {
         return res.status(409).json({
           ok: false,
