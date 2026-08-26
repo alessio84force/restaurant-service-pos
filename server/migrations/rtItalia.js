@@ -80,6 +80,10 @@ async function prepararRtItalia(db) {
       {
         nombre: "iva",
         definicion: "REAL"
+      },
+      {
+        nombre: "nombre_producto",
+        definicion: "TEXT"
       }
     ]
   );

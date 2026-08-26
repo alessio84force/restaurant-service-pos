@@ -108,7 +108,11 @@ async function construirDocumentoRt(
     `SELECT
        pl.id AS linea_id,
        pl.producto_id,
-       COALESCE(pr.nombre, '') AS nombre,
+       COALESCE(
+         NULLIF(TRIM(pl.nombre_producto),''),
+         pr.nombre,
+         ''
+       ) AS nombre,
        pl.cantidad,
        pl.precio,
        pl.iva

@@ -1338,6 +1338,7 @@ module.exports = function operativaSaasRoutes(db) {
       db,
       `SELECT
          p.id,
+         p.nombre,
          p.precio,
          p.iva AS iva_producto,
          c.iva AS iva_default,
@@ -1358,6 +1359,16 @@ module.exports = function operativaSaasRoutes(db) {
         error: "Producto no encontrado para este restaurante"
       });
     }
+
+    const nombreProducto =
+      String(
+        producto.nombre || ""
+      ).trim();
+
+    const precioProducto =
+      Number(
+        producto.precio || 0
+      );
 
     const ivaEfectiva =
       producto.iva_efectiva == null
@@ -1397,9 +1408,18 @@ module.exports = function operativaSaasRoutes(db) {
          AND (nota IS NULL OR TRIM(nota)='')
          AND iva IS NOT NULL
          AND ABS(iva - ?) < 0.000001
+         AND ABS(precio - ?) < 0.000001
+         AND nombre_producto=?
          ORDER BY id DESC
          LIMIT 1`,
-        [pedido.id, productoId, restauranteId, ivaEfectiva]
+        [
+          pedido.id,
+          productoId,
+          restauranteId,
+          ivaEfectiva,
+          precioProducto,
+          nombreProducto
+        ]
       );
 
     if (lineaExistente) {
@@ -1412,16 +1432,26 @@ module.exports = function operativaSaasRoutes(db) {
       await run(
         db,
         `INSERT INTO pedido_lineas
-         (pedido_id, producto_id, cantidad, precio, nota, restaurante_id, iva)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+         (
+           pedido_id,
+           producto_id,
+           cantidad,
+           precio,
+           nota,
+           restaurante_id,
+           iva,
+           nombre_producto
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           pedido.id,
           productoId,
           cantidad,
-          Number(producto.precio || 0),
+          precioProducto,
           nota,
           restauranteId,
-          ivaEfectiva
+          ivaEfectiva,
+          nombreProducto
         ]
       );
     }
