@@ -1,5 +1,7 @@
 let mesaSeleccionada = null;
 
+window.rolUsuarioActualV2 = "";
+
 document.addEventListener("DOMContentLoaded", async ()=>{
 
     try{
@@ -164,6 +166,8 @@ async function cargarUsuarioTopbarV2(){
         }
 
         const rol = String(usuario.rol || "").toLowerCase();
+
+        window.rolUsuarioActualV2 = rol;
         const puedeConfigurar = rol === "admin" || rol === "gerente";
 
         contenedor.innerHTML = `

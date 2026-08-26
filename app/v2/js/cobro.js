@@ -61,7 +61,17 @@ function textosCobroV2(){
                 "El navegador ha bloqueado la ventana del ticket final. Permite las ventanas emergentes para este sitio.",
             cerrarVentanaReintentar:
                 "Cierra esta ventana e inténtalo de nuevo.",
-            cerrar: "Cerrar"
+            cerrar: "Cerrar",
+            rtError: "La fiscalización RT no se completó. Es necesario reintentarlo antes de cerrar la mesa.",
+            rtReintentar: "Reintentar fiscalización RT",
+            rtEnCurso: "Fiscalización RT en curso. No repita la operación.",
+            rtVerificaDisponible: "La operación lleva más de 120 segundos. Un administrador puede iniciar una verificación manual.",
+            rtAvviaVerifica: "Iniciar verificación manual",
+            rtNotaVerificaPrompt: "Introduzca una nota sobre la verificación realizada:",
+            rtRevisionManual: "El resultado de la fiscalización RT es incierto. Es necesaria una verificación manual antes de continuar.",
+            rtDocumentoEmesso: "Confirmar documento RT emitido",
+            rtDocumentoNoEmesso: "Confirmar que el documento RT NO fue emitido",
+            rtDocumentoIdPrompt: "Introduzca el identificador del documento RT emitido:"
         },
 
         it: {
@@ -114,7 +124,17 @@ function textosCobroV2(){
                 "Il browser ha bloccato la finestra del ticket finale. Consenti le finestre popup per questo sito.",
             cerrarVentanaReintentar:
                 "Chiudi questa finestra e riprova.",
-            cerrar: "Chiudi"
+            cerrar: "Chiudi",
+            rtError: "La fiscalizzazione RT non è stata completata. È necessario riprovare prima di chiudere il tavolo.",
+            rtReintentar: "Riprova fiscalizzazione RT",
+            rtEnCurso: "Fiscalizzazione RT in corso. Non ripetere l'operazione.",
+            rtVerificaDisponible: "L'operazione è in corso da oltre 120 secondi. Un amministratore può avviare una verifica manuale.",
+            rtAvviaVerifica: "Avvia verifica manuale",
+            rtNotaVerificaPrompt: "Inserisci una nota sulla verifica effettuata:",
+            rtRevisionManual: "L'esito della fiscalizzazione RT è incerto. È necessaria una verifica manuale prima di continuare.",
+            rtDocumentoEmesso: "Conferma documento RT emesso",
+            rtDocumentoNoEmesso: "Conferma che il documento RT NON è stato emesso",
+            rtDocumentoIdPrompt: "Inserisci l'identificativo del documento RT emesso:"
         },
 
         en: {
@@ -167,7 +187,17 @@ function textosCobroV2(){
                 "The browser blocked the final receipt window. Allow pop-up windows for this site.",
             cerrarVentanaReintentar:
                 "Close this window and try again.",
-            cerrar: "Close"
+            cerrar: "Close",
+            rtError: "RT fiscalization was not completed. It must be retried before the table can be closed.",
+            rtReintentar: "Retry RT fiscalization",
+            rtEnCurso: "RT fiscalization is in progress. Do not repeat the operation.",
+            rtVerificaDisponible: "The operation has been running for more than 120 seconds. An administrator can start manual verification.",
+            rtAvviaVerifica: "Start manual verification",
+            rtNotaVerificaPrompt: "Enter a note about the verification performed:",
+            rtRevisionManual: "The RT fiscalization result is uncertain. Manual verification is required before continuing.",
+            rtDocumentoEmesso: "Confirm RT document issued",
+            rtDocumentoNoEmesso: "Confirm RT document was NOT issued",
+            rtDocumentoIdPrompt: "Enter the identifier of the issued RT document:"
         },
 
         "pt-br": {
@@ -220,7 +250,17 @@ function textosCobroV2(){
                 "O navegador bloqueou a janela do comprovante final. Permita janelas pop-up para este site.",
             cerrarVentanaReintentar:
                 "Feche esta janela e tente novamente.",
-            cerrar: "Fechar"
+            cerrar: "Fechar",
+            rtError: "A fiscalização RT não foi concluída. É necessário tentar novamente antes de fechar a mesa.",
+            rtReintentar: "Tentar novamente a fiscalização RT",
+            rtEnCurso: "Fiscalização RT em andamento. Não repita a operação.",
+            rtVerificaDisponible: "A operação está em andamento há mais de 120 segundos. Um administrador pode iniciar uma verificação manual.",
+            rtAvviaVerifica: "Iniciar verificação manual",
+            rtNotaVerificaPrompt: "Informe uma nota sobre a verificação realizada:",
+            rtRevisionManual: "O resultado da fiscalização RT é incerto. É necessária uma verificação manual antes de continuar.",
+            rtDocumentoEmesso: "Confirmar documento RT emitido",
+            rtDocumentoNoEmesso: "Confirmar que o documento RT NÃO foi emitido",
+            rtDocumentoIdPrompt: "Informe o identificador do documento RT emitido:"
         }
     };
 
@@ -350,6 +390,9 @@ async function abrirCobro(pedidoId, totalPedido){
         pagos: [],
         pagado: 0,
         pendiente: redondearImporteCobroV2(totalPedido),
+        rtEstado: "no_requerido",
+        rtEnviandoDesde: null,
+        rtPuedeMarcarIncerto: false,
         metodo: "tarjeta",
         importeActual: null,
         mensaje: "",
@@ -363,6 +406,40 @@ async function abrirCobro(pedidoId, totalPedido){
 
     await cargarDatosCobroV2();
 }
+
+function esAdminGerenteCobroV2(){
+
+    const rol =
+        String(
+            window.rolUsuarioActualV2 ||
+            ""
+        ).toLowerCase();
+
+    return (
+        rol === "admin" ||
+        rol === "gerente"
+    );
+}
+
+
+function puedeCerrarMesaRtCobroV2(){
+
+    if(!cobroActualV2){
+        return false;
+    }
+
+    const estadoRt =
+        String(
+            cobroActualV2.rtEstado ||
+            "no_requerido"
+        ).toLowerCase();
+
+    return (
+        estadoRt === "no_requerido" ||
+        estadoRt === "emitido"
+    );
+}
+
 
 function renderCargandoCobroV2(){
 
@@ -427,12 +504,35 @@ async function cargarDatosCobroV2(){
                 );
         }
 
+        cobroActualV2.rtEstado =
+            pendienteData &&
+            pendienteData.rt_estado
+                ? String(
+                    pendienteData.rt_estado
+                )
+                : "no_requerido";
+
+        cobroActualV2.rtEnviandoDesde =
+            pendienteData &&
+            pendienteData.rt_enviando_desde
+                ? String(
+                    pendienteData.rt_enviando_desde
+                )
+                : null;
+
+        cobroActualV2.rtPuedeMarcarIncerto =
+            !!(
+                pendienteData &&
+                pendienteData.rt_puede_marcar_incerto === true
+            );
+
         renderCobroV2();
 
         if(
             cobroActualV2.pendiente <= 0 &&
             !cobroActualV2.cerrando &&
-            !cobroActualV2.cerrado
+            !cobroActualV2.cerrado &&
+            puedeCerrarMesaRtCobroV2()
         ){
             await cerrarMesaDesdeCobroV2();
         }
@@ -575,6 +675,99 @@ function renderCobroV2(){
             `
             : "";
 
+    let rtHtml = "";
+
+    if(
+        pendienteVisible <= 0 &&
+        cobroActualV2.cerrado !== true
+    ){
+
+        if(cobroActualV2.rtEstado === "error"){
+
+            rtHtml = `
+                <div class="cobro-mensaje error">
+                    ${textos.rtError}
+                </div>
+
+                ${
+                    esAdminGerenteCobroV2()
+                        ? `
+                            <button
+                                class="cobro-btn-principal"
+                                onclick="reintentarFiscalizacionRtCobroV2()"
+                                ${cobroActualV2.procesando ? "disabled" : ""}
+                            >
+                                ${textos.rtReintentar}
+                            </button>
+                        `
+                        : ""
+                }
+            `;
+
+        }else if(
+            cobroActualV2.rtEstado === "enviando"
+        ){
+
+            rtHtml = `
+                <div class="cobro-mensaje info">
+                    ${textos.rtEnCurso}
+                </div>
+
+                ${
+                    cobroActualV2.rtPuedeMarcarIncerto === true &&
+                    esAdminGerenteCobroV2()
+                        ? `
+                            <div class="cobro-mensaje info">
+                                ${textos.rtVerificaDisponible}
+                            </div>
+
+                            <button
+                                class="cobro-btn-secundario"
+                                onclick="marcarRtIncertoCobroV2()"
+                                ${cobroActualV2.procesando ? "disabled" : ""}
+                            >
+                                ${textos.rtAvviaVerifica}
+                            </button>
+                        `
+                        : ""
+                }
+            `;
+
+        }else if(
+            cobroActualV2.rtEstado === "incerto"
+        ){
+
+            rtHtml = `
+                <div class="cobro-mensaje error">
+                    ${textos.rtRevisionManual}
+                </div>
+
+                ${
+                    esAdminGerenteCobroV2()
+                        ? `
+                            <button
+                                class="cobro-btn-principal"
+                                onclick="confirmarRtEmitidoCobroV2()"
+                                ${cobroActualV2.procesando ? "disabled" : ""}
+                            >
+                                ${textos.rtDocumentoEmesso}
+                            </button>
+
+                            <button
+                                class="cobro-btn-secundario"
+                                onclick="confirmarRtNoEmitidoCobroV2()"
+                                ${cobroActualV2.procesando ? "disabled" : ""}
+                            >
+                                ${textos.rtDocumentoNoEmesso}
+                            </button>
+                        `
+                        : ""
+                }
+            `;
+
+        }
+    }
+
     panel.innerHTML = `
         <div class="cobro-panel">
 
@@ -635,6 +828,7 @@ function renderCobroV2(){
             ${mensajeHtml}
             ${avisoPendienteNegativo}
             ${textoCierre}
+            ${rtHtml}
 
             <div class="cobro-bloque">
                 <h3>${textos.metodoPago}</h3>
@@ -829,7 +1023,11 @@ async function confirmarPagoCobroV2(){
 
         renderCobroV2();
 
-        await cerrarMesaDesdeCobroV2();
+        if(
+            puedeCerrarMesaRtCobroV2()
+        ){
+            await cerrarMesaDesdeCobroV2();
+        }
 
         return;
     }
@@ -905,6 +1103,415 @@ async function confirmarPagoCobroV2(){
         renderCobroV2();
     }
 }
+
+async function confirmarRtNoEmitidoCobroV2(){
+
+    if(
+        !cobroActualV2 ||
+        !cobroActualV2.pedidoId ||
+        cobroActualV2.procesando ||
+        !esAdminGerenteCobroV2()
+    ){
+        return;
+    }
+
+    if(
+        cobroActualV2.pendiente > 0.005 ||
+        cobroActualV2.rtEstado !== "incerto"
+    ){
+        return;
+    }
+
+    const textos =
+        textosCobroV2();
+
+    const conferma =
+        window.confirm(
+            textos.rtDocumentoNoEmesso + "?"
+        );
+
+    if(!conferma){
+        return;
+    }
+
+    const nota =
+        String(
+            window.prompt(
+                textos.rtNotaVerificaPrompt
+            ) || ""
+        ).trim();
+
+    if(!nota){
+        return;
+    }
+
+    cobroActualV2.procesando = true;
+    cobroActualV2.mensaje = "";
+    cobroActualV2.tipoMensaje = "";
+
+    renderCobroV2();
+
+    try{
+
+        const risposta =
+            await apiPost(
+                "/pedido/" +
+                cobroActualV2.pedidoId +
+                "/rt/confirmar-no-emitido",
+                {
+                    nota: nota
+                }
+            );
+
+        cobroActualV2.procesando = false;
+
+        if(
+            risposta &&
+            risposta.estado
+        ){
+            cobroActualV2.rtEstado =
+                String(
+                    risposta.estado
+                );
+        }
+
+        cobroActualV2.cerrado = false;
+        cobroActualV2.rtEnviandoDesde = null;
+        cobroActualV2.rtPuedeMarcarIncerto = false;
+
+        await cargarDatosCobroV2();
+
+    }catch(error){
+
+        console.error(
+            "Error confirmando documento RT non emesso:",
+            error
+        );
+
+        cobroActualV2.procesando = false;
+
+        await cargarDatosCobroV2();
+    }
+}
+
+
+async function confirmarRtEmitidoCobroV2(){
+
+    if(
+        !cobroActualV2 ||
+        !cobroActualV2.pedidoId ||
+        cobroActualV2.procesando ||
+        !esAdminGerenteCobroV2()
+    ){
+        return;
+    }
+
+    if(
+        cobroActualV2.pendiente > 0.005 ||
+        cobroActualV2.rtEstado !== "incerto"
+    ){
+        return;
+    }
+
+    const textos =
+        textosCobroV2();
+
+    const conferma =
+        window.confirm(
+            textos.rtDocumentoEmesso + "?"
+        );
+
+    if(!conferma){
+        return;
+    }
+
+    const documentoId =
+        String(
+            window.prompt(
+                textos.rtDocumentoIdPrompt
+            ) || ""
+        ).trim();
+
+    if(!documentoId){
+        return;
+    }
+
+    const nota =
+        String(
+            window.prompt(
+                textos.rtNotaVerificaPrompt
+            ) || ""
+        ).trim();
+
+    if(!nota){
+        return;
+    }
+
+    cobroActualV2.procesando = true;
+    cobroActualV2.mensaje = "";
+    cobroActualV2.tipoMensaje = "";
+
+    renderCobroV2();
+
+    try{
+
+        const respuesta =
+            await apiPost(
+                "/pedido/" +
+                cobroActualV2.pedidoId +
+                "/rt/confirmar-emitido",
+                {
+                    documentoId: documentoId,
+                    nota: nota
+                }
+            );
+
+        cobroActualV2.procesando = false;
+
+        if(
+            respuesta &&
+            respuesta.cerrado === true
+        ){
+            await finalizarCierreRtCobroV2();
+            return;
+        }
+
+        await cargarDatosCobroV2();
+
+    }catch(error){
+
+        console.error(
+            "Error confirmando documento RT emesso:",
+            error
+        );
+
+        cobroActualV2.procesando = false;
+
+        await cargarDatosCobroV2();
+    }
+}
+
+
+async function marcarRtIncertoCobroV2(){
+
+    if(
+        !cobroActualV2 ||
+        !cobroActualV2.pedidoId ||
+        cobroActualV2.procesando ||
+        !esAdminGerenteCobroV2()
+    ){
+        return;
+    }
+
+    if(
+        cobroActualV2.pendiente > 0.005 ||
+        cobroActualV2.rtEstado !== "enviando" ||
+        cobroActualV2.rtPuedeMarcarIncerto !== true
+    ){
+        return;
+    }
+
+    const textos =
+        textosCobroV2();
+
+    const conferma =
+        window.confirm(
+            textos.rtVerificaDisponible
+        );
+
+    if(!conferma){
+        return;
+    }
+
+    const nota =
+        String(
+            window.prompt(
+                textos.rtNotaVerificaPrompt
+            ) || ""
+        ).trim();
+
+    if(!nota){
+        return;
+    }
+
+    cobroActualV2.procesando = true;
+    cobroActualV2.mensaje = "";
+    cobroActualV2.tipoMensaje = "";
+
+    renderCobroV2();
+
+    try{
+
+        const respuesta =
+            await apiPost(
+                "/pedido/" +
+                cobroActualV2.pedidoId +
+                "/rt/marcar-incerto",
+                {
+                    nota: nota
+                }
+            );
+
+        cobroActualV2.procesando = false;
+
+        if(
+            respuesta &&
+            respuesta.estado
+        ){
+            cobroActualV2.rtEstado =
+                String(
+                    respuesta.estado
+                );
+        }
+
+        cobroActualV2.rtEnviandoDesde =
+            null;
+
+        cobroActualV2.rtPuedeMarcarIncerto =
+            false;
+
+        await cargarDatosCobroV2();
+
+    }catch(error){
+
+        console.error(
+            "Error marcando RT incerto:",
+            error
+        );
+
+        cobroActualV2.procesando = false;
+
+        await cargarDatosCobroV2();
+    }
+}
+
+
+async function reintentarFiscalizacionRtCobroV2(){
+
+    if(
+        !cobroActualV2 ||
+        !cobroActualV2.pedidoId ||
+        cobroActualV2.procesando ||
+        !esAdminGerenteCobroV2()
+    ){
+        return;
+    }
+
+    if(
+        cobroActualV2.pendiente > 0.005 ||
+        cobroActualV2.rtEstado !== "error"
+    ){
+        return;
+    }
+
+    cobroActualV2.procesando = true;
+    cobroActualV2.mensaje = "";
+    cobroActualV2.tipoMensaje = "";
+
+    renderCobroV2();
+
+    try{
+
+        const respuesta =
+            await apiPost(
+                "/pedido/" +
+                cobroActualV2.pedidoId +
+                "/rt/reintentar",
+                {}
+            );
+
+        cobroActualV2.procesando = false;
+
+        if(
+            respuesta &&
+            respuesta.cerrado === true
+        ){
+            await finalizarCierreRtCobroV2();
+            return;
+        }
+
+        if(
+            respuesta &&
+            respuesta.rt &&
+            respuesta.rt.estado
+        ){
+            cobroActualV2.rtEstado =
+                String(
+                    respuesta.rt.estado
+                );
+        }
+
+        await cargarDatosCobroV2();
+
+    }catch(error){
+
+        console.error(
+            "Error reintentando fiscalización RT:",
+            error
+        );
+
+        cobroActualV2.procesando = false;
+
+        await cargarDatosCobroV2();
+    }
+}
+
+
+async function finalizarCierreRtCobroV2(){
+
+    if(
+        !cobroActualV2 ||
+        !cobroActualV2.pedidoId
+    ){
+        return;
+    }
+
+    const mesaCerrada =
+        cobroActualV2.mesa;
+
+    const pedidoCerrado =
+        cobroActualV2.pedidoId;
+
+    const totalCerrado =
+        cobroActualV2.total;
+
+    const pagadoCerrado =
+        obtenerTotalPagadoCobroV2();
+
+    cobroActualV2.rtEstado =
+        "emitido";
+
+    cobroActualV2.pendiente =
+        0;
+
+    cobroActualV2.cerrado =
+        true;
+
+    cobroActualV2.cerrando =
+        false;
+
+    cobroActualV2.procesando =
+        false;
+
+    cobroActualV2.rtEnviandoDesde =
+        null;
+
+    cobroActualV2.rtPuedeMarcarIncerto =
+        false;
+
+    mesaSeleccionada =
+        null;
+
+    await cargarMesasV2();
+
+    renderMesaCerradaCobroV2(
+        mesaCerrada,
+        pedidoCerrado,
+        totalCerrado,
+        pagadoCerrado
+    );
+}
+
 
 async function cerrarMesaDesdeCobroV2(){
 
