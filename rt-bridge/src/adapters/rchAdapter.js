@@ -14,6 +14,10 @@ const {
 } = require("./rchResponse");
 
 const {
+  interpretaConfigurazione
+} = require("./rchConfig");
+
+const {
   inviaXml
 } = require("../transport/rchHttp");
 
@@ -68,8 +72,33 @@ function creaAdapterRch(configurazione) {
   }
 
   async function leggiConfigurazione() {
-    return eseguiRichiestaSingola(
-      richiestaConfigurazione()
+    const risultato =
+      await eseguiRichiestaSingola(
+        richiestaConfigurazione()
+      );
+
+    if (!risultato.stato.ok) {
+      return Object.assign(
+        {},
+        risultato,
+        {
+          configurazione: null
+        }
+      );
+    }
+
+    const configurazioneRch =
+      interpretaConfigurazione(
+        risultato.xml_risposta
+      );
+
+    return Object.assign(
+      {},
+      risultato,
+      {
+        configurazione:
+          configurazioneRch
+      }
     );
   }
 
