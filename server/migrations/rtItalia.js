@@ -174,6 +174,28 @@ async function prepararRtItalia(db) {
     []
   );
 
+  await run(
+    db,
+    `CREATE TABLE IF NOT EXISTS rt_mapeo_pagos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      restaurante_id INTEGER NOT NULL,
+      fabricante TEXT NOT NULL,
+      metodo_pos TEXT NOT NULL,
+      metodo_rt_id TEXT NOT NULL,
+      metodo_rt_nombre TEXT,
+      actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(restaurante_id, fabricante, metodo_pos)
+    )`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_rt_mapeo_pagos_restaurante
+     ON rt_mapeo_pagos(restaurante_id, fabricante)`,
+    []
+  );
+
   console.log(
     "[RT Italia] Schema RT preparado correctamente"
   );
