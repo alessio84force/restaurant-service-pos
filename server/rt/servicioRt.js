@@ -2,6 +2,10 @@ const {
   construirDocumentoRt
 } = require("./documentoRt");
 
+const {
+  cargarMapeoPagosRt
+} = require("./mapeoPagosRt");
+
 const simulacion =
   require("./adapters/simulacion");
 
@@ -1048,6 +1052,58 @@ async function emitirPedidoRt(
     };
   }
 
+  const modoMappatura =
+    String(
+      configuracion.rt_modo ||
+      "simulacion"
+    )
+      .trim()
+      .toLowerCase();
+
+  let mapeoPagos = null;
+
+  if (modoMappatura !== "simulacion") {
+    try {
+      mapeoPagos =
+        await cargarMapeoPagosRt(
+          db,
+          restauranteId,
+          configuracion.rt_fabricante,
+          documento.pagos
+        );
+    } catch (err) {
+      const mensaje =
+        await guardarError(
+          db,
+          restauranteId,
+          pedidoId,
+          idempotencyKey,
+          err
+        );
+
+      return {
+        ok: false,
+        requerido: true,
+        estado: "error",
+        error: mensaje,
+        idempotency_key:
+          idempotencyKey
+      };
+    }
+  }
+
+  const contextoAdapter = {
+    modo: modoMappatura,
+    fabricante:
+      mapeoPagos
+        ? mapeoPagos.fabricante
+        : null,
+    mapeo_pagos:
+      mapeoPagos
+        ? mapeoPagos.metodi
+        : {}
+  };
+
   const claim = await run(
     db,
     `UPDATE pedidos
@@ -1103,10 +1159,7 @@ async function emitirPedidoRt(
     adaptadoresDisponibles(opciones);
 
   const modo =
-    String(
-      configuracion.rt_modo ||
-      "simulacion"
-    ).trim();
+    modoMappatura;
 
   const adapter =
     adaptadores[modo];
@@ -1143,7 +1196,10 @@ async function emitirPedidoRt(
     adapterChiamato = true;
 
     const risposta =
-      await adapter.emitir(documento);
+      await adapter.emitir(
+        documento,
+        contextoAdapter
+      );
 
     if (
       !risposta ||
