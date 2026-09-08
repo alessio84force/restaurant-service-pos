@@ -114,6 +114,80 @@ function interpretaRisposta(xml) {
   return risultato;
 }
 
+function verificaDocumentoCompletato(
+  risultato,
+  numeroComandi
+) {
+  if (
+    !risultato ||
+    typeof risultato !== "object"
+  ) {
+    throw new Error(
+      "Esito documento RCH mancante"
+    );
+  }
+
+  if (
+    !Number.isInteger(numeroComandi) ||
+    numeroComandi <= 0
+  ) {
+    throw new Error(
+      "Numero comandi RCH non valido"
+    );
+  }
+
+  if (risultato.errorCode !== 0) {
+    throw new Error(
+      "Errore RCH durante emissione: errorCode " +
+      risultato.errorCode
+    );
+  }
+
+  if (risultato.printerError !== 0) {
+    throw new Error(
+      "Errore stampante RCH durante emissione"
+    );
+  }
+
+  if (risultato.paperEnd !== 0) {
+    throw new Error(
+      "Carta RCH terminata durante emissione"
+    );
+  }
+
+  if (risultato.coverOpen !== 0) {
+    throw new Error(
+      "Coperchio RCH aperto durante emissione"
+    );
+  }
+
+  if (risultato.lastCmd !== numeroComandi) {
+    throw new Error(
+      "Documento RCH non completato: lastCmd " +
+      risultato.lastCmd +
+      " di " +
+      numeroComandi
+    );
+  }
+
+  if (risultato.idleState !== 0) {
+    throw new Error(
+      "Documento RCH non chiuso: idleState " +
+      risultato.idleState
+    );
+  }
+
+  if (risultato.busy !== 0) {
+    throw new Error(
+      "RCH occupato dopo emissione: busy " +
+      risultato.busy
+    );
+  }
+
+  return true;
+}
+
 module.exports = {
-  interpretaRisposta
+  interpretaRisposta,
+  verificaDocumentoCompletato
 };
