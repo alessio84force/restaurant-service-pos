@@ -134,54 +134,76 @@ function creaAdapterRch(configurazione) {
     documento,
     contextoAdapter
   ) {
-    const risultatoConfigurazione =
-      await leggiConfigurazione();
+    let invioFiscaleAvviato = false;
 
-    if (
-      !risultatoConfigurazione.stato.ok ||
-      !risultatoConfigurazione.configurazione
-    ) {
-      throw new Error(
-        "Configurazione RCH non disponibile"
+    try {
+      const risultatoConfigurazione =
+        await leggiConfigurazione();
+
+      if (
+        !risultatoConfigurazione.stato.ok ||
+        !risultatoConfigurazione.configurazione
+      ) {
+        throw new Error(
+          "Configurazione RCH non disponibile"
+        );
+      }
+
+      const preparato =
+        preparaDocumento(
+          documento,
+          contextoAdapter,
+          risultatoConfigurazione.configurazione
+        );
+
+      /*
+       * Da questo punto il documento fiscale
+       * puo essere arrivato al registratore.
+       * Qualunque errore successivo deve essere
+       * trattato come esito potenzialmente incerto.
+       */
+      invioFiscaleAvviato = true;
+
+      const rispostaHttp =
+        await inviaXml(
+          configurazione,
+          preparato.xml
+        );
+
+      const stato =
+        interpretaRisposta(
+          rispostaHttp.body
+        );
+
+      verificaDocumentoCompletato(
+        stato,
+        preparato.comandi.length
       );
+
+      return {
+        ok: true,
+        fabricante: "RCH",
+        http_status:
+          rispostaHttp.statusCode,
+        stato: stato,
+        comandi:
+          preparato.comandi,
+        xml_richiesta:
+          preparato.xml,
+        xml_risposta:
+          rispostaHttp.body
+      };
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object"
+      ) {
+        err.rt_invio_avviato =
+          invioFiscaleAvviato;
+      }
+
+      throw err;
     }
-
-    const preparato =
-      preparaDocumento(
-        documento,
-        contextoAdapter,
-        risultatoConfigurazione.configurazione
-      );
-
-    const rispostaHttp =
-      await inviaXml(
-        configurazione,
-        preparato.xml
-      );
-
-    const stato =
-      interpretaRisposta(
-        rispostaHttp.body
-      );
-
-    verificaDocumentoCompletato(
-      stato,
-      preparato.comandi.length
-    );
-
-    return {
-      ok: true,
-      fabricante: "RCH",
-      http_status:
-        rispostaHttp.statusCode,
-      stato: stato,
-      comandi:
-        preparato.comandi,
-      xml_richiesta:
-        preparato.xml,
-      xml_risposta:
-        rispostaHttp.body
-    };
   }
 
   return Object.freeze({
