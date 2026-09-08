@@ -153,6 +153,10 @@ app.use('/app/v2', (req, res, next) => {
 
 app.use('/app', express.static(path.join(__dirname, '..', 'app')));
 
+app.get('/favicon.ico', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'app', 'assets', 'favicon.ico'));
+});
+
 app.use(cors({ origin: true, credentials: true }));
 
 
