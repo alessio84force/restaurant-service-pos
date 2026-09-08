@@ -18,6 +18,10 @@ const {
 } = require("./rchConfig");
 
 const {
+  creaComandiDocumentoRch
+} = require("./rchDocumento");
+
+const {
   inviaXml
 } = require("../transport/rchHttp");
 
@@ -102,11 +106,35 @@ function creaAdapterRch(configurazione) {
     );
   }
 
+  function preparaDocumento(
+    documento,
+    contextoAdapter,
+    configurazioneRch
+  ) {
+    const comandi =
+      creaComandiDocumentoRch(
+        documento,
+        contextoAdapter,
+        configurazioneRch
+      );
+
+    const xml =
+      creaServiceXml(
+        comandi
+      );
+
+    return {
+      comandi: comandi,
+      xml: xml
+    };
+  }
+
   return Object.freeze({
     nome: "rch",
     fabricante: "RCH",
     leggiStato,
-    leggiConfigurazione
+    leggiConfigurazione,
+    preparaDocumento
   });
 }
 
