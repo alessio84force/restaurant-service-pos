@@ -1304,7 +1304,15 @@ async function emitirPedidoRt(
       return resultadoEmitido(actual);
     }
 
-    if (adapterChiamato) {
+    const invioSicuramenteNonAvviato =
+      err &&
+      typeof err === "object" &&
+      err.rt_invio_avviato === false;
+
+    if (
+      adapterChiamato &&
+      !invioSicuramenteNonAvviato
+    ) {
       const mensaje =
         mensajeError(err);
 
