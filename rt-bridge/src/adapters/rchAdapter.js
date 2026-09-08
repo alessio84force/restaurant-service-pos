@@ -10,7 +10,8 @@ const {
 } = require("./rchCommands");
 
 const {
-  interpretaRisposta
+  interpretaRisposta,
+  verificaDocumentoCompletato
 } = require("./rchResponse");
 
 const {
@@ -129,12 +130,67 @@ function creaAdapterRch(configurazione) {
     };
   }
 
+  async function emitir(
+    documento,
+    contextoAdapter
+  ) {
+    const risultatoConfigurazione =
+      await leggiConfigurazione();
+
+    if (
+      !risultatoConfigurazione.stato.ok ||
+      !risultatoConfigurazione.configurazione
+    ) {
+      throw new Error(
+        "Configurazione RCH non disponibile"
+      );
+    }
+
+    const preparato =
+      preparaDocumento(
+        documento,
+        contextoAdapter,
+        risultatoConfigurazione.configurazione
+      );
+
+    const rispostaHttp =
+      await inviaXml(
+        configurazione,
+        preparato.xml
+      );
+
+    const stato =
+      interpretaRisposta(
+        rispostaHttp.body
+      );
+
+    verificaDocumentoCompletato(
+      stato,
+      preparato.comandi.length
+    );
+
+    return {
+      ok: true,
+      fabricante: "RCH",
+      http_status:
+        rispostaHttp.statusCode,
+      stato: stato,
+      comandi:
+        preparato.comandi,
+      xml_richiesta:
+        preparato.xml,
+      xml_risposta:
+        rispostaHttp.body
+    };
+  }
+
   return Object.freeze({
     nome: "rch",
     fabricante: "RCH",
     leggiStato,
     leggiConfigurazione,
-    preparaDocumento
+    preparaDocumento,
+    emitir
   });
 }
 
