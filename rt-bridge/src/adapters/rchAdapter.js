@@ -180,8 +180,37 @@ function creaAdapterRch(configurazione) {
         preparato.comandi.length
       );
 
+      if (
+        !Number.isInteger(stato.lastZ) ||
+        stato.lastZ < 0
+      ) {
+        throw new Error(
+          "Risposta RCH senza lastZ valido"
+        );
+      }
+
+      if (
+        !Number.isInteger(stato.lastDocF) ||
+        stato.lastDocF <= 0
+      ) {
+        throw new Error(
+          "Risposta RCH senza lastDocF valido"
+        );
+      }
+
+      const numeroChiusura =
+        stato.lastZ + 1;
+
+      const documentoId =
+        String(numeroChiusura)
+          .padStart(4, "0") +
+        "/" +
+        String(stato.lastDocF)
+          .padStart(4, "0");
+
       return {
         ok: true,
+        documento_id: documentoId,
         fabricante: "RCH",
         http_status:
           rispostaHttp.statusCode,
