@@ -338,7 +338,7 @@ module.exports = function rtBridgeApiRoutes(db) {
           `UPDATE rt_bridge_jobs
            SET
              estado=?,
-             risultato_json=?,
+             resultado_json=?,
              ultimo_error=?,
              finalizado_en=CURRENT_TIMESTAMP,
              actualizado_en=CURRENT_TIMESTAMP
