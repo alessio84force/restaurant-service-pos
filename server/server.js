@@ -77,6 +77,7 @@ const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
 const configuracionChicSaasRoutes = require("./routes/configuracionChicSaas");
 const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
+const rtBridgeApiRoutes = require("./routes/rtBridgeApi");
 const { prepararRtItalia } = require("./migrations/rtItalia");
 
 const app = express();
@@ -169,6 +170,7 @@ app.use(express.json({ limit: "10mb" }));
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
 // ===== RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 app.use(function(req, res, next) {
   return zonasSaasRoutes(db)(req, res, next);
@@ -258,6 +260,7 @@ const db = new sqlite3.Database(
   path.join(__dirname, '..', 'database', 'restaurant_service.db')
 );
 
+app.use("/api/rt-bridge", rtBridgeApiRoutes(db));
 app.use(stripeSuscripcionRoutes(db));
 app.use(destinosRoutes(db));
 app.use(middlewareSuscripcion(db));
