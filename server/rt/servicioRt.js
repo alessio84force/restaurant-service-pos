@@ -1104,6 +1104,140 @@ async function emitirPedidoRt(
         : {}
   };
 
+  if (modoMappatura !== "simulacion") {
+    const payloadBridge = JSON.stringify({
+      version: 1,
+      documento: documento,
+      contexto_adapter: contextoAdapter
+    });
+
+    /*
+     * Un retry e consentito soltanto per un job
+     * terminato in errore prima dell'invio fiscale.
+     * Un job incerto non viene mai rimesso
+     * automaticamente in coda.
+     */
+    await run(
+      db,
+      `UPDATE rt_bridge_jobs
+       SET
+         estado='pendiente',
+         payload_json=?,
+         resultado_json=NULL,
+         ultimo_error=NULL,
+         claim_token=NULL,
+         reclamado_en=NULL,
+         actualizado_en=CURRENT_TIMESTAMP,
+         finalizado_en=NULL
+       WHERE restaurante_id=?
+         AND idempotency_key=?
+         AND estado='error'`,
+      [
+        payloadBridge,
+        restauranteId,
+        idempotencyKey
+      ]
+    );
+
+    /*
+     * INSERT OR IGNORE mantiene l'idempotenza:
+     * lo stesso pedido non puo generare
+     * due lavori fiscali distinti.
+     */
+    await run(
+      db,
+      `INSERT OR IGNORE INTO rt_bridge_jobs (
+         restaurante_id,
+         pedido_id,
+         idempotency_key,
+         estado,
+         payload_json
+       )
+       VALUES (?, ?, ?, 'pendiente', ?)`,
+      [
+        restauranteId,
+        pedidoId,
+        idempotencyKey,
+        payloadBridge
+      ]
+    );
+
+    /*
+     * Il pedido passa a "enviando" soltanto
+     * se esiste realmente un job ancora
+     * pendente o gia reclamato dal bridge.
+     */
+    const claimBridge = await run(
+      db,
+      `UPDATE pedidos
+       SET
+         rt_estado='enviando',
+         rt_ultimo_error=NULL,
+         rt_enviando_desde=CURRENT_TIMESTAMP
+       WHERE id=?
+         AND COALESCE(restaurante_id,1)=?
+         AND rt_idempotency_key=?
+         AND COALESCE(rt_estado,'no_requerido')
+             IN ('pendiente','error')
+         AND EXISTS (
+           SELECT 1
+           FROM rt_bridge_jobs
+           WHERE restaurante_id=?
+             AND idempotency_key=?
+             AND estado IN ('pendiente','reclamado')
+         )`,
+      [
+        pedidoId,
+        restauranteId,
+        idempotencyKey,
+        restauranteId,
+        idempotencyKey
+      ]
+    );
+
+    if (claimBridge.changes !== 1) {
+      const actual =
+        await cargarPedidoRt(
+          db,
+          restauranteId,
+          pedidoId
+        );
+
+      if (
+        actual &&
+        actual.rt_estado === "emitido"
+      ) {
+        return resultadoEmitido(actual);
+      }
+
+      return {
+        ok: false,
+        requerido: true,
+        en_proceso:
+          actual &&
+          actual.rt_estado === "enviando",
+        estado:
+          actual
+            ? actual.rt_estado
+            : "desconocido",
+        idempotency_key:
+          actual
+            ? actual.rt_idempotency_key
+            : idempotencyKey
+      };
+    }
+
+    return {
+      ok: true,
+      requerido: true,
+      en_proceso: true,
+      en_cola: true,
+      estado: "enviando",
+      idempotency_key:
+        idempotencyKey
+    };
+  }
+
   const claim = await run(
     db,
     `UPDATE pedidos

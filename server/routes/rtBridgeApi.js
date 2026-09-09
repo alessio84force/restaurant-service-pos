@@ -310,56 +310,178 @@ module.exports = function rtBridgeApiRoutes(db) {
           });
         }
 
-        const esitoOk =
-          body.ok === true;
-
         const invioAvviato =
           body.invio_fiscale_avviato === true;
 
-        const statoFinale =
-          esitoOk
-            ? "completato"
-            : (
-                invioAvviato
-                  ? "incerto"
-                  : "error"
-              );
+        const documentoId =
+          String(
+            body.documento_id || ""
+          ).trim();
 
-        const errore =
-          esitoOk
-            ? null
-            : String(
-                body.error ||
-                "Errore RT Bridge"
-              );
+        const rispostaOk =
+          body.ok === true;
 
-        await run(
-          db,
-          `UPDATE rt_bridge_jobs
-           SET
-             estado=?,
-             resultado_json=?,
-             ultimo_error=?,
-             finalizado_en=CURRENT_TIMESTAMP,
-             actualizado_en=CURRENT_TIMESTAMP
-           WHERE id=?
-             AND restaurante_id=?
-             AND estado='reclamado'
-             AND claim_token=?`,
-          [
-            statoFinale,
-            JSON.stringify(body),
-            errore,
-            jobId,
-            restauranteId,
-            claimToken
-          ]
-        );
+        let statoFinale;
+        let errore = null;
+
+        if (
+          rispostaOk &&
+          documentoId
+        ) {
+          statoFinale = "completato";
+        } else if (
+          rispostaOk &&
+          !documentoId
+        ) {
+          statoFinale =
+            invioAvviato
+              ? "incerto"
+              : "error";
+
+          errore =
+            "Risposta RT completata senza documento_id";
+        } else {
+          statoFinale =
+            invioAvviato
+              ? "incerto"
+              : "error";
+
+          errore = String(
+            body.error ||
+            "Errore RT Bridge"
+          );
+        }
+
+        const statoPedido =
+          statoFinale === "completato"
+            ? "emitido"
+            : statoFinale;
+
+        await run(db, "BEGIN IMMEDIATE", []);
+
+        try {
+          const aggiornamentoJob = await run(
+            db,
+            `UPDATE rt_bridge_jobs
+             SET
+               estado=?,
+               resultado_json=?,
+               ultimo_error=?,
+               finalizado_en=CURRENT_TIMESTAMP,
+               actualizado_en=CURRENT_TIMESTAMP
+             WHERE id=?
+               AND restaurante_id=?
+               AND estado='reclamado'
+               AND claim_token=?`,
+            [
+              statoFinale,
+              JSON.stringify(body),
+              errore,
+              jobId,
+              restauranteId,
+              claimToken
+            ]
+          );
+
+          if (aggiornamentoJob.changes !== 1) {
+            throw new Error(
+              "Job RT non più reclamabile"
+            );
+          }
+
+          let aggiornamentoPedido;
+
+          if (statoPedido === "emitido") {
+            aggiornamentoPedido = await run(
+              db,
+              `UPDATE pedidos
+               SET
+                 rt_estado='emitido',
+                 rt_documento_id=?,
+                 rt_emitido_en=CURRENT_TIMESTAMP,
+                 rt_ultimo_error=NULL,
+                 rt_enviando_desde=NULL
+               WHERE id=?
+                 AND COALESCE(restaurante_id,1)=?
+                 AND rt_idempotency_key=?
+                 AND rt_estado='enviando'`,
+              [
+                documentoId,
+                job.pedido_id,
+                restauranteId,
+                job.idempotency_key
+              ]
+            );
+          } else {
+            aggiornamentoPedido = await run(
+              db,
+              `UPDATE pedidos
+               SET
+                 rt_estado=?,
+                 rt_ultimo_error=?,
+                 rt_enviando_desde=NULL
+               WHERE id=?
+                 AND COALESCE(restaurante_id,1)=?
+                 AND rt_idempotency_key=?
+                 AND rt_estado='enviando'`,
+              [
+                statoPedido,
+                errore,
+                job.pedido_id,
+                restauranteId,
+                job.idempotency_key
+              ]
+            );
+          }
+
+          if (aggiornamentoPedido.changes !== 1) {
+            throw new Error(
+              "Pedido RT non aggiornabile dallo stato enviando"
+            );
+          }
+
+          await run(
+            db,
+            `INSERT INTO rt_eventos (
+               restaurante_id,
+               pedido_id,
+               tipo,
+               estado_anterior,
+               estado_nuevo,
+               documento_id,
+               idempotency_key,
+               nota
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              restauranteId,
+              job.pedido_id,
+              "bridge_resultado",
+              "enviando",
+              statoPedido,
+              documentoId || null,
+              job.idempotency_key,
+              errore
+            ]
+          );
+
+          await run(db, "COMMIT", []);
+        } catch (err) {
+          try {
+            await run(db, "ROLLBACK", []);
+          } catch (_) {
+          }
+
+          throw err;
+        }
 
         res.json({
           ok: true,
           job_id: jobId,
-          estado: statoFinale
+          estado: statoFinale,
+          pedido_estado: statoPedido,
+          documento_id:
+            documentoId || null
         });
       } catch (err) {
         console.error(
