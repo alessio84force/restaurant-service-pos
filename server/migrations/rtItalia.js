@@ -222,12 +222,24 @@ async function prepararRtItalia(db) {
       intentos INTEGER NOT NULL DEFAULT 0,
       claim_token TEXT,
       reclamado_en TEXT,
+      invio_avviato_en TEXT,
       creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       finalizado_en TEXT,
       UNIQUE(restaurante_id, idempotency_key)
     )`,
     []
+  );
+
+  await asegurarColumnasTabla(
+    db,
+    "rt_bridge_jobs",
+    [
+      {
+        nombre: "invio_avviato_en",
+        definicion: "TEXT"
+      }
+    ]
   );
 
   await run(

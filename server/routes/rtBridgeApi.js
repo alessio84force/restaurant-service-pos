@@ -250,6 +250,144 @@ module.exports = function rtBridgeApiRoutes(db) {
   );
 
   router.post(
+    "/jobs/:id/start",
+    autenticaBridge,
+    async function(req, res) {
+      const restauranteId =
+        req.rtBridge.restaurante_id;
+
+      const jobId =
+        Number(req.params.id || 0);
+
+      const body =
+        req.body &&
+        typeof req.body === "object"
+          ? req.body
+          : {};
+
+      const claimToken =
+        String(
+          body.claim_token || ""
+        ).trim();
+
+      if (!jobId || !claimToken) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            "Job o claim_token RT non valido"
+        });
+      }
+
+      try {
+        const job = await get(
+          db,
+          `SELECT
+             id,
+             pedido_id,
+             idempotency_key,
+             estado,
+             claim_token
+           FROM rt_bridge_jobs
+           WHERE id=?
+             AND restaurante_id=?
+           LIMIT 1`,
+          [
+            jobId,
+            restauranteId
+          ]
+        );
+
+        if (!job) {
+          return res.status(404).json({
+            ok: false,
+            error: "Job RT non trovato"
+          });
+        }
+
+        if (
+          String(job.claim_token || "") !==
+            claimToken
+        ) {
+          return res.status(409).json({
+            ok: false,
+            error:
+              "Claim RT non valido"
+          });
+        }
+
+        /*
+         * Endpoint idempotente:
+         * se il bridge ha gia comunicato
+         * l'avvio fiscale, rispondiamo OK.
+         */
+        if (job.estado === "inviando") {
+          return res.json({
+            ok: true,
+            job_id: jobId,
+            estado: "inviando"
+          });
+        }
+
+        if (job.estado !== "reclamado") {
+          return res.status(409).json({
+            ok: false,
+            error:
+              "Job RT non reclamato"
+          });
+        }
+
+        const aggiornamento =
+          await run(
+            db,
+            `UPDATE rt_bridge_jobs
+             SET
+               estado='inviando',
+               invio_avviato_en=COALESCE(invio_avviato_en,CURRENT_TIMESTAMP),
+               actualizado_en=CURRENT_TIMESTAMP
+             WHERE id=?
+               AND restaurante_id=?
+               AND estado IN ('reclamado','inviando')
+               AND claim_token=?`,
+            [
+              jobId,
+              restauranteId,
+              claimToken
+            ]
+          );
+
+        if (
+          aggiornamento.changes !== 1
+        ) {
+          return res.status(409).json({
+            ok: false,
+            error:
+              "Impossibile avviare job RT"
+          });
+        }
+
+        res.json({
+          ok: true,
+          job_id: jobId,
+          estado: "inviando"
+        });
+      } catch (err) {
+        console.error(
+          "[RT Bridge API] Errore avvio fiscale:",
+          err && err.message
+            ? err.message
+            : err
+        );
+
+        res.status(500).json({
+          ok: false,
+          error:
+            "Errore avvio fiscale RT"
+        });
+      }
+    }
+  );
+
+  router.post(
     "/jobs/:id/result",
     autenticaBridge,
     async function(req, res) {
@@ -299,7 +437,10 @@ module.exports = function rtBridgeApiRoutes(db) {
         }
 
         if (
-          job.estado !== "reclamado" ||
+          (
+            job.estado !== "reclamado" &&
+            job.estado !== "inviando"
+          ) ||
           String(job.claim_token || "") !==
             claimToken
         ) {
@@ -310,8 +451,17 @@ module.exports = function rtBridgeApiRoutes(db) {
           });
         }
 
-        const invioAvviato =
+        const invioDichiarato =
           body.invio_fiscale_avviato === true;
+
+        /*
+         * La fonte autorevole sull'avvio fiscale
+         * e lo stato registrato dal SaaS tramite
+         * /jobs/:id/start, non il valore dichiarato
+         * successivamente dal bridge.
+         */
+        const invioRegistrato =
+          job.estado === "inviando";
 
         const documentoId =
           String(
@@ -320,6 +470,20 @@ module.exports = function rtBridgeApiRoutes(db) {
 
         const rispostaOk =
           body.ok === true;
+
+        if (
+          (
+            rispostaOk ||
+            invioDichiarato
+          ) &&
+          !invioRegistrato
+        ) {
+          return res.status(409).json({
+            ok: false,
+            error:
+              "Invio fiscale RT non marcato come avviato"
+          });
+        }
 
         let statoFinale;
         let errore = null;
@@ -334,7 +498,7 @@ module.exports = function rtBridgeApiRoutes(db) {
           !documentoId
         ) {
           statoFinale =
-            invioAvviato
+            invioRegistrato
               ? "incerto"
               : "error";
 
@@ -342,7 +506,7 @@ module.exports = function rtBridgeApiRoutes(db) {
             "Risposta RT completata senza documento_id";
         } else {
           statoFinale =
-            invioAvviato
+            invioRegistrato
               ? "incerto"
               : "error";
 
@@ -371,7 +535,7 @@ module.exports = function rtBridgeApiRoutes(db) {
                actualizado_en=CURRENT_TIMESTAMP
              WHERE id=?
                AND restaurante_id=?
-               AND estado='reclamado'
+               AND estado IN ('reclamado','inviando')
                AND claim_token=?`,
             [
               statoFinale,
