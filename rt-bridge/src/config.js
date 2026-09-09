@@ -68,7 +68,13 @@ function caricaConfigurazione() {
         "RT_POLL_MS",
         "3000"
       )
-    )
+    ),
+
+    workerAttivo:
+      valoreTesto(
+        "RT_WORKER_ATTIVO",
+        "0"
+      ) === "1"
   });
 }
 
