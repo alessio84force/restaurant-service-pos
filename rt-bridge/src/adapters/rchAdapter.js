@@ -162,6 +162,23 @@ function creaAdapterRch(configurazione) {
        * Qualunque errore successivo deve essere
        * trattato come esito potenzialmente incerto.
        */
+      /*
+       * Il callback viene eseguito soltanto
+       * quando tutti i controlli e la preparazione
+       * del documento sono gia completati.
+       *
+       * Il worker lo usera per registrare /start
+       * sul SaaS immediatamente prima del vero
+       * invio fiscale all'RCH.
+       */
+      if (
+        contextoAdapter &&
+        typeof contextoAdapter.primaInvioFiscale ===
+          "function"
+      ) {
+        await contextoAdapter.primaInvioFiscale();
+      }
+
       invioFiscaleAvviato = true;
 
       const rispostaHttp =

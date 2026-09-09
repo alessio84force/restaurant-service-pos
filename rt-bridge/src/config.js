@@ -51,6 +51,23 @@ function caricaConfigurazione() {
     endpoint: valoreTesto(
       "RT_ENDPOINT",
       "/service.cgi"
+    ),
+
+    saasUrl: valoreTesto(
+      "RT_SAAS_URL",
+      ""
+    ),
+
+    bridgeToken: valoreTesto(
+      "RT_BRIDGE_TOKEN",
+      ""
+    ),
+
+    pollMs: Number(
+      valoreTesto(
+        "RT_POLL_MS",
+        "3000"
+      )
     )
   });
 }
