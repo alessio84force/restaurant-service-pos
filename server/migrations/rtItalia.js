@@ -138,6 +138,18 @@ async function prepararRtItalia(db) {
       {
         nombre: "rt_modelo",
         definicion: "TEXT DEFAULT ''"
+      },
+      {
+        nombre: "rt_bridge_token_hash",
+        definicion: "TEXT"
+      },
+      {
+        nombre: "rt_bridge_token_creado_en",
+        definicion: "TEXT"
+      },
+      {
+        nombre: "rt_bridge_ultimo_contatto",
+        definicion: "TEXT"
       }
     ]
   );
@@ -193,6 +205,42 @@ async function prepararRtItalia(db) {
     db,
     `CREATE INDEX IF NOT EXISTS idx_rt_mapeo_pagos_restaurante
      ON rt_mapeo_pagos(restaurante_id, fabricante)`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE TABLE IF NOT EXISTS rt_bridge_jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      restaurante_id INTEGER NOT NULL,
+      pedido_id INTEGER NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'pendiente',
+      payload_json TEXT NOT NULL,
+      resultado_json TEXT,
+      ultimo_error TEXT,
+      intentos INTEGER NOT NULL DEFAULT 0,
+      claim_token TEXT,
+      reclamado_en TEXT,
+      creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      finalizado_en TEXT,
+      UNIQUE(restaurante_id, idempotency_key)
+    )`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_rt_bridge_jobs_estado
+     ON rt_bridge_jobs(restaurante_id, estado, id)`,
+    []
+  );
+
+  await run(
+    db,
+    `CREATE INDEX IF NOT EXISTS idx_rt_bridge_jobs_pedido
+     ON rt_bridge_jobs(restaurante_id, pedido_id)`,
     []
   );
 
