@@ -146,11 +146,28 @@ module.exports = function rtBridgeApiRoutes(db) {
              idempotency_key,
              payload_json,
              intentos,
-             creado_en
+             creado_en,
+             estado
            FROM rt_bridge_jobs
            WHERE restaurante_id=?
-             AND estado='pendiente'
-           ORDER BY id
+             AND (
+               estado='pendiente'
+               OR (
+                 estado='reclamado'
+                 AND invio_avviato_en IS NULL
+                 AND reclamado_en IS NOT NULL
+                 AND reclamado_en <= datetime(
+                   'now',
+                   '-5 minutes'
+                 )
+               )
+             )
+           ORDER BY
+             CASE
+               WHEN estado='pendiente' THEN 0
+               ELSE 1
+             END,
+             id
            LIMIT 1`,
           [restauranteId]
         );
@@ -176,7 +193,18 @@ module.exports = function rtBridgeApiRoutes(db) {
              intentos=intentos+1
            WHERE id=?
              AND restaurante_id=?
-             AND estado='pendiente'`,
+             AND (
+               estado='pendiente'
+               OR (
+                 estado='reclamado'
+                 AND invio_avviato_en IS NULL
+                 AND reclamado_en IS NOT NULL
+                 AND reclamado_en <= datetime(
+                   'now',
+                   '-5 minutes'
+                 )
+               )
+             )`,
           [
             claimToken,
             job.id,
