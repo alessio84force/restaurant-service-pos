@@ -109,6 +109,27 @@ function rispostaConfigurazioneXml() {
 </Service>`;
 }
 
+function rispostaDocumentoXml(numeroComandi) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Service>
+  <Request>
+    <errorCode>0</errorCode>
+    <printerError>0</printerError>
+    <paperEnd>0</paperEnd>
+    <coverOpen>0</coverOpen>
+    <lastCmd>${numeroComandi}</lastCmd>
+    <mode>REG</mode>
+    <idleState>0</idleState>
+    <lastZ>499</lastZ>
+    <lastDocF>2</lastDocF>
+    <lastDocNF>0</lastDocNF>
+    <lastCreditNoteN>0</lastCreditNoteN>
+    <lastInvoiceN>0</lastInvoiceN>
+    <busy>0</busy>
+  </Request>
+</Service>`;
+}
+
 function rispostaErroreXml() {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Service>
@@ -186,12 +207,35 @@ const server = http.createServer(
           xml =
             rispostaConfigurazioneXml();
         } else {
-          console.log(
-            "TIPO: COMANDO NON RICONOSCIUTO"
-          );
+          const numeroComandi =
+            (
+              corpo.match(
+                /<cmd>/gi
+              ) || []
+            ).length;
 
-          xml =
-            rispostaErroreXml();
+          if (numeroComandi > 0) {
+            console.log(
+              "TIPO: DOCUMENTO COMMERCIALE SIMULATO"
+            );
+
+            console.log(
+              "COMANDI RICEVUTI: " +
+              numeroComandi
+            );
+
+            xml =
+              rispostaDocumentoXml(
+                numeroComandi
+              );
+          } else {
+            console.log(
+              "TIPO: COMANDO NON RICONOSCIUTO"
+            );
+
+            xml =
+              rispostaErroreXml();
+          }
         }
 
         console.log("");
