@@ -110,19 +110,51 @@ function rispostaConfigurazioneXml() {
 }
 
 function rispostaDocumentoXml(numeroComandi) {
+  const modo =
+    String(
+      process.env.RCH_SIM_MODE ||
+      "success"
+    )
+      .trim()
+      .toLowerCase();
+
+  let printerError = 0;
+  let paperEnd = 0;
+  let coverOpen = 0;
+
+  if (modo === "printer_error") {
+    printerError = 1;
+  }
+
+  if (modo === "paper_end") {
+    paperEnd = 1;
+  }
+
+  if (modo === "cover_open") {
+    coverOpen = 1;
+  }
+
+  const lastDocF =
+    modo === "missing_lastdocf"
+      ? ""
+      : "    <lastDocF>2</lastDocF>\n";
+
+  console.log(
+    "MODALITA SIMULATORE: " + modo
+  );
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <Service>
   <Request>
     <errorCode>0</errorCode>
-    <printerError>0</printerError>
-    <paperEnd>0</paperEnd>
-    <coverOpen>0</coverOpen>
+    <printerError>${printerError}</printerError>
+    <paperEnd>${paperEnd}</paperEnd>
+    <coverOpen>${coverOpen}</coverOpen>
     <lastCmd>${numeroComandi}</lastCmd>
     <mode>REG</mode>
     <idleState>0</idleState>
     <lastZ>499</lastZ>
-    <lastDocF>2</lastDocF>
-    <lastDocNF>0</lastDocNF>
+${lastDocF}    <lastDocNF>0</lastDocNF>
     <lastCreditNoteN>0</lastCreditNoteN>
     <lastInvoiceN>0</lastInvoiceN>
     <busy>0</busy>
