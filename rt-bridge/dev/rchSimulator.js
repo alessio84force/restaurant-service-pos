@@ -256,6 +256,26 @@ const server = http.createServer(
               numeroComandi
             );
 
+            if (
+              String(
+                process.env.RCH_SIM_MODE || ""
+              )
+                .trim()
+                .toLowerCase() ===
+              "drop_after_document"
+            ) {
+              console.log(
+                "MODALITA SIMULATORE: drop_after_document"
+              );
+
+              console.log(
+                "CONNESSIONE INTERROTTA DOPO RICEZIONE DOCUMENTO"
+              );
+
+              req.socket.destroy();
+              return;
+            }
+
             xml =
               rispostaDocumentoXml(
                 numeroComandi
