@@ -86,6 +86,11 @@ function html({ title, description, body, pathUrl }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/app/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/app/assets/favicon-192x192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/app/assets/favicon-512x512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/app/assets/apple-touch-icon.png">
 ${hreflangLinks(pathUrl)}
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
