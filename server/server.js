@@ -17,6 +17,7 @@ const bloqueoRestauranteSaas = require("./middleware/bloqueoRestauranteSaas");
 const registroSaasMiddleware = require("./middleware/registroSaas");
 const registroFiscalPendienteSaas = require("./middleware/registroFiscalPendienteSaas");
 const legalLinksGlobalMiddleware = require("./middleware/legalLinksGlobal");
+const faviconGlobalMiddleware = require("./middleware/faviconGlobal");
 const manualClienteLinkMiddleware = require("./middleware/manualClienteLink");
 const onboardingClienteLinkMiddleware = require("./middleware/onboardingClienteLink");
 const backupRestauranteLinkMiddleware = require("./middleware/backupRestauranteLink");
@@ -169,6 +170,9 @@ app.use(express.json({ limit: "10mb" }));
 
 app.use('/app/assets', express.static(path.join(__dirname, '..', 'app', 'assets')));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Favicon globale per tutte le pagine HTML dinamiche
+app.use(faviconGlobalMiddleware());
 // ===== RUTAS SAAS MULTI-RESTAURANTE PRIORITARIAS =====
 app.use(function(req, res, next) {
   return zonasSaasRoutes(db)(req, res, next);
