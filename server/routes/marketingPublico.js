@@ -154,7 +154,7 @@ footer{text-align:center;color:#94a3b8;border-top:1px solid rgba(255,255,255,.12
   </div>
 </header>
 <main>${body}</main>
-<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/registro?idioma=es">Prueba gratis</a> · <a href="/login?idioma=es">Entrar</a></footer>
+<footer>Restaurant Service POS · Software POS para restaurantes · <a href="/tpv-restaurante-barato">TPV restaurante barato</a> · <a href="/programa-comandas-restaurante">Programa de comandas</a> · <a href="/registro?idioma=es">Prueba gratis</a> · <a href="/login?idioma=es">Entrar</a></footer>
 </body>
 </html>`;
 }
