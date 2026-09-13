@@ -1,0 +1,304 @@
+function run(db, sql, params) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params || [], function(err) {
+      if (err) return reject(err);
+
+      resolve({
+        id: this.lastID,
+        changes: this.changes
+      });
+    });
+  });
+}
+
+function get(db, sql, params) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params || [], function(err, row) {
+      if (err) return reject(err);
+      resolve(row || null);
+    });
+  });
+}
+
+function oraIso() {
+  return new Date().toISOString();
+}
+
+async function accodaLavoro(db, dati) {
+  const ristoranteId = Number(dati.restaurante_id);
+  const idempotencyKey = String(
+    dati.idempotency_key || ""
+  ).trim();
+
+  const tipo = String(
+    dati.tipo || "comanda"
+  ).trim();
+
+  const destino = String(
+    dati.destino || ""
+  ).trim();
+
+  const contenuto = String(
+    dati.contenuto || ""
+  );
+
+  if (!ristoranteId) {
+    throw new Error("restaurante_id obbligatorio");
+  }
+
+  if (!idempotencyKey) {
+    throw new Error("idempotency_key obbligatoria");
+  }
+
+  if (!destino) {
+    throw new Error("destino obbligatorio");
+  }
+
+  if (!contenuto) {
+    throw new Error("contenuto obbligatorio");
+  }
+
+  const risultato = await run(
+    db,
+    `
+    INSERT OR IGNORE INTO print_bridge_jobs
+    (
+      restaurante_id,
+      idempotency_key,
+      tipo,
+      destino,
+      contenido,
+      estado,
+      printer_id,
+      printer_nombre,
+      creado_en
+    )
+    VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)
+    `,
+    [
+      ristoranteId,
+      idempotencyKey,
+      tipo,
+      destino,
+      contenuto,
+      dati.printer_id || null,
+      dati.printer_nombre || null,
+      oraIso()
+    ]
+  );
+
+  const lavoro = await get(
+    db,
+    `
+    SELECT *
+    FROM print_bridge_jobs
+    WHERE restaurante_id=?
+      AND idempotency_key=?
+    LIMIT 1
+    `,
+    [
+      ristoranteId,
+      idempotencyKey
+    ]
+  );
+
+  return {
+    creato: risultato.changes === 1,
+    lavoro
+  };
+}
+
+async function reclamaProssimoLavoro(
+  db,
+  ristoranteId,
+  bridgeId,
+  leaseSecondi
+) {
+  const restauranteId = Number(ristoranteId);
+  const bridge = String(bridgeId || "").trim();
+
+  if (!restauranteId) {
+    throw new Error("restaurante_id non valido");
+  }
+
+  if (!bridge) {
+    throw new Error("bridge_id obbligatorio");
+  }
+
+  const durata =
+    Number(leaseSecondi || 60);
+
+  const adesso = oraIso();
+
+  const leaseHasta =
+    new Date(
+      Date.now() +
+      durata * 1000
+    ).toISOString();
+
+  await run(db, "BEGIN IMMEDIATE");
+
+  try {
+    const lavoro = await get(
+      db,
+      `
+      SELECT *
+      FROM print_bridge_jobs
+      WHERE restaurante_id=?
+        AND (
+          estado='pendiente'
+          OR (
+            estado='reclamado'
+            AND lease_hasta IS NOT NULL
+            AND lease_hasta < ?
+          )
+        )
+      ORDER BY id
+      LIMIT 1
+      `,
+      [
+        restauranteId,
+        adesso
+      ]
+    );
+
+    if (!lavoro) {
+      await run(db, "COMMIT");
+      return null;
+    }
+
+    const aggiornato = await run(
+      db,
+      `
+      UPDATE print_bridge_jobs
+      SET
+        estado='reclamado',
+        bridge_id=?,
+        reclamado_en=?,
+        lease_hasta=?,
+        intentos=intentos+1,
+        error_mensaje=NULL,
+        error_en=NULL
+      WHERE id=?
+        AND restaurante_id=?
+        AND (
+          estado='pendiente'
+          OR (
+            estado='reclamado'
+            AND lease_hasta IS NOT NULL
+            AND lease_hasta < ?
+          )
+        )
+      `,
+      [
+        bridge,
+        adesso,
+        leaseHasta,
+        lavoro.id,
+        restauranteId,
+        adesso
+      ]
+    );
+
+    if (aggiornato.changes !== 1) {
+      await run(db, "ROLLBACK");
+      return null;
+    }
+
+    const reclamato = await get(
+      db,
+      `
+      SELECT *
+      FROM print_bridge_jobs
+      WHERE id=?
+        AND restaurante_id=?
+      `,
+      [
+        lavoro.id,
+        restauranteId
+      ]
+    );
+
+    await run(db, "COMMIT");
+
+    return reclamato;
+  } catch (err) {
+    try {
+      await run(db, "ROLLBACK");
+    } catch (_) {}
+
+    throw err;
+  }
+}
+
+async function segnaImpreso(
+  db,
+  ristoranteId,
+  lavoroId,
+  bridgeId
+) {
+  const risultato = await run(
+    db,
+    `
+    UPDATE print_bridge_jobs
+    SET
+      estado='impreso',
+      impreso_en=?,
+      lease_hasta=NULL,
+      error_en=NULL,
+      error_mensaje=NULL
+    WHERE id=?
+      AND restaurante_id=?
+      AND estado='reclamado'
+      AND bridge_id=?
+    `,
+    [
+      oraIso(),
+      Number(lavoroId),
+      Number(ristoranteId),
+      String(bridgeId || "")
+    ]
+  );
+
+  return risultato.changes === 1;
+}
+
+async function segnaErrore(
+  db,
+  ristoranteId,
+  lavoroId,
+  bridgeId,
+  messaggio
+) {
+  const risultato = await run(
+    db,
+    `
+    UPDATE print_bridge_jobs
+    SET
+      estado='error',
+      error_en=?,
+      error_mensaje=?,
+      lease_hasta=NULL
+    WHERE id=?
+      AND restaurante_id=?
+      AND estado='reclamado'
+      AND bridge_id=?
+    `,
+    [
+      oraIso(),
+      String(messaggio || "Errore stampa"),
+      Number(lavoroId),
+      Number(ristoranteId),
+      String(bridgeId || "")
+    ]
+  );
+
+  return risultato.changes === 1;
+}
+
+module.exports = {
+  accodaLavoro,
+  reclamaProssimoLavoro,
+  segnaImpreso,
+  segnaErrore
+};
