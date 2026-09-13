@@ -73,18 +73,35 @@ const mesasOperativasSaasRoutes = require("./routes/mesasOperativasSaas");
 const productosSaasRoutes = require("./routes/productosSaas");
 const operativaSaasRoutes = require("./routes/operativaSaas");
 const destinosImpresionSaasRoutes = require("./routes/destinosImpresionSaas");
+const printBridgeApiRoutes = require("./routes/printBridgeApi");
 const cajaReportesSaasRoutes = require("./routes/cajaReportesSaas");
 const usuariosConfigSaasRoutes = require("./routes/usuariosConfigSaas");
 const configuracionChicSaasRoutes = require("./routes/configuracionChicSaas");
 const fiscalSaasRoutes = require("./routes/fiscalSaas");
 const ticketRoutes = require("./routes/ticket");
 const { prepararRtItalia } = require("./migrations/rtItalia");
+const { prepararPrintBridge } = require("./migrations/printBridge");
 
 const app = express();
 
 app.use(seoLocalesRoutes());
 app.use(marketingPublicoRoutes());
 app.use(marketingMultilinguaRoutes());
+/*
+ * V2.14.0 - Print Bridge
+ * API macchina-macchina autenticata tramite token.
+ * Montata prima della sessione browser.
+ */
+app.use(function(req, res, next) {
+  if (
+    String(req.path || "").indexOf("/api/print-bridge/") !== 0
+  ) {
+    return next();
+  }
+
+  return printBridgeApiRoutes(db)(req, res, next);
+});
+
 app.use(session({
 secret: "restaurant-service-secret",
 resave: false,
@@ -1792,7 +1809,19 @@ app.get('/mesas', (req, res) => {
 });
 
 
+function prepararPrintBridgeAsync() {
+  return new Promise(function(resolve, reject) {
+    prepararPrintBridge(db, function(err) {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+}
+
 prepararRtItalia(db)
+  .then(function() {
+    return prepararPrintBridgeAsync();
+  })
   .then(function() {
     app.listen(PUERTO_RESTAURANT_SERVICE, () => {
       console.log(
@@ -1803,7 +1832,7 @@ prepararRtItalia(db)
   })
   .catch(function(err) {
     console.error(
-      "[RT Italia] Error preparando schema RT:",
+      "[STARTUP] Error preparando schema:",
       err && err.message ? err.message : err
     );
 
