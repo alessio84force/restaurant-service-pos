@@ -149,6 +149,7 @@ async function reclamaProssimoLavoro(
           estado='pendiente'
           OR (
             estado='reclamado'
+            AND bridge_id=?
             AND lease_hasta IS NOT NULL
             AND lease_hasta < ?
           )
@@ -158,6 +159,7 @@ async function reclamaProssimoLavoro(
       `,
       [
         restauranteId,
+        bridge,
         adesso
       ]
     );
@@ -185,6 +187,7 @@ async function reclamaProssimoLavoro(
           estado='pendiente'
           OR (
             estado='reclamado'
+            AND bridge_id=?
             AND lease_hasta IS NOT NULL
             AND lease_hasta < ?
           )
@@ -196,6 +199,7 @@ async function reclamaProssimoLavoro(
         leaseHasta,
         lavoro.id,
         restauranteId,
+        bridge,
         adesso
       ]
     );
@@ -297,28 +301,69 @@ async function segnaErrore(
   bridgeId,
   messaggio
 ) {
-  const risultato = await run(
-    db,
-    `
-    UPDATE print_bridge_jobs
-    SET
-      estado='error',
-      error_en=?,
-      error_mensaje=?,
-      lease_hasta=NULL
-    WHERE id=?
-      AND restaurante_id=?
-      AND estado='reclamado'
-      AND bridge_id=?
-    `,
-    [
-      oraIso(),
-      String(messaggio || "Errore stampa"),
-      Number(lavoroId),
-      Number(ristoranteId),
-      String(bridgeId || "")
-    ]
-  );
+  const id =
+    Number(lavoroId);
+
+  const restauranteId =
+    Number(ristoranteId);
+
+  const bridge =
+    String(bridgeId || "");
+
+  const esistente =
+    await get(
+      db,
+      `
+      SELECT
+        estado,
+        bridge_id
+      FROM print_bridge_jobs
+      WHERE id=?
+        AND restaurante_id=?
+      LIMIT 1
+      `,
+      [
+        id,
+        restauranteId
+      ]
+    );
+
+  if (
+    esistente &&
+    esistente.estado === "error" &&
+    String(
+      esistente.bridge_id || ""
+    ) === bridge
+  ) {
+    return true;
+  }
+
+  const risultato =
+    await run(
+      db,
+      `
+      UPDATE print_bridge_jobs
+      SET
+        estado='error',
+        error_en=?,
+        error_mensaje=?,
+        lease_hasta=NULL
+      WHERE id=?
+        AND restaurante_id=?
+        AND estado='reclamado'
+        AND bridge_id=?
+      `,
+      [
+        oraIso(),
+        String(
+          messaggio ||
+          "Errore stampa"
+        ),
+        id,
+        restauranteId,
+        bridge
+      ]
+    );
 
   return risultato.changes === 1;
 }
