@@ -26,6 +26,7 @@ function oraIso() {
 
 async function accodaLavoro(db, dati) {
   const ristoranteId = Number(dati.restaurante_id);
+
   const idempotencyKey = String(
     dati.idempotency_key || ""
   ).trim();
@@ -42,20 +43,32 @@ async function accodaLavoro(db, dati) {
     dati.contenuto || ""
   );
 
+  const bridgeId = String(
+    dati.bridge_id || ""
+  ).trim();
+
   if (!ristoranteId) {
-    throw new Error("restaurante_id obbligatorio");
+    throw new Error(
+      "restaurante_id obbligatorio"
+    );
   }
 
   if (!idempotencyKey) {
-    throw new Error("idempotency_key obbligatoria");
+    throw new Error(
+      "idempotency_key obbligatoria"
+    );
   }
 
   if (!destino) {
-    throw new Error("destino obbligatorio");
+    throw new Error(
+      "destino obbligatorio"
+    );
   }
 
   if (!contenuto) {
-    throw new Error("contenuto obbligatorio");
+    throw new Error(
+      "contenuto obbligatorio"
+    );
   }
 
   const risultato = await run(
@@ -71,9 +84,14 @@ async function accodaLavoro(db, dati) {
       estado,
       printer_id,
       printer_nombre,
+      bridge_id,
       creado_en
     )
-    VALUES (?, ?, ?, ?, ?, 'pendiente', ?, ?, ?)
+    VALUES (
+      ?, ?, ?, ?, ?,
+      'pendiente',
+      ?, ?, ?, ?
+    )
     `,
     [
       ristoranteId,
@@ -83,6 +101,7 @@ async function accodaLavoro(db, dati) {
       contenuto,
       dati.printer_id || null,
       dati.printer_nombre || null,
+      bridgeId || null,
       oraIso()
     ]
   );
@@ -103,7 +122,8 @@ async function accodaLavoro(db, dati) {
   );
 
   return {
-    creato: risultato.changes === 1,
+    creato:
+      risultato.changes === 1,
     lavoro
   };
 }
@@ -114,21 +134,33 @@ async function reclamaProssimoLavoro(
   bridgeId,
   leaseSecondi
 ) {
-  const restauranteId = Number(ristoranteId);
-  const bridge = String(bridgeId || "").trim();
+  const restauranteId =
+    Number(ristoranteId);
+
+  const bridge =
+    String(
+      bridgeId || ""
+    ).trim();
 
   if (!restauranteId) {
-    throw new Error("restaurante_id non valido");
+    throw new Error(
+      "restaurante_id non valido"
+    );
   }
 
   if (!bridge) {
-    throw new Error("bridge_id obbligatorio");
+    throw new Error(
+      "bridge_id obbligatorio"
+    );
   }
 
   const durata =
-    Number(leaseSecondi || 60);
+    Number(
+      leaseSecondi || 60
+    );
 
-  const adesso = oraIso();
+  const adesso =
+    oraIso();
 
   const leaseHasta =
     new Date(
@@ -136,99 +168,137 @@ async function reclamaProssimoLavoro(
       durata * 1000
     ).toISOString();
 
-  await run(db, "BEGIN IMMEDIATE");
+  await run(
+    db,
+    "BEGIN IMMEDIATE"
+  );
 
   try {
-    const lavoro = await get(
-      db,
-      `
-      SELECT *
-      FROM print_bridge_jobs
-      WHERE restaurante_id=?
-        AND (
-          estado='pendiente'
-          OR (
-            estado='reclamado'
-            AND bridge_id=?
-            AND lease_hasta IS NOT NULL
-            AND lease_hasta < ?
+    const lavoro =
+      await get(
+        db,
+        `
+        SELECT *
+        FROM print_bridge_jobs
+        WHERE restaurante_id=?
+          AND (
+            (
+              estado='pendiente'
+              AND (
+                bridge_id IS NULL
+                OR bridge_id=''
+                OR bridge_id=?
+              )
+            )
+            OR (
+              estado='reclamado'
+              AND bridge_id=?
+              AND lease_hasta IS NOT NULL
+              AND lease_hasta < ?
+            )
           )
-        )
-      ORDER BY id
-      LIMIT 1
-      `,
-      [
-        restauranteId,
-        bridge,
-        adesso
-      ]
-    );
+        ORDER BY id
+        LIMIT 1
+        `,
+        [
+          restauranteId,
+          bridge,
+          bridge,
+          adesso
+        ]
+      );
 
     if (!lavoro) {
-      await run(db, "COMMIT");
+      await run(
+        db,
+        "COMMIT"
+      );
+
       return null;
     }
 
-    const aggiornato = await run(
-      db,
-      `
-      UPDATE print_bridge_jobs
-      SET
-        estado='reclamado',
-        bridge_id=?,
-        reclamado_en=?,
-        lease_hasta=?,
-        intentos=intentos+1,
-        error_mensaje=NULL,
-        error_en=NULL
-      WHERE id=?
-        AND restaurante_id=?
-        AND (
-          estado='pendiente'
-          OR (
-            estado='reclamado'
-            AND bridge_id=?
-            AND lease_hasta IS NOT NULL
-            AND lease_hasta < ?
+    const aggiornato =
+      await run(
+        db,
+        `
+        UPDATE print_bridge_jobs
+        SET
+          estado='reclamado',
+          bridge_id=?,
+          reclamado_en=?,
+          lease_hasta=?,
+          intentos=intentos+1,
+          error_mensaje=NULL,
+          error_en=NULL
+        WHERE id=?
+          AND restaurante_id=?
+          AND (
+            (
+              estado='pendiente'
+              AND (
+                bridge_id IS NULL
+                OR bridge_id=''
+                OR bridge_id=?
+              )
+            )
+            OR (
+              estado='reclamado'
+              AND bridge_id=?
+              AND lease_hasta IS NOT NULL
+              AND lease_hasta < ?
+            )
           )
-        )
-      `,
-      [
-        bridge,
-        adesso,
-        leaseHasta,
-        lavoro.id,
-        restauranteId,
-        bridge,
-        adesso
-      ]
-    );
+        `,
+        [
+          bridge,
+          adesso,
+          leaseHasta,
+          lavoro.id,
+          restauranteId,
+          bridge,
+          bridge,
+          adesso
+        ]
+      );
 
-    if (aggiornato.changes !== 1) {
-      await run(db, "ROLLBACK");
+    if (
+      aggiornato.changes !== 1
+    ) {
+      await run(
+        db,
+        "ROLLBACK"
+      );
+
       return null;
     }
 
-    const reclamato = await get(
-      db,
-      `
-      SELECT *
-      FROM print_bridge_jobs
-      WHERE id=?
-        AND restaurante_id=?
-      `,
-      [
-        lavoro.id,
-        restauranteId
-      ]
-    );
+    const reclamato =
+      await get(
+        db,
+        `
+        SELECT *
+        FROM print_bridge_jobs
+        WHERE id=?
+          AND restaurante_id=?
+        `,
+        [
+          lavoro.id,
+          restauranteId
+        ]
+      );
 
-    await run(db, "COMMIT");
+    await run(
+      db,
+      "COMMIT"
+    );
 
     return reclamato;
   } catch (err) {
     try {
-      await run(db, "ROLLBACK");
+      await run(
+        db,
+        "ROLLBACK"
+      );
     } catch (_) {}
 
     throw err;

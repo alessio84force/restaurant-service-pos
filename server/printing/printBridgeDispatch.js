@@ -241,15 +241,15 @@ async function preparaComandaPrintBridge(
       ""
     ).trim();
 
-  const printerNombre =
+  const targetBridgeId =
     String(
-      configDestino.nombre ||
+      configDestino.bridge_id ||
       ""
     ).trim();
 
   if (
-    !printerId &&
-    !printerNombre
+    !printerId ||
+    !targetBridgeId
   ) {
     return {
       gestita: true,
@@ -260,6 +260,51 @@ async function preparaComandaPrintBridge(
         "print_bridge_stampante_non_assegnata"
     };
   }
+
+  const stampante =
+    await get(
+      db,
+      `
+      SELECT
+        printer_id,
+        printer_nome,
+        bridge_id,
+        stato,
+        tipo,
+        connessione
+      FROM print_bridge_printers
+      WHERE restaurante_id=?
+        AND bridge_id=?
+        AND printer_id=?
+      LIMIT 1
+      `,
+      [
+        restauranteId,
+        targetBridgeId,
+        printerId
+      ]
+    );
+
+  if (
+    !stampante ||
+    stampante.stato !==
+      "rilevata"
+  ) {
+    return {
+      gestita: true,
+      ok: false,
+      modo:
+        "print_bridge",
+      error:
+        "print_bridge_stampante_non_disponibile"
+    };
+  }
+
+  const printerNombre =
+    String(
+      stampante.printer_nome ||
+      ""
+    ).trim();
 
   const idempotencyKey =
     creaIdempotencyKey(
@@ -282,9 +327,11 @@ async function preparaComandaPrintBridge(
             dati.contenuto || ""
           ),
         printer_id:
-          printerId || null,
+          printerId,
         printer_nombre:
-          printerNombre || null
+          printerNombre,
+        bridge_id:
+          targetBridgeId
       }
     );
 
