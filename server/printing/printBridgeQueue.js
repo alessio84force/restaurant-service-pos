@@ -237,6 +237,33 @@ async function segnaImpreso(
   lavoroId,
   bridgeId
 ) {
+  const id = Number(lavoroId);
+  const restauranteId = Number(ristoranteId);
+  const bridge = String(bridgeId || "");
+
+  const esistente = await get(
+    db,
+    `
+    SELECT estado, bridge_id
+    FROM print_bridge_jobs
+    WHERE id=?
+      AND restaurante_id=?
+    LIMIT 1
+    `,
+    [
+      id,
+      restauranteId
+    ]
+  );
+
+  if (
+    esistente &&
+    esistente.estado === "impreso" &&
+    String(esistente.bridge_id || "") === bridge
+  ) {
+    return true;
+  }
+
   const risultato = await run(
     db,
     `
@@ -254,9 +281,9 @@ async function segnaImpreso(
     `,
     [
       oraIso(),
-      Number(lavoroId),
-      Number(ristoranteId),
-      String(bridgeId || "")
+      id,
+      restauranteId,
+      bridge
     ]
   );
 
