@@ -34,6 +34,28 @@ function prepararPrintBridge(db, callback) {
     )
     `,
     `
+    CREATE TABLE IF NOT EXISTS print_bridge_printers (
+      restaurante_id INTEGER NOT NULL,
+      bridge_id TEXT NOT NULL,
+      printer_id TEXT NOT NULL,
+      printer_nome TEXT NOT NULL,
+      tipo TEXT,
+      connessione TEXT,
+      uri TEXT,
+      stato TEXT NOT NULL DEFAULT 'rilevata',
+      ultimo_contacto TEXT NOT NULL,
+      PRIMARY KEY (
+        restaurante_id,
+        bridge_id,
+        printer_id
+      )
+    )
+    `,
+    `
+    CREATE INDEX IF NOT EXISTS idx_print_bridge_printers_ristorante
+    ON print_bridge_printers(restaurante_id, stato, printer_nome)
+    `,
+    `
     CREATE INDEX IF NOT EXISTS idx_print_bridge_jobs_estado
     ON print_bridge_jobs(restaurante_id, estado, id)
     `,

@@ -148,6 +148,23 @@ function heartbeat(config) {
   );
 }
 
+function sincronizzaStampanti(
+  config,
+  stampanti
+) {
+  return richiesta(
+    config,
+    "POST",
+    "/api/print-bridge/printers/sync",
+    {
+      stampanti:
+        Array.isArray(stampanti)
+          ? stampanti
+          : []
+    }
+  );
+}
+
 function claim(config) {
   return richiesta(
     config,
@@ -193,6 +210,7 @@ function segnalaErrore(
 module.exports = {
   ping,
   heartbeat,
+  sincronizzaStampanti,
   claim,
   confermaStampa,
   segnalaErrore

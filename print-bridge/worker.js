@@ -4,10 +4,15 @@ const path = require("path");
 
 const {
   heartbeat,
+  sincronizzaStampanti,
   claim,
   confermaStampa,
   segnalaErrore
 } = require("./clientApi");
+
+const {
+  scopriStampanti
+} = require("./scopriStampanti");
 
 const {
   stampaTesto
@@ -283,6 +288,34 @@ async function main() {
   console.log(
     "HEARTBEAT: OK"
   );
+
+  try {
+    const stampanti =
+      scopriStampanti();
+
+    const sync =
+      await sincronizzaStampanti(
+        config,
+        stampanti
+      );
+
+    if (rispostaOk(sync)) {
+      console.log(
+        "STAMPANTI SINCRONIZZATE:",
+        sync.json.rilevate
+      );
+    } else {
+      console.log(
+        "STAMPANTI: sync fallita HTTP",
+        sync.status
+      );
+    }
+  } catch (errStampanti) {
+    console.log(
+      "STAMPANTI: sincronizzazione non disponibile:",
+      errStampanti.message
+    );
+  }
 
   const recuperato =
     await recuperaStatoLocale(

@@ -15,6 +15,12 @@ const {
   "../printing/printBridgeQueue"
 );
 
+const {
+  sincronizzaStampanti
+} = require(
+  "../printing/printBridgePrinters"
+);
+
 function tokenBearer(req) {
   const header = String(
     req.headers.authorization || ""
@@ -165,6 +171,45 @@ function printBridgeApiRoutes(db) {
         res.status(500).json({
           ok: false,
           error: "errore_heartbeat"
+        });
+      }
+    }
+  );
+
+  router.post(
+    "/api/print-bridge/printers/sync",
+    richiedeToken,
+    richiedeBridgeId,
+    async (req, res) => {
+      try {
+        const risultato =
+          await sincronizzaStampanti(
+            db,
+            req.printBridgeAuth
+              .restaurante_id,
+            req.printBridgeId,
+            req.body &&
+            req.body.stampanti
+          );
+
+        res.json({
+          ok: true,
+          rilevate:
+            risultato.rilevate,
+          ultimo_contacto:
+            risultato
+              .ultimo_contacto
+        });
+      } catch (err) {
+        console.error(
+          "[PRINT BRIDGE PRINTERS]",
+          err.message
+        );
+
+        res.status(400).json({
+          ok: false,
+          error:
+            "errore_sync_stampanti"
         });
       }
     }
