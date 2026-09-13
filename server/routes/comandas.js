@@ -1,4 +1,6 @@
 const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
+const { restauranteIdFromReq } = require("../utils/restauranteContext");
+const { preparaComandaPrintBridge } = require("../printing/printBridgeDispatch");
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -109,41 +111,41 @@ function buscarLineasPendientes(db, mesa, destino, callback){
 }
 
 function actualizarEnvios(db, destino, lineas, callback){
-  let i = 0;
-
-  function siguiente(){
-    if(i >= lineas.length){
-      return callback(null);
-    }
-
-    const linea = lineas[i];
-
-    db.run(
-      "INSERT OR IGNORE INTO comanda_envios_linea(linea_id,destino,cantidad_enviada,actualizado_en) VALUES(?,?,0,CURRENT_TIMESTAMP)",
-      [linea.id, destino],
-      (errInsert)=>{
-        if(errInsert) return callback(errInsert);
-
-        db.run(
-          "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?)",
-          [linea.cantidad_total, linea.id, destino],
-          (errUpdate)=>{
-            if(errUpdate) return callback(errUpdate);
-            i++;
-            siguiente();
-          }
-        );
-      }
-    );
+  if(!lineas || lineas.length === 0){
+    return callback(null);
   }
 
-  siguiente();
+  const valori = [];
+  const placeholders = lineas.map((linea)=>{
+    valori.push(
+      linea.id,
+      destino,
+      linea.cantidad_total
+    );
+
+    return "(?,?,?,CURRENT_TIMESTAMP)";
+  }).join(",");
+
+  const sql =
+    "INSERT OR REPLACE INTO comanda_envios_linea " +
+    "(linea_id,destino,cantidad_enviada,actualizado_en) " +
+    "VALUES " +
+    placeholders;
+
+  db.run(
+    sql,
+    valori,
+    (err)=>{
+      callback(err || null);
+    }
+  );
 }
 
 function comandasRoutes(db){
   const router = express.Router();
 
   router.post("/comandas/enviar/:destino/:mesa", (req,res)=>{
+    const restauranteId = restauranteIdFromReq(req);
     const destino = normalizarDestino(req.params.destino);
     const mesa = req.params.mesa;
 
@@ -185,27 +187,140 @@ function comandasRoutes(db){
 
           fs.writeFileSync(rutaPrint, texto, "utf8");
 
-          imprimirCentroImpresion(db, destino, texto, function(resultadoImpresion){
-            if(resultadoImpresion && resultadoImpresion.modo === "escpos_red" && !resultadoImpresion.ok){
-              console.log("[COMANDA " + destino.toUpperCase() + "] No se pudo imprimir:", resultadoImpresion.motivo || resultadoImpresion.error || "sin detalle");
-            }
-          });
+          const finalizzareInvio = function(extra){
+            actualizarEnvios(db, destino, lineas, (errUpdate)=>{
+              if(errUpdate){
+                return res.status(500).json({
+                  ok:false,
+                  error:errUpdate.message
+                });
+              }
 
-          actualizarEnvios(db, destino, lineas, (errUpdate)=>{
-            if(errUpdate){
-              return res.status(500).json({ ok:false, error:errUpdate.message });
-            }
-
-            res.json({
-              ok:true,
-              mensaje:"Comanda " + destinoNombre + " generada",
-              archivo:"prints/" + archivo,
-              destino,
-              destino_nombre:destinoNombre,
-              mesa,
-              lineas
+              res.json(Object.assign({
+                ok:true,
+                mensaje:"Comanda " + destinoNombre + " generada",
+                archivo:"prints/" + archivo,
+                destino,
+                destino_nombre:destinoNombre,
+                mesa,
+                lineas
+              }, extra || {}));
             });
-          });
+          };
+
+          preparaComandaPrintBridge(
+            db,
+            {
+              restaurante_id: restauranteId,
+              destino,
+              mesa,
+              lineas,
+              contenuto: texto
+            }
+          )
+            .then((resultadoBridge)=>{
+              if(
+                resultadoBridge &&
+                resultadoBridge.gestita
+              ){
+                if(
+                  !resultadoBridge.ok
+                ){
+                  console.log(
+                    "[PRINT BRIDGE " +
+                    destino.toUpperCase() +
+                    "] Comanda non accodata:",
+                    resultadoBridge.error
+                  );
+
+                  return res
+                    .status(503)
+                    .json({
+                      ok:false,
+                      error:
+                        resultadoBridge.error,
+                      destino,
+                      destino_nombre:
+                        destinoNombre,
+                      mesa
+                    });
+                }
+
+                console.log(
+                  "[PRINT BRIDGE " +
+                  destino.toUpperCase() +
+                  "] Job accodato:",
+                  resultadoBridge.lavoro.id,
+                  resultadoBridge.creato
+                    ? "nuovo"
+                    : "gia_esistente"
+                );
+
+                return finalizzareInvio({
+                  stampa:{
+                    modo:
+                      "print_bridge",
+                    job_id:
+                      resultadoBridge
+                        .lavoro.id,
+                    stato:
+                      resultadoBridge
+                        .lavoro.estado,
+                    creato:
+                      resultadoBridge
+                        .creato
+                  }
+                });
+              }
+
+              imprimirCentroImpresion(
+                db,
+                destino,
+                texto,
+                function(resultadoImpresion){
+                  if(
+                    resultadoImpresion &&
+                    resultadoImpresion.modo ===
+                      "escpos_red" &&
+                    !resultadoImpresion.ok
+                  ){
+                    console.log(
+                      "[COMANDA " +
+                      destino.toUpperCase() +
+                      "] No se pudo imprimir:",
+                      resultadoImpresion.motivo ||
+                      resultadoImpresion.error ||
+                      "sin detalle"
+                    );
+                  }
+                }
+              );
+
+              return finalizzareInvio({
+                stampa:{
+                  modo:
+                    (
+                      resultadoBridge &&
+                      resultadoBridge.modo
+                    ) ||
+                    "legacy"
+                }
+              });
+            })
+            .catch((errBridge)=>{
+              console.error(
+                "[PRINT BRIDGE] Errore accodando comanda:",
+                errBridge.message
+              );
+
+              return res
+                .status(500)
+                .json({
+                  ok:false,
+                  error:
+                    "print_bridge_queue_error"
+                });
+            });
         });
       });
     });
