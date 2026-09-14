@@ -181,6 +181,17 @@ function creaBufferEscPos(
     Buffer.from(
       "\n\n\n",
       "ascii"
+    ),
+    /*
+     * Epson ESC/POS:
+     * GS V 1 = taglio parziale
+     */
+    Buffer.from(
+      [
+        0x1D,
+        0x56,
+        0x01
+      ]
     )
   ]);
 }
