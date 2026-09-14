@@ -897,11 +897,22 @@ async function enviarComandaV2(numeroMesa, destino){
         const centroImpresionComandaV2 = await obtenerCentroImpresionComandaV2();
         const configDestinoImpresionV2 = obtenerDestinoImpresionComandaV2(centroImpresionComandaV2, destinoTitulo);
 
-        escribirVentanaPreparandoComandaV2(
-            ventanaPreviewComandaV2,
-            destinoTitulo,
-            configDestinoImpresionV2.modo || "preview"
-        );
+        if(
+            configDestinoImpresionV2 &&
+            configDestinoImpresionV2.modo === "print_bridge"
+        ){
+            if(ventanaPreviewComandaV2){
+                try{
+                    ventanaPreviewComandaV2.close();
+                }catch(_){}
+            }
+        }else{
+            escribirVentanaPreparandoComandaV2(
+                ventanaPreviewComandaV2,
+                destinoTitulo,
+                configDestinoImpresionV2.modo || "preview"
+            );
+        }
 
         const respuesta = await apiPost(endpoint, {});
 
@@ -923,12 +934,27 @@ async function enviarComandaV2(numeroMesa, destino){
 
         }
 
+        const configSalidaImpresionV2 =
+            Object.assign(
+                {},
+                configDestinoImpresionV2 || {}
+            );
+
+        if(
+            respuesta &&
+            respuesta.stampa &&
+            respuesta.stampa.modo
+        ){
+            configSalidaImpresionV2.modo =
+                respuesta.stampa.modo;
+        }
+
         gestionarSalidaComandaCentroImpresionV2(
             destinoTitulo,
             numeroMesa,
             lineas,
             ventanaPreviewComandaV2,
-            configDestinoImpresionV2
+            configSalidaImpresionV2
         );
 
         mostrarToastPedidoV2(textos.comandaEnviadaA + " " + destinoVisible + ". " + textos.lineasEnviadas + ": " + lineas.length + ".", "correcto");
@@ -1208,6 +1234,16 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
         if(ventana){
             ventana.close();
         }
+        return;
+    }
+
+    if(modo === "print_bridge"){
+        if(ventana){
+            try{
+                ventana.close();
+            }catch(_){}
+        }
+
         return;
     }
 

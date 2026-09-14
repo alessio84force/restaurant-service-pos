@@ -335,7 +335,169 @@ function textosDestinosImpresion(idiomaValor) {
     }
   };
 
-  return textos[idioma] || textos.es;
+  const extra = {
+    es: {
+      modoVentana:
+        "Ventana de impresión",
+      modoPrintBridge:
+        "RSP Print Bridge",
+      rspPrintBridge:
+        "RSP Print Bridge",
+      bridgeRegistrado:
+        "Bridge registrado",
+      bridgeNoRegistrado:
+        "Todavía no hay ningún Bridge registrado",
+      versionBridge:
+        "Versión",
+      ultimoContacto:
+        "Último contacto",
+      impresorasDetectadas:
+        "Impresoras detectadas",
+      ningunaImpresoraDetectada:
+        "Todavía no se ha detectado ninguna impresora.",
+      seleccionarImpresora:
+        "Impresora RSP Print Bridge",
+      sinAsignar:
+        "Sin asignar",
+      conexion:
+        "Conexión",
+      identificadorBridge:
+        "Bridge",
+      estadoDetectada:
+        "Detectada",
+      estadoNoDetectada:
+        "No detectada",
+      configuracionLegacy:
+        "Configuración manual / legacy",
+      printBridgeAyuda:
+        "Selecciona una impresora detectada por RSP Print Bridge. No es necesario introducir IP ni elegir impresora desde el POS.",
+      stampanteBridgeNonValida:
+        "La impresora seleccionada para RSP Print Bridge no está disponible."
+    },
+
+    it: {
+      modoVentana:
+        "Finestra di stampa",
+      modoPrintBridge:
+        "RSP Print Bridge",
+      rspPrintBridge:
+        "RSP Print Bridge",
+      bridgeRegistrado:
+        "Bridge registrato",
+      bridgeNoRegistrado:
+        "Non è ancora stato registrato alcun Bridge",
+      versionBridge:
+        "Versione",
+      ultimoContacto:
+        "Ultimo contatto",
+      impresorasDetectadas:
+        "Stampanti rilevate",
+      ningunaImpresoraDetectada:
+        "Non è stata ancora rilevata alcuna stampante.",
+      seleccionarImpresora:
+        "Stampante RSP Print Bridge",
+      sinAsignar:
+        "Non assegnata",
+      conexion:
+        "Connessione",
+      identificadorBridge:
+        "Bridge",
+      estadoDetectada:
+        "Rilevata",
+      estadoNoDetectada:
+        "Non rilevata",
+      configuracionLegacy:
+        "Configurazione manuale / legacy",
+      printBridgeAyuda:
+        "Seleziona una stampante rilevata da RSP Print Bridge. Dal POS non sarà necessario inserire IP o scegliere la stampante.",
+      stampanteBridgeNonValida:
+        "La stampante selezionata per RSP Print Bridge non è disponibile."
+    },
+
+    en: {
+      modoVentana:
+        "Print window",
+      modoPrintBridge:
+        "RSP Print Bridge",
+      rspPrintBridge:
+        "RSP Print Bridge",
+      bridgeRegistrado:
+        "Registered Bridge",
+      bridgeNoRegistrado:
+        "No Bridge has been registered yet",
+      versionBridge:
+        "Version",
+      ultimoContacto:
+        "Last contact",
+      impresorasDetectadas:
+        "Detected printers",
+      ningunaImpresoraDetectada:
+        "No printer has been detected yet.",
+      seleccionarImpresora:
+        "RSP Print Bridge printer",
+      sinAsignar:
+        "Not assigned",
+      conexion:
+        "Connection",
+      identificadorBridge:
+        "Bridge",
+      estadoDetectada:
+        "Detected",
+      estadoNoDetectada:
+        "Not detected",
+      configuracionLegacy:
+        "Manual / legacy configuration",
+      printBridgeAyuda:
+        "Select a printer detected by RSP Print Bridge. The POS will not need an IP address or manual printer selection.",
+      stampanteBridgeNonValida:
+        "The selected RSP Print Bridge printer is not available."
+    },
+
+    "pt-br": {
+      modoVentana:
+        "Janela de impressão",
+      modoPrintBridge:
+        "RSP Print Bridge",
+      rspPrintBridge:
+        "RSP Print Bridge",
+      bridgeRegistrado:
+        "Bridge registrado",
+      bridgeNoRegistrado:
+        "Ainda não há nenhum Bridge registrado",
+      versionBridge:
+        "Versão",
+      ultimoContacto:
+        "Último contato",
+      impresorasDetectadas:
+        "Impressoras detectadas",
+      ningunaImpresoraDetectada:
+        "Ainda não foi detectada nenhuma impressora.",
+      seleccionarImpresora:
+        "Impressora RSP Print Bridge",
+      sinAsignar:
+        "Não atribuída",
+      conexion:
+        "Conexão",
+      identificadorBridge:
+        "Bridge",
+      estadoDetectada:
+        "Detectada",
+      estadoNoDetectada:
+        "Não detectada",
+      configuracionLegacy:
+        "Configuração manual / legacy",
+      printBridgeAyuda:
+        "Selecione uma impressora detectada pelo RSP Print Bridge. No POS não será necessário informar IP nem escolher a impressora.",
+      stampanteBridgeNonValida:
+        "A impressora selecionada para o RSP Print Bridge não está disponível."
+    }
+  };
+
+  return Object.assign(
+    {},
+    textos[idioma] || textos.es,
+    extra[idioma] || extra.es
+  );
 }
 
 function nombreDestinoVisible(destino, textos) {

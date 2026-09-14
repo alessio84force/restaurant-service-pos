@@ -187,23 +187,62 @@ function parseConfigImpresion(config) {
 }
 
 function configDestino(config, configJson, destino) {
-  const modo = config.modo_impresion || "preview";
-  const id = destino.id;
+  const modo =
+    config.modo_impresion ||
+    "preview";
 
-  const guardado = configJson[id] || {};
+  const id =
+    destino.id;
 
-  let nombre = guardado.nombre || "";
+  const guardado =
+    configJson[id] || {};
 
-  if (id === "ticket") nombre = nombre || config.stampante_ticket || "";
-  if (id === "bar") nombre = nombre || config.stampante_bar || "";
-  if (id === "cocina") nombre = nombre || config.stampante_cocina || config.stampante_cucina || "";
+  let nombre =
+    guardado.nombre || "";
+
+  if (id === "ticket") {
+    nombre =
+      nombre ||
+      config.stampante_ticket ||
+      "";
+  }
+
+  if (id === "bar") {
+    nombre =
+      nombre ||
+      config.stampante_bar ||
+      "";
+  }
+
+  if (id === "cocina") {
+    nombre =
+      nombre ||
+      config.stampante_cocina ||
+      config.stampante_cucina ||
+      "";
+  }
 
   return {
-    id: id,
-    nombre: nombre,
-    modo: guardado.modo || modo,
-    tipo: guardado.tipo || "preview",
-    activo: destino.activo
+    id,
+    nombre,
+    modo:
+      guardado.modo ||
+      modo,
+    tipo:
+      guardado.tipo ||
+      "preview",
+    printer_id:
+      String(
+        guardado.printer_id ||
+        ""
+      ),
+    bridge_id:
+      String(
+        guardado.bridge_id ||
+        ""
+      ),
+    activo:
+      destino.activo
   };
 }
 
@@ -434,48 +473,239 @@ function renderDestinos(destinos, query, textos) {
 </html>`;
 }
 
-function renderImpresoras(config, destinos, query, textos) {
-  const ok = query.ok || "";
-  const error = query.error || "";
-  const configJson = parseConfigImpresion(config);
-  const modo = config.modo_impresion || "preview";
+function renderImpresoras(
+  config,
+  destinos,
+  query,
+  textos,
+  bridgeConfig,
+  stampantiBridge
+) {
+  const ok =
+    query.ok || "";
+
+  const error =
+    query.error || "";
+
+  const configJson =
+    parseConfigImpresion(config);
+
+  const modo =
+    config.modo_impresion ||
+    "ventana";
+
+  const stampanti =
+    Array.isArray(stampantiBridge)
+      ? stampantiBridge
+      : [];
+
+  const rilevate =
+    stampanti.filter(
+      (p) =>
+        String(p.stato) ===
+        "rilevata"
+    );
 
   const destinosImpresion = [
     {
       id: "ticket",
-      nombre: textos.ticketCaja,
+      nombre:
+        textos.ticketCaja,
       activo: 1,
       orden: 0
     },
-    ...destinos.map((destino) => ({
-      ...destino,
-      nombre: nombreDestinoVisible(destino, textos)
-    }))
+    ...destinos.map(
+      (destino) => ({
+        ...destino,
+        nombre:
+          nombreDestinoVisible(
+            destino,
+            textos
+          )
+      })
+    )
   ];
 
-  const cards = destinosImpresion.map((d) => {
-    const cfg = configDestino(config, configJson, d);
+  function selectBridge(cfg, destinoId) {
+    let html =
+      '<select name="print_bridge_' +
+      escapar(destinoId) +
+      '">';
 
-    return `
-      <div class="printer-card">
-        <h3>${escapar(d.nombre)}</h3>
-        <small>${escapar(d.id)}</small>
+    html +=
+      '<option value="">' +
+      escapar(textos.sinAsignar) +
+      '</option>';
 
-        <label>${escapar(textos.nombreImpresora)}</label>
-        <input name="impresora_${escapar(d.id)}" value="${escapar(cfg.nombre)}" placeholder="${escapar(textos.placeholderImpresora)}">
+    rilevate.forEach((p) => {
+      const value =
+        JSON.stringify({
+          bridge_id:
+            p.bridge_id,
+          printer_id:
+            p.printer_id
+        });
 
-        <label>${escapar(textos.modo)}</label>
-        <select name="modo_${escapar(d.id)}">
-          <option value="preview" ${cfg.modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
-          <option value="archivo_txt" ${cfg.modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
-          <option value="escpos_red" ${cfg.modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
-        </select>
+      const selected =
+        String(cfg.bridge_id || "") ===
+          String(p.bridge_id || "") &&
+        String(cfg.printer_id || "") ===
+          String(p.printer_id || "");
 
-        <button type="submit" formaction="/configuracion-impresoras/probar-${encodeURIComponent(d.id)}">${escapar(textos.probar)} ${escapar(d.nombre)}</button>
-        <a class="link" target="_blank" href="/configuracion-impresoras/ver-prueba/${encodeURIComponent(d.id)}">${escapar(textos.verUltimaPrueba)}</a>
-      </div>
-    `;
-  }).join("");
+      const label =
+        String(p.printer_nome || "") +
+        " — " +
+        String(
+          p.connessione ||
+          p.tipo ||
+          ""
+        );
+
+      html +=
+        '<option value="' +
+        escapar(value) +
+        '"' +
+        (
+          selected
+            ? " selected"
+            : ""
+        ) +
+        ">" +
+        escapar(label) +
+        "</option>";
+    });
+
+    html +=
+      "</select>";
+
+    return html;
+  }
+
+  const cards =
+    destinosImpresion
+      .map((d) => {
+        const cfg =
+          configDestino(
+            config,
+            configJson,
+            d
+          );
+
+        return `
+          <div class="printer-card">
+            <h3>${escapar(d.nombre)}</h3>
+            <small>${escapar(d.id)}</small>
+
+            <label>${escapar(textos.modo)}</label>
+            <select name="modo_${escapar(d.id)}">
+              <option value="ventana" ${cfg.modo === "ventana" ? "selected" : ""}>${escapar(textos.modoVentana)}</option>
+              <option value="preview" ${cfg.modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
+              <option value="archivo_txt" ${cfg.modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
+              <option value="escpos_red" ${cfg.modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
+              <option value="print_bridge" ${cfg.modo === "print_bridge" ? "selected" : ""}>${escapar(textos.modoPrintBridge)}</option>
+            </select>
+
+            <label>${escapar(textos.seleccionarImpresora)}</label>
+            ${selectBridge(cfg, d.id)}
+
+            <p class="help">
+              ${escapar(textos.printBridgeAyuda)}
+            </p>
+
+            <details>
+              <summary>${escapar(textos.configuracionLegacy)}</summary>
+
+              <label>${escapar(textos.nombreImpresora)}</label>
+              <input
+                name="impresora_${escapar(d.id)}"
+                value="${escapar(cfg.nombre)}"
+                placeholder="${escapar(textos.placeholderImpresora)}"
+              >
+            </details>
+
+            <button
+              type="submit"
+              formaction="/configuracion-impresoras/probar-${encodeURIComponent(d.id)}"
+            >
+              ${escapar(textos.probar)} ${escapar(d.nombre)}
+            </button>
+
+            <a
+              class="link"
+              target="_blank"
+              href="/configuracion-impresoras/ver-prueba/${encodeURIComponent(d.id)}"
+            >
+              ${escapar(textos.verUltimaPrueba)}
+            </a>
+          </div>
+        `;
+      })
+      .join("");
+
+  const bridgeHtml =
+    bridgeConfig
+      ? `
+        <div class="bridge-ok">
+          <strong>${escapar(textos.bridgeRegistrado)}</strong>
+          <div>${escapar(bridgeConfig.bridge_nombre || "")}</div>
+          <small>
+            ${escapar(textos.versionBridge)}:
+            ${escapar(bridgeConfig.bridge_version || "-")}
+            ·
+            ${escapar(textos.ultimoContacto)}:
+            ${escapar(bridgeConfig.ultimo_contacto || "-")}
+          </small>
+        </div>
+      `
+      : `
+        <div class="bridge-off">
+          ${escapar(textos.bridgeNoRegistrado)}
+        </div>
+      `;
+
+  const stampantiHtml =
+    stampanti.length
+      ? stampanti
+          .map((p) => {
+            const rilevata =
+              String(p.stato) ===
+              "rilevata";
+
+            return `
+              <div class="device">
+                <div>
+                  <strong>${escapar(p.printer_nome)}</strong>
+                  <small>${escapar(p.printer_id)}</small>
+                </div>
+
+                <div>
+                  <strong>
+                    ${escapar(
+                      rilevata
+                        ? textos.estadoDetectada
+                        : textos.estadoNoDetectada
+                    )}
+                  </strong>
+
+                  <small>
+                    ${escapar(textos.conexion)}:
+                    ${escapar(p.connessione || p.tipo || "-")}
+                  </small>
+
+                  <small>
+                    ${escapar(textos.identificadorBridge)}:
+                    ${escapar(p.bridge_id)}
+                  </small>
+                </div>
+              </div>
+            `;
+          })
+          .join("")
+      : `
+        <p>
+          ${escapar(textos.ningunaImpresoraDetectada)}
+        </p>
+      `;
 
   return `<!doctype html>
 <html lang="${escapar(textos.lang)}">
@@ -483,64 +713,258 @@ function renderImpresoras(config, destinos, query, textos) {
   <meta charset="utf-8">
   <title>${escapar(textos.centroImpresion)} - Restaurant Service POS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
-    *{box-sizing:border-box;}
-    body{margin:0;background:#f3f4f6;color:#111827;font-family:Arial,Helvetica,sans-serif;}
-    .wrap{max-width:1160px;margin:0 auto;padding:28px 18px 70px;}
-    .hero{background:linear-gradient(135deg,#111827,#312e81);color:white;border-radius:26px;padding:28px;margin-bottom:18px;box-shadow:0 18px 42px rgba(15,23,42,.16);}
-    .hero h1{margin:0 0 8px;font-size:32px;}
-    .hero p{margin:0;color:#e0e7ff;line-height:1.5;}
-    .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;}
-    a.btn,button{display:inline-block;border:0;border-radius:12px;padding:11px 14px;background:#4f46e5;color:white;text-decoration:none;font-weight:900;cursor:pointer;font-size:14px;}
-    a.sec,button.sec{background:#e5e7eb;color:#111827;}
-    .msg{border-radius:15px;padding:12px 14px;margin-bottom:14px;font-weight:900;}
-    .msg.okmsg{background:#ecfdf5;color:#14532d;border:1px solid #86efac;}
-    .msg.errmsg{background:#fef2f2;color:#991b1b;border:1px solid #fecaca;}
-    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;padding:20px;margin-bottom:16px;box-shadow:0 10px 26px rgba(15,23,42,.07);}
-    label{display:block;font-weight:900;font-size:13px;margin:10px 0 6px;color:#374151;}
-    input,select{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:10px;font-size:15px;background:white;}
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
-    .printer-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:18px;padding:16px;}
-    .printer-card h3{margin:0 0 2px;font-size:20px;}
-    small{display:block;color:#6b7280;font-weight:800;margin-bottom:10px;}
-    .link{display:inline-block;margin-top:10px;color:#3730a3;font-weight:900;}
-    @media(max-width:850px){.grid{grid-template-columns:1fr;}}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,Helvetica,sans-serif;
+      color:#111827;
+      background:
+        radial-gradient(circle at 12% 8%,rgba(20,184,166,.17),transparent 28%),
+        radial-gradient(circle at 88% 10%,rgba(245,158,11,.15),transparent 25%),
+        #f3f4f6;
+    }
+    .wrap{
+      max-width:1180px;
+      margin:auto;
+      padding:28px 18px 70px;
+    }
+    .hero{
+      background:linear-gradient(135deg,#111827,#0f766e);
+      color:white;
+      border-radius:28px;
+      padding:28px;
+      margin-bottom:18px;
+      box-shadow:0 20px 50px rgba(15,23,42,.20);
+    }
+    .hero h1{
+      margin:0 0 8px;
+      font-size:32px;
+    }
+    .hero p{
+      margin:0;
+      color:#ccfbf1;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+    .btn,button{
+      border:0;
+      border-radius:12px;
+      padding:11px 14px;
+      background:#0f766e;
+      color:white;
+      text-decoration:none;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .sec{
+      background:white;
+      color:#111827;
+    }
+    .card{
+      background:white;
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      padding:20px;
+      margin-bottom:16px;
+      box-shadow:0 10px 28px rgba(15,23,42,.07);
+    }
+    .bridge-grid{
+      display:grid;
+      grid-template-columns:1fr 1.3fr;
+      gap:14px;
+    }
+    .bridge-ok{
+      padding:16px;
+      border-radius:16px;
+      background:#ecfdf5;
+      border:1px solid #86efac;
+    }
+    .bridge-off{
+      padding:16px;
+      border-radius:16px;
+      background:#fef2f2;
+      border:1px solid #fecaca;
+    }
+    .device{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      padding:12px;
+      border-bottom:1px solid #e5e7eb;
+    }
+    .device:last-child{
+      border-bottom:0;
+    }
+    .device small{
+      display:block;
+      margin-top:4px;
+      color:#6b7280;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+    }
+    .printer-card{
+      padding:17px;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      border-radius:18px;
+    }
+    .printer-card h3{
+      margin:0 0 2px;
+    }
+    label{
+      display:block;
+      margin:12px 0 6px;
+      font-size:12px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:#374151;
+    }
+    input,select{
+      width:100%;
+      padding:11px;
+      border:1px solid #d1d5db;
+      border-radius:12px;
+      background:white;
+      font-size:14px;
+    }
+    .help{
+      color:#6b7280;
+      font-size:12px;
+      line-height:1.45;
+    }
+    details{
+      margin:12px 0;
+      padding:10px;
+      border-radius:12px;
+      background:white;
+      border:1px solid #e5e7eb;
+    }
+    summary{
+      cursor:pointer;
+      font-weight:800;
+    }
+    .link{
+      display:inline-block;
+      margin-top:10px;
+      color:#0f766e;
+      font-weight:900;
+    }
+    .msg{
+      padding:12px 14px;
+      border-radius:14px;
+      margin-bottom:14px;
+      font-weight:900;
+    }
+    .okmsg{
+      background:#ecfdf5;
+      border:1px solid #86efac;
+    }
+    .errmsg{
+      background:#fef2f2;
+      border:1px solid #fecaca;
+    }
+    @media(max-width:850px){
+      .grid,
+      .bridge-grid,
+      .device{
+        grid-template-columns:1fr;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <main class="wrap">
-    <section class="hero">
-      <h1>${escapar(textos.centroImpresion)}</h1>
-      <p>${escapar(textos.descripcionImpresion)}</p>
-      <div class="actions">
-        <a class="btn sec" href="/configuracion">${escapar(textos.volverConfiguracion)}</a>
-        <a class="btn sec" href="/configuracion-destinos">${escapar(textos.destinos)}</a>
-        <a class="btn sec" href="/app/v2">${escapar(textos.abrirPos)}</a>
+<main class="wrap">
+
+  <section class="hero">
+    <h1>${escapar(textos.centroImpresion)}</h1>
+    <p>${escapar(textos.descripcionImpresion)}</p>
+
+    <div class="actions">
+      <a class="btn sec" href="/configuracion">
+        ${escapar(textos.volverConfiguracion)}
+      </a>
+
+      <a class="btn sec" href="/configuracion-destinos">
+        ${escapar(textos.destinos)}
+      </a>
+
+      <a class="btn sec" href="/app/v2">
+        ${escapar(textos.abrirPos)}
+      </a>
+    </div>
+  </section>
+
+  ${ok ? `<div class="msg okmsg">${escapar(ok)}</div>` : ""}
+  ${error ? `<div class="msg errmsg">${escapar(error)}</div>` : ""}
+
+  <section class="card">
+    <h2>${escapar(textos.rspPrintBridge)}</h2>
+
+    <div class="bridge-grid">
+      <div>
+        ${bridgeHtml}
       </div>
+
+      <div>
+        <h3>${escapar(textos.impresorasDetectadas)}</h3>
+        ${stampantiHtml}
+      </div>
+    </div>
+  </section>
+
+  <form method="POST" action="/configuracion-impresoras">
+
+    <section class="card">
+      <h2>${escapar(textos.modoGeneral)}</h2>
+
+      <label>
+        ${escapar(textos.modoImpresionGeneral)}
+      </label>
+
+      <select name="modo_impresion">
+        <option value="ventana" ${modo === "ventana" ? "selected" : ""}>
+          ${escapar(textos.modoVentana)}
+        </option>
+
+        <option value="preview" ${modo === "preview" ? "selected" : ""}>
+          ${escapar(textos.modoPreview)}
+        </option>
+
+        <option value="archivo_txt" ${modo === "archivo_txt" ? "selected" : ""}>
+          ${escapar(textos.modoArchivoTxt)}
+        </option>
+
+        <option value="escpos_red" ${modo === "escpos_red" ? "selected" : ""}>
+          ${escapar(textos.modoEscposRed)}
+        </option>
+
+        <option value="centro_impresion" ${modo === "centro_impresion" ? "selected" : ""}>
+          ${escapar(textos.modoCentroImpresion)}
+        </option>
+      </select>
     </section>
 
-    ${ok ? `<div class="msg okmsg">${escapar(ok)}</div>` : ""}
-    ${error ? `<div class="msg errmsg">${escapar(error)}</div>` : ""}
+    <section class="grid">
+      ${cards}
+    </section>
 
-    <form method="POST" action="/configuracion-impresoras">
-      <section class="card">
-        <h2>${escapar(textos.modoGeneral)}</h2>
-        <label>${escapar(textos.modoImpresionGeneral)}</label>
-        <select name="modo_impresion">
-          <option value="preview" ${modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
-          <option value="archivo_txt" ${modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
-          <option value="escpos_red" ${modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
-          <option value="centro_impresion" ${modo === "centro_impresion" ? "selected" : ""}>${escapar(textos.modoCentroImpresion)}</option>
-        </select>
-      </section>
+    <button type="submit">
+      ${escapar(textos.guardarCentroImpresion)}
+    </button>
 
-      <section class="grid">
-        ${cards}
-      </section>
+  </form>
 
-      <button type="submit">${escapar(textos.guardarCentroImpresion)}</button>
-    </form>
-  </main>
+</main>
 </body>
 </html>`;
 }
@@ -693,73 +1117,298 @@ module.exports = function destinosImpresionSaasRoutes(db) {
   });
 
   router.get("/configuracion-impresoras", requiereConfig, async function(req, res) {
-    const restauranteId = restauranteIdFromReq(req);
-    const textos = await textosDestinosRestaurante(
-      db,
-      restauranteId
-    );
-    const config = await asegurarConfig(
-      db,
-      restauranteId
-    );
-    const destinos = await destinosRestaurante(
-      db,
-      restauranteId
-    );
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const textos =
+      await textosDestinosRestaurante(
+        db,
+        restauranteId
+      );
+
+    const config =
+      await asegurarConfig(
+        db,
+        restauranteId
+      );
+
+    const destinos =
+      await destinosRestaurante(
+        db,
+        restauranteId
+      );
+
+    const bridgeConfig =
+      await get(
+        db,
+        `
+        SELECT
+          restaurante_id,
+          bridge_nombre,
+          bridge_version,
+          ultimo_contacto,
+          ultimo_error
+        FROM print_bridge_config
+        WHERE restaurante_id=?
+        LIMIT 1
+        `,
+        [restauranteId]
+      );
+
+    const stampanti =
+      await all(
+        db,
+        `
+        SELECT
+          restaurante_id,
+          bridge_id,
+          printer_id,
+          printer_nome,
+          tipo,
+          connessione,
+          uri,
+          stato,
+          ultimo_contacto
+        FROM print_bridge_printers
+        WHERE restaurante_id=?
+        ORDER BY
+          CASE
+            WHEN stato='rilevata'
+            THEN 0
+            ELSE 1
+          END,
+          printer_nome
+        `,
+        [restauranteId]
+      );
 
     res.send(
       renderImpresoras(
         config,
         destinos,
         req.query || {},
-        textos
+        textos,
+        bridgeConfig,
+        stampanti
       )
     );
   });
 
   router.post("/configuracion-impresoras", requiereConfig, async function(req, res) {
-    const restauranteId = restauranteIdFromReq(req);
-    const textos = await textosDestinosRestaurante(
-      db,
-      restauranteId
-    );
-    const body = req.body || {};
-    const config = await asegurarConfig(db, restauranteId);
-    const destinos = await destinosRestaurante(db, restauranteId);
-    const todos = [{ id: "ticket", nombre: "Ticket", activo: 1 }].concat(destinos);
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const textos =
+      await textosDestinosRestaurante(
+        db,
+        restauranteId
+      );
+
+    const body =
+      req.body || {};
+
+    const config =
+      await asegurarConfig(
+        db,
+        restauranteId
+      );
+
+    const destinos =
+      await destinosRestaurante(
+        db,
+        restauranteId
+      );
+
+    const todos =
+      [
+        {
+          id: "ticket",
+          nombre: "Ticket",
+          activo: 1
+        }
+      ].concat(destinos);
+
+    const stampanti =
+      await all(
+        db,
+        `
+        SELECT
+          bridge_id,
+          printer_id,
+          printer_nome,
+          stato
+        FROM print_bridge_printers
+        WHERE restaurante_id=?
+          AND stato='rilevata'
+        `,
+        [restauranteId]
+      );
+
+    const mappaStampanti = {};
+
+    stampanti.forEach((p) => {
+      mappaStampanti[
+        String(p.bridge_id) +
+        "\n" +
+        String(p.printer_id)
+      ] = p;
+    });
+
     const configJson = {};
 
+    let erroreBridge = false;
+
     todos.forEach((d) => {
-      configJson[d.id] = {
-        nombre: body["impresora_" + d.id] || "",
-        modo: body["modo_" + d.id] || body.modo_impresion || "preview"
+      const modoDestino =
+        String(
+          body[
+            "modo_" + d.id
+          ] ||
+          body.modo_impresion ||
+          "ventana"
+        );
+
+      const legacyNome =
+        String(
+          body[
+            "impresora_" + d.id
+          ] || ""
+        );
+
+      const item = {
+        nombre:
+          legacyNome,
+        modo:
+          modoDestino
       };
+
+      const raw =
+        String(
+          body[
+            "print_bridge_" + d.id
+          ] || ""
+        );
+
+      if (raw) {
+        try {
+          const scelta =
+            JSON.parse(raw);
+
+          const chiave =
+            String(
+              scelta.bridge_id || ""
+            ) +
+            "\n" +
+            String(
+              scelta.printer_id || ""
+            );
+
+          const stampante =
+            mappaStampanti[chiave];
+
+          if (stampante) {
+            item.bridge_id =
+              stampante.bridge_id;
+
+            item.printer_id =
+              stampante.printer_id;
+
+            if (
+              modoDestino ===
+              "print_bridge"
+            ) {
+              item.nombre =
+                stampante.printer_nome;
+            }
+          } else if (
+            modoDestino ===
+            "print_bridge"
+          ) {
+            erroreBridge = true;
+          }
+        } catch (_) {
+          if (
+            modoDestino ===
+            "print_bridge"
+          ) {
+            erroreBridge = true;
+          }
+        }
+      } else if (
+        modoDestino ===
+        "print_bridge"
+      ) {
+        erroreBridge = true;
+      }
+
+      configJson[d.id] =
+        item;
     });
+
+    if (erroreBridge) {
+      return res.redirect(
+        "/configuracion-impresoras?error=" +
+        encodeURIComponent(
+          textos.stampanteBridgeNonValida
+        )
+      );
+    }
+
+    const modiGenerali = [
+      "ventana",
+      "preview",
+      "archivo_txt",
+      "escpos_red",
+      "centro_impresion"
+    ];
+
+    const modoGenerale =
+      modiGenerali.includes(
+        String(body.modo_impresion)
+      )
+        ? String(body.modo_impresion)
+        : String(
+            config.modo_impresion ||
+            "ventana"
+          );
 
     await run(
       db,
-      `UPDATE configurazione
-       SET modo_impresion=?,
-           stampante_ticket=?,
-           stampante_bar=?,
-           stampante_cocina=?,
-           stampante_cucina=?,
-           config_impresion_json=?
-       WHERE id=?
-       AND COALESCE(restaurante_id,1)=?`,
+      `
+      UPDATE configurazione
+      SET
+        modo_impresion=?,
+        stampante_ticket=?,
+        stampante_bar=?,
+        stampante_cocina=?,
+        stampante_cucina=?,
+        config_impresion_json=?
+      WHERE id=?
+        AND COALESCE(
+          restaurante_id,
+          1
+        )=?
+      `,
       [
-        body.modo_impresion || "preview",
+        modoGenerale,
         body.impresora_ticket || "",
         body.impresora_bar || "",
         body.impresora_cocina || "",
         body.impresora_cocina || "",
-        JSON.stringify(configJson),
+        JSON.stringify(
+          configJson
+        ),
         config.id,
         restauranteId
       ]
     );
 
-    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent(textos.centroImpresionGuardado));
+    res.redirect(
+      "/configuracion-impresoras?ok=" +
+      encodeURIComponent(
+        textos.centroImpresionGuardado
+      )
+    );
   });
 
   router.post("/configuracion-impresoras/probar-:destinoId", requiereConfig, async function(req, res) {
