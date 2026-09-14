@@ -128,7 +128,7 @@ function creaIdempotencyKey(dati) {
   );
 }
 
-async function preparaComandaPrintBridge(
+async function preparaStampaPrintBridge(
   db,
   dati
 ) {
@@ -153,6 +153,11 @@ async function preparaComandaPrintBridge(
       "destino non valido"
     );
   }
+
+  const tipoLavoro =
+    normalizzaDestino(
+      dati.tipo || "comanda"
+    ) || "comanda";
 
   const config =
     await get(
@@ -307,9 +312,36 @@ async function preparaComandaPrintBridge(
     ).trim();
 
   const idempotencyKey =
-    creaIdempotencyKey(
-      dati
-    );
+    tipoLavoro === "comanda"
+      ? creaIdempotencyKey(
+          dati
+        )
+      : String(
+          dati.idempotency_key ||
+          (
+            tipoLavoro +
+            ":" +
+            restauranteId +
+            ":" +
+            destino +
+            ":" +
+            crypto
+              .createHash("sha256")
+              .update(
+                JSON.stringify({
+                  mesa:
+                    String(
+                      dati.mesa || ""
+                    ),
+                  contenuto:
+                    String(
+                      dati.contenuto || ""
+                    )
+                })
+              )
+              .digest("hex")
+          )
+        );
 
   const risultato =
     await accodaLavoro(
@@ -320,7 +352,7 @@ async function preparaComandaPrintBridge(
         idempotency_key:
           idempotencyKey,
         tipo:
-          "comanda",
+          tipoLavoro,
         destino,
         contenuto:
           String(
@@ -349,7 +381,24 @@ async function preparaComandaPrintBridge(
   };
 }
 
+async function preparaComandaPrintBridge(
+  db,
+  dati
+) {
+  return preparaStampaPrintBridge(
+    db,
+    Object.assign(
+      {},
+      dati,
+      {
+        tipo: "comanda"
+      }
+    )
+  );
+}
+
 module.exports = {
   creaIdempotencyKey,
+  preparaStampaPrintBridge,
   preparaComandaPrintBridge
 };

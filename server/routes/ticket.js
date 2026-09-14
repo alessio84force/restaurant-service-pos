@@ -1,4 +1,5 @@
 const { imprimirCentroImpresion } = require("../printing/centroImpresionRuntime");
+const { preparaStampaPrintBridge } = require("../printing/printBridgeDispatch");
 const express = require("express");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
 const { normalizarIdioma } = require("../utils/i18n");
@@ -974,6 +975,383 @@ function ticketRoutes(db) {
     `;
 
   }
+
+  function getTicketPromise(
+    sql,
+    params
+  ) {
+    return new Promise(
+      (resolve, reject) => {
+        db.get(
+          sql,
+          params || [],
+          (err, row) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve(row || null);
+          }
+        );
+      }
+    );
+  }
+
+  function configuracionTicketPromise(
+    restauranteId
+  ) {
+    return new Promise(
+      (resolve, reject) => {
+        obtenerConfiguracion(
+          restauranteId,
+          (err, config) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve(config || {});
+          }
+        );
+      }
+    );
+  }
+
+  function lineasTicketPromise(
+    pedidoId,
+    restauranteId
+  ) {
+    return new Promise(
+      (resolve, reject) => {
+        obtenerLineasPedido(
+          pedidoId,
+          restauranteId,
+          (err, productos) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve(productos || []);
+          }
+        );
+      }
+    );
+  }
+
+  function pagosTicketPromise(
+    pedidoId,
+    restauranteId
+  ) {
+    return new Promise(
+      (resolve, reject) => {
+        obtenerPagosPedido(
+          pedidoId,
+          restauranteId,
+          (err, pagos) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve(pagos || []);
+          }
+        );
+      }
+    );
+  }
+
+  async function prepararTicketPrintBridge(
+    restauranteId,
+    config,
+    pedido,
+    productos,
+    pagos,
+    tipo
+  ) {
+    const contenido =
+      generarTextoTicketCentroImpresion(
+        config,
+        pedido,
+        productos,
+        pagos,
+        tipo
+      );
+
+    return preparaStampaPrintBridge(
+      db,
+      {
+        restaurante_id:
+          restauranteId,
+        destino:
+          "ticket",
+        tipo:
+          tipo === "final"
+            ? "ticket_final"
+            : "precuenta",
+        mesa:
+          pedido.mesa,
+        contenuto:
+          contenido,
+        lineas:
+          []
+      }
+    );
+  }
+
+  router.post(
+    "/saas/ticket/:mesa/imprimir",
+    requiereLoginTicket,
+    async (req, res) => {
+      try {
+        const restauranteId =
+          restauranteIdFromReq(req);
+
+        const mesa =
+          req.params.mesa;
+
+        const config =
+          await configuracionTicketPromise(
+            restauranteId
+          );
+
+        const pedido =
+          await getTicketPromise(
+            `
+            SELECT
+              pedidos.id,
+              mesas.numero AS mesa,
+              pedidos.estado,
+              pedidos.total,
+              pedidos.creado_en
+            FROM pedidos
+            JOIN mesas
+              ON pedidos.mesa_id = mesas.id
+              AND COALESCE(mesas.restaurante_id,1)=?
+            WHERE mesas.numero=?
+              AND COALESCE(pedidos.restaurante_id,1)=?
+              AND pedidos.estado IN ('abierto','cuenta')
+            ORDER BY pedidos.id DESC
+            LIMIT 1
+            `,
+            [
+              restauranteId,
+              mesa,
+              restauranteId
+            ]
+          );
+
+        if (!pedido) {
+          return res.status(404).json({
+            ok: false,
+            error:
+              "pedido_no_encontrado"
+          });
+        }
+
+        const productos =
+          await lineasTicketPromise(
+            pedido.id,
+            restauranteId
+          );
+
+        const resultado =
+          await prepararTicketPrintBridge(
+            restauranteId,
+            config,
+            pedido,
+            productos,
+            [],
+            "precuenta"
+          );
+
+        if (
+          resultado.gestita &&
+          !resultado.ok
+        ) {
+          return res.status(503).json({
+            ok: false,
+            error:
+              resultado.error
+          });
+        }
+
+        if (!resultado.gestita) {
+          return res.json({
+            ok: true,
+            stampa: {
+              modo:
+                resultado.modo ||
+                "preview"
+            },
+            fallback_url:
+              "/saas/ticket/" +
+              encodeURIComponent(mesa)
+          });
+        }
+
+        console.log(
+          "[PRINT BRIDGE TICKET] Precuenta accodata:",
+          resultado.lavoro.id
+        );
+
+        return res.json({
+          ok: true,
+          stampa: {
+            modo:
+              "print_bridge",
+            job_id:
+              resultado.lavoro.id,
+            stato:
+              resultado.lavoro.estado,
+            creato:
+              resultado.creato
+          }
+        });
+      } catch (err) {
+        console.error(
+          "[PRINT BRIDGE TICKET] Errore precuenta:",
+          err.message
+        );
+
+        return res.status(500).json({
+          ok: false,
+          error:
+            "print_bridge_ticket_error"
+        });
+      }
+    }
+  );
+
+  router.post(
+    "/saas/ticket-final/:pedido/imprimir",
+    requiereLoginTicket,
+    async (req, res) => {
+      try {
+        const restauranteId =
+          restauranteIdFromReq(req);
+
+        const pedidoId =
+          Number(
+            req.params.pedido || 0
+          );
+
+        const config =
+          await configuracionTicketPromise(
+            restauranteId
+          );
+
+        const pedido =
+          await getTicketPromise(
+            `
+            SELECT
+              pedidos.id,
+              mesas.numero AS mesa,
+              pedidos.estado,
+              pedidos.total,
+              pedidos.creado_en,
+              pedidos.pagado_en
+            FROM pedidos
+            JOIN mesas
+              ON pedidos.mesa_id = mesas.id
+              AND COALESCE(mesas.restaurante_id,1)=?
+            WHERE pedidos.id=?
+              AND COALESCE(pedidos.restaurante_id,1)=?
+            LIMIT 1
+            `,
+            [
+              restauranteId,
+              pedidoId,
+              restauranteId
+            ]
+          );
+
+        if (!pedido) {
+          return res.status(404).json({
+            ok: false,
+            error:
+              "pedido_no_encontrado"
+          });
+        }
+
+        const productos =
+          await lineasTicketPromise(
+            pedido.id,
+            restauranteId
+          );
+
+        const pagos =
+          await pagosTicketPromise(
+            pedido.id,
+            restauranteId
+          );
+
+        const resultado =
+          await prepararTicketPrintBridge(
+            restauranteId,
+            config,
+            pedido,
+            productos,
+            pagos,
+            "final"
+          );
+
+        if (
+          resultado.gestita &&
+          !resultado.ok
+        ) {
+          return res.status(503).json({
+            ok: false,
+            error:
+              resultado.error
+          });
+        }
+
+        if (!resultado.gestita) {
+          return res.json({
+            ok: true,
+            stampa: {
+              modo:
+                resultado.modo ||
+                "preview"
+            },
+            fallback_url:
+              "/ticket-final/" +
+              encodeURIComponent(
+                pedidoId
+              )
+          });
+        }
+
+        console.log(
+          "[PRINT BRIDGE TICKET] Ticket finale accodato:",
+          resultado.lavoro.id
+        );
+
+        return res.json({
+          ok: true,
+          stampa: {
+            modo:
+              "print_bridge",
+            job_id:
+              resultado.lavoro.id,
+            stato:
+              resultado.lavoro.estado,
+            creato:
+              resultado.creato
+          }
+        });
+      } catch (err) {
+        console.error(
+          "[PRINT BRIDGE TICKET] Errore ticket finale:",
+          err.message
+        );
+
+        return res.status(500).json({
+          ok: false,
+          error:
+            "print_bridge_ticket_final_error"
+        });
+      }
+    }
+  );
 
   router.get(
     "/ticket/:mesa",

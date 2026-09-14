@@ -1316,66 +1316,6 @@ function gestionarSalidaComandaCentroImpresionV2(destinoTitulo, numeroMesa, line
 async function generarPrecuenta(numeroMesa){
 
     const textos = textosPedidoV2();
-    const panel = document.getElementById("panel-central");
-
-    const ventanaTicket = window.open(
-        "",
-        "_blank",
-        "width=420,height=700"
-    );
-
-    if(ventanaTicket){
-
-        ventanaTicket.document.open();
-
-        ventanaTicket.document.write(`
-            <!DOCTYPE html>
-            <html lang="${textos.idiomaHtmlPrecuenta}">
-            <head>
-                <meta charset="UTF-8">
-                <title>${textos.tituloPrecuenta} - ${textos.mesaPrecuenta} ${numeroMesa}</title>
-
-                <style>
-                    body{
-                        font-family:Arial,sans-serif;
-                        padding:30px;
-                        text-align:center;
-                        color:#1f2937;
-                    }
-
-                    .cargando{
-                        margin-top:80px;
-                    }
-
-                    .spinner{
-                        width:42px;
-                        height:42px;
-                        border:5px solid #e5e7eb;
-                        border-top:5px solid #2563eb;
-                        border-radius:50%;
-                        margin:0 auto 20px auto;
-                        animation:girar 1s linear infinite;
-                    }
-
-                    @keyframes girar{
-                        from{transform:rotate(0deg);}
-                        to{transform:rotate(360deg);}
-                    }
-                </style>
-            </head>
-
-            <body>
-                <div class="cargando">
-                    <div class="spinner"></div>
-                    <h2>${textos.preparandoPrecuenta}</h2>
-                    <p>${textos.mesaPrecuenta} ${numeroMesa}</p>
-                </div>
-            </body>
-            </html>
-        `);
-
-        ventanaTicket.document.close();
-    }
 
     try{
 
@@ -1397,54 +1337,79 @@ async function generarPrecuenta(numeroMesa){
                 "La mesa puede estar ya en cuenta:",
                 errorCuenta
             );
+
         }
 
-        const respuestaTicket = await fetch(
-            API + "/saas/ticket/" + numeroMesa,
+        const respuesta = await fetch(
+            API +
+            "/saas/ticket/" +
+            numeroMesa +
+            "/imprimir",
             {
-                credentials: "same-origin"
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: "{}"
             }
         );
 
-        if(!respuestaTicket.ok){
+        const data = await respuesta.json();
 
+        if(
+            !respuesta.ok ||
+            !data ||
+            data.ok === false
+        ){
             throw new Error(
+                (
+                    data &&
+                    data.error
+                ) ||
                 textos.noGenerarPrecuenta
             );
         }
 
-        const htmlTicket = await respuestaTicket.text();
+        const modo =
+            data.stampa &&
+            data.stampa.modo
+                ? data.stampa.modo
+                : "preview";
 
-        const htmlConImpresion = htmlTicket.replace(
-            "</body>",
-            `
-            <script>
-                window.addEventListener("load", function(){
-                    setTimeout(function(){
+        if(modo === "print_bridge"){
 
-                    }, 400);
-                });
-            </script>
-            </body>
-            `
-        );
-
-        if(ventanaTicket){
-
-            ventanaTicket.document.open();
-            ventanaTicket.document.write(htmlConImpresion);
-            ventanaTicket.document.close();
-
-        }else{
-
-            window.open(
-                API + "/saas/ticket/" + numeroMesa,
-                "_blank"
+            await cargarMesasV2();
+            await cargarPedidoV2(
+                numeroMesa
             );
+
+            mostrarToastPedidoV2(
+                textos.precuentaGenerada,
+                "correcto"
+            );
+
+            return;
         }
 
+        const fallbackUrl =
+            data.fallback_url ||
+            (
+                API +
+                "/saas/ticket/" +
+                numeroMesa
+            );
+
+        window.open(
+            fallbackUrl,
+            "_blank"
+        );
+
         await cargarMesasV2();
-        await cargarPedidoV2(numeroMesa);
+        await cargarPedidoV2(
+            numeroMesa
+        );
 
         mostrarToastPedidoV2(
             textos.precuentaGenerada,
@@ -1458,31 +1423,11 @@ async function generarPrecuenta(numeroMesa){
             error
         );
 
-        if(ventanaTicket){
-
-            ventanaTicket.document.open();
-
-            ventanaTicket.document.write(`
-                <!DOCTYPE html>
-                <html lang="${textos.idiomaHtmlPrecuenta}">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${textos.errorTituloPrecuenta}</title>
-                </head>
-
-                <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;">
-                    <h2>${textos.noImprimirPrecuenta}</h2>
-                    <p>${textos.revisarServidorPrecuenta}</p>
-                </body>
-                </html>
-            `);
-
-            ventanaTicket.document.close();
-        }
-
         mostrarToastPedidoV2(
             textos.noGenerarPrecuenta,
             "error"
         );
+
     }
+
 }

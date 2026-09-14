@@ -1690,148 +1690,85 @@ async function imprimirTicketFinalCobroV2(pedidoId){
 
     const textos = textosCobroV2();
 
-    const idiomaDocumento = String(
-        document.documentElement.lang || "es"
-    ).toLowerCase();
-
-    const idioma = ["es","it","en","pt-br"].includes(
-        idiomaDocumento
-    )
-        ? idiomaDocumento
-        : "es";
-
     if(!pedidoId){
-        alert(textos.pedidoNoEncontradoTicketFinal);
+
+        alert(
+            textos.pedidoNoEncontradoTicketFinal
+        );
+
         return;
-    }
-
-    const ventanaTicket = window.open(
-        "",
-        "_blank",
-        "width=420,height=700"
-    );
-
-    if(ventanaTicket){
-
-        ventanaTicket.document.open();
-
-        ventanaTicket.document.write(`
-            <!DOCTYPE html>
-            <html lang="${idioma}">
-            <head>
-                <meta charset="UTF-8">
-                <title>${textos.preparandoTicketFinal}</title>
-                <style>
-                    body{
-                        font-family:Arial,sans-serif;
-                        padding:30px;
-                        text-align:center;
-                        color:#1f2937;
-                    }
-
-                    .cargando{
-                        margin-top:80px;
-                    }
-
-                    .spinner{
-                        width:42px;
-                        height:42px;
-                        border:5px solid #e5e7eb;
-                        border-top:5px solid #2563eb;
-                        border-radius:50%;
-                        margin:0 auto 20px auto;
-                        animation:girar 1s linear infinite;
-                    }
-
-                    @keyframes girar{
-                        from{transform:rotate(0deg);}
-                        to{transform:rotate(360deg);}
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="cargando">
-                    <div class="spinner"></div>
-                    <h2>${textos.preparandoTicketFinal}</h2>
-                    <p>${textos.pedido} ${pedidoId}</p>
-                </div>
-            </body>
-            </html>
-        `);
-
-        ventanaTicket.document.close();
-
     }
 
     try{
 
         const respuesta = await fetch(
-            API + "/ticket-final/" + pedidoId,
+            API +
+            "/saas/ticket-final/" +
+            pedidoId +
+            "/imprimir",
             {
-                credentials: "include"
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                body: "{}"
             }
         );
 
-        if(!respuesta.ok){
+        const data =
+            await respuesta.json();
+
+        if(
+            !respuesta.ok ||
+            !data ||
+            data.ok === false
+        ){
             throw new Error(
+                (
+                    data &&
+                    data.error
+                ) ||
                 textos.noGenerarTicketFinal
             );
         }
 
-        const htmlTicket = await respuesta.text();
+        const modo =
+            data.stampa &&
+            data.stampa.modo
+                ? data.stampa.modo
+                : "preview";
 
-        if(ventanaTicket){
-
-            ventanaTicket.document.open();
-            ventanaTicket.document.write(htmlTicket);
-            ventanaTicket.document.close();
-
-            ventanaTicket.focus();
+        if(modo === "print_bridge"){
 
             return;
         }
 
-        alert(
-            textos.popupBloqueadoTicket
+        const fallbackUrl =
+            data.fallback_url ||
+            (
+                API +
+                "/ticket-final/" +
+                pedidoId
+            );
+
+        window.open(
+            fallbackUrl,
+            "_blank"
         );
 
     }catch(error){
 
-        console.error("Error generando ticket final:", error);
+        console.error(
+            "Error generando ticket final:",
+            error
+        );
 
-        if(ventanaTicket){
-
-            ventanaTicket.document.open();
-
-            ventanaTicket.document.write(`
-                <!DOCTYPE html>
-                <html lang="${idioma}">
-                <head>
-                    <meta charset="UTF-8">
-                    <title>${textos.noGenerarTicketFinal}</title>
-                </head>
-                <body style="font-family:Arial,sans-serif;padding:30px;text-align:center;color:#1f2937;">
-                    <h2>${textos.noGenerarTicketFinal}</h2>
-                    <p>${textos.cerrarVentanaReintentar}</p>
-                    <button
-                        onclick="window.close()"
-                        style="margin-top:20px;padding:12px 18px;border:0;border-radius:10px;background:#111827;color:white;font-weight:700;"
-                    >
-                        ${textos.cerrar}
-                    </button>
-                </body>
-                </html>
-            `);
-
-            ventanaTicket.document.close();
-
-        }else{
-
-            alert(
-                textos.noGenerarTicketFinal + "."
-            );
-
-        }
+        alert(
+            textos.noGenerarTicketFinal +
+            "."
+        );
 
     }
 
