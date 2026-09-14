@@ -1,5 +1,6 @@
 const {
-  execFileSync
+  execFileSync,
+  spawnSync
 } = require("child_process");
 
 const fs = require("fs");
@@ -213,7 +214,128 @@ function elencaUsbEscposMacOS() {
     .filter(Boolean);
 }
 
+
+function inviaUsbEscposMacOS(
+  dispositivo,
+  dati,
+  opzioni
+) {
+  if (os.platform() !== "darwin") {
+    throw new Error(
+      "Stampa USB ESC/POS disponibile solo su macOS"
+    );
+  }
+
+  if (!dispositivo) {
+    throw new Error(
+      "Dispositivo USB ESC/POS mancante"
+    );
+  }
+
+  const buffer =
+    Buffer.isBuffer(dati)
+      ? dati
+      : Buffer.from(dati || "");
+
+  if (!buffer.length) {
+    throw new Error(
+      "Contenuto USB vuoto"
+    );
+  }
+
+  const vendorId =
+    String(
+      dispositivo.vendor_id || ""
+    ).trim();
+
+  const productId =
+    String(
+      dispositivo.product_id || ""
+    ).trim();
+
+  const seriale =
+    String(
+      dispositivo.seriale || ""
+    ).trim();
+
+  const interfaccia =
+    Number(
+      dispositivo.interfaccia
+    );
+
+  if (
+    !vendorId ||
+    !productId ||
+    !Number.isInteger(interfaccia)
+  ) {
+    throw new Error(
+      "Identificazione stampante USB incompleta"
+    );
+  }
+
+  const helper =
+    assicuraHelper();
+
+  const timeoutMs =
+    Number(
+      opzioni &&
+      opzioni.timeoutMs
+    ) || 15000;
+
+  const risultato =
+    spawnSync(
+      helper,
+      [
+        "--write",
+        vendorId,
+        productId,
+        seriale,
+        String(interfaccia)
+      ],
+      {
+        input: buffer,
+        encoding: "utf8",
+        timeout: timeoutMs,
+        maxBuffer:
+          1024 * 1024
+      }
+    );
+
+  if (risultato.error) {
+    throw risultato.error;
+  }
+
+  if (risultato.status !== 0) {
+    const dettaglio =
+      String(
+        risultato.stderr ||
+        risultato.stdout ||
+        ""
+      ).trim();
+
+    throw new Error(
+      "Invio USB ESC/POS fallito" +
+      (
+        dettaglio
+          ? ": " + dettaglio
+          : " (codice " +
+            risultato.status +
+            ")"
+      )
+    );
+  }
+
+  return {
+    ok: true,
+    stdout:
+      String(
+        risultato.stdout || ""
+      ).trim()
+  };
+}
+
 module.exports = {
   assicuraHelper,
-  elencaUsbEscposMacOS
+  elencaUsbEscposMacOS,
+  inviaUsbEscposMacOS
 };

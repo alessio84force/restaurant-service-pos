@@ -10,6 +10,10 @@ const {
   scopriStampanti
 } = require("./scopriStampanti");
 
+const {
+  inviaUsbEscposMacOS
+} = require("./usbEscposMac");
+
 function esegui(comando, args) {
   return new Promise(
     (resolve, reject) => {
@@ -139,6 +143,48 @@ async function cancellaLavoro(
   } catch (_) {}
 }
 
+
+function normalizzaTestoEscPos(
+  testo
+) {
+  return String(testo || "")
+    .normalize("NFD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .replace(
+      /[^\x0A\x0D\x20-\x7E]/g,
+      "?"
+    );
+}
+
+function creaBufferEscPos(
+  testo
+) {
+  const contenuto =
+    normalizzaTestoEscPos(
+      testo
+    );
+
+  return Buffer.concat([
+    Buffer.from(
+      [
+        0x1B,
+        0x40
+      ]
+    ),
+    Buffer.from(
+      contenuto,
+      "ascii"
+    ),
+    Buffer.from(
+      "\n\n\n",
+      "ascii"
+    )
+  ]);
+}
+
 async function stampaTesto(
   idONome,
   testo,
@@ -174,6 +220,40 @@ async function stampaTesto(
       opzioni &&
       opzioni.intervalloMs
     ) || 1000;
+
+  if (
+    stampante.trasporto ===
+    "usb_escpos"
+  ) {
+    const dati =
+      creaBufferEscPos(
+        contenuto
+      );
+
+    const risultato =
+      inviaUsbEscposMacOS(
+        stampante,
+        dati,
+        {
+          timeoutMs: timeoutMs
+        }
+      );
+
+    return {
+      ok: true,
+      stampante:
+        stampante.nome,
+      printer_id:
+        stampante.id,
+      job_id:
+        "usb-" +
+        Date.now(),
+      risposta:
+        risultato.stdout,
+      trasporto:
+        "usb_escpos"
+    };
+  }
 
   const file =
     path.join(
