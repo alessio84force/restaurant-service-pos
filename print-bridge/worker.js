@@ -480,8 +480,14 @@ async function main() {
   }
 
   console.log(
-    "CUPS COMPLETATO:",
+    "STAMPA COMPLETATA:",
     risultatoStampa.job_id
+  );
+
+  console.log(
+    "TRASPORTO:",
+    risultatoStampa.trasporto ||
+      "cups"
   );
 
   try {
@@ -500,8 +506,11 @@ async function main() {
       printer_nombre:
         lavoro.printer_nombre ||
         null,
-      cups_job_id:
-        risultatoStampa.job_id
+      print_job_id:
+        risultatoStampa.job_id,
+      trasporto:
+        risultatoStampa.trasporto ||
+        "cups"
     });
   } catch (errStato) {
     console.log(
