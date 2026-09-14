@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
 const { normalizarIdioma } = require("../utils/i18n");
+const { preparaComandaPrintBridge } = require("../printing/printBridgeDispatch");
 const {
   emitirPedidoRt,
   confirmarRtEmitidoManualmente,
@@ -544,24 +545,109 @@ function guardarPrint(nombreArchivo, contenido) {
 }
 
 
-async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
-  const destino = String(destinoRaw || "").trim().toLowerCase();
 
-  const restaurante = await get(
-    db,
-    "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
-    [restauranteId]
-  ) || {};
+async function marcarLineasComandaEnviadas(
+  db,
+  restauranteId,
+  destino,
+  lineas
+) {
+  for (const linea of lineas) {
+    await run(
+      db,
+      "INSERT OR IGNORE INTO comanda_envios_linea (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id) VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)",
+      [
+        linea.id,
+        destino,
+        restauranteId
+      ]
+    );
 
-  const idioma = normalizarIdioma(restaurante.idioma);
+    await run(
+      db,
+      "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?) AND COALESCE(restaurante_id,1)=?",
+      [
+        linea.cantidad_total,
+        linea.id,
+        destino,
+        restauranteId
+      ]
+    );
 
-  const aliasesDestino = await aliasesDestinoComanda(db, restauranteId, destino);
+    if (destino === "bar") {
+      await run(
+        db,
+        "UPDATE pedido_lineas SET cantidad_enviada_bar=cantidad, enviada_bar=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
+        [
+          linea.id,
+          restauranteId
+        ]
+      );
+    }
 
-  if (!aliasesDestino.length) aliasesDestino.push(destino || "cocina");
+    if (destino === "cocina") {
+      await run(
+        db,
+        "UPDATE pedido_lineas SET cantidad_enviada_cocina=cantidad, enviada_cocina=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
+        [
+          linea.id,
+          restauranteId
+        ]
+      );
+    }
+  }
+}
 
-  const placeholdersDestino = aliasesDestino.map(() => "?").join(",");
 
-  const mesa = await buscarMesa(db, restauranteId, mesaParam);
+async function enviarComandaDestino(
+  db,
+  restauranteId,
+  mesaParam,
+  destinoRaw
+) {
+  const destino =
+    String(
+      destinoRaw || ""
+    )
+      .trim()
+      .toLowerCase();
+
+  const restaurante =
+    await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
+      [restauranteId]
+    ) || {};
+
+  const idioma =
+    normalizarIdioma(
+      restaurante.idioma
+    );
+
+  const aliasesDestino =
+    await aliasesDestinoComanda(
+      db,
+      restauranteId,
+      destino
+    );
+
+  if (!aliasesDestino.length) {
+    aliasesDestino.push(
+      destino || "cocina"
+    );
+  }
+
+  const placeholdersDestino =
+    aliasesDestino
+      .map(() => "?")
+      .join(",");
+
+  const mesa =
+    await buscarMesa(
+      db,
+      restauranteId,
+      mesaParam
+    );
 
   if (!mesa) {
     return {
@@ -569,22 +655,30 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
       status: 404,
       data: {
         ok: false,
-        error: "Mesa no encontrada para este restaurante"
+        error:
+          "Mesa no encontrada para este restaurante"
       }
     };
   }
 
-  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
+  const pedido =
+    await buscarPedidoMesa(
+      db,
+      restauranteId,
+      mesa.id
+    );
 
   if (!pedido) {
     return {
       ok: true,
       data: {
         ok: true,
-        mensaje: "Nada para enviar",
+        mensaje:
+          "Nada para enviar",
         lineas: [],
         destino: destino,
-        debug: "Sin pedido abierto para esta mesa"
+        debug:
+          "Sin pedido abierto para esta mesa"
       }
     };
   }
@@ -614,7 +708,9 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
     "AND COALESCE(cel.restaurante_id,1)=? " +
     "WHERE pl.pedido_id=? " +
     "AND COALESCE(pl.restaurante_id,1)=? " +
-    "AND LOWER(COALESCE(categorias.destino,'cocina')) IN (" + placeholdersDestino + ") " +
+    "AND LOWER(COALESCE(categorias.destino,'cocina')) IN (" +
+    placeholdersDestino +
+    ") " +
     "AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0 " +
     "ORDER BY pl.id";
 
@@ -625,105 +721,251 @@ async function enviarComandaDestino(db, restauranteId, mesaParam, destinoRaw) {
     restauranteId,
     pedido.id,
     restauranteId
-  ].concat(aliasesDestino);
+  ].concat(
+    aliasesDestino
+  );
 
-  const lineas = await all(db, sql, params);
+  const lineas =
+    await all(
+      db,
+      sql,
+      params
+    );
 
   if (!lineas.length) {
-    const debugLineas = await all(
-      db,
-      "SELECT pl.id, pl.pedido_id, productos.nombre AS producto, categorias.destino, pl.cantidad, COALESCE(pl.restaurante_id,1) AS restaurante_id " +
-      "FROM pedido_lineas pl " +
-      "JOIN productos ON productos.id = pl.producto_id " +
-      "JOIN categorias ON categorias.id = productos.categoria_id " +
-      "WHERE pl.pedido_id=? " +
-      "ORDER BY pl.id",
-      [pedido.id]
-    );
+    const debugLineas =
+      await all(
+        db,
+        "SELECT pl.id, pl.pedido_id, productos.nombre AS producto, categorias.destino, pl.cantidad, COALESCE(pl.restaurante_id,1) AS restaurante_id " +
+        "FROM pedido_lineas pl " +
+        "JOIN productos ON productos.id = pl.producto_id " +
+        "JOIN categorias ON categorias.id = productos.categoria_id " +
+        "WHERE pl.pedido_id=? " +
+        "ORDER BY pl.id",
+        [pedido.id]
+      );
 
     return {
       ok: true,
       data: {
         ok: true,
-        mensaje: "Nada para enviar",
+        mensaje:
+          "Nada para enviar",
         lineas: [],
         destino: destino,
         debug: {
-          pedido_id: pedido.id,
-          mesa_id: mesa.id,
-          mesa: mesa.numero,
-          aliases: aliasesDestino,
-          lineas_pedido: debugLineas
+          pedido_id:
+            pedido.id,
+          mesa_id:
+            mesa.id,
+          mesa:
+            mesa.numero,
+          aliases:
+            aliasesDestino,
+          lineas_pedido:
+            debugLineas
         }
       }
     };
   }
 
-  for (const linea of lineas) {
-    await run(
-      db,
-      "INSERT OR IGNORE INTO comanda_envios_linea (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id) VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)",
-      [linea.id, destino, restauranteId]
+  const texto =
+    formatearComanda(
+      destino,
+      mesa.numero,
+      lineas,
+      idioma
     );
 
-    await run(
-      db,
-      "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?) AND COALESCE(restaurante_id,1)=?",
-      [linea.cantidad_total, linea.id, destino, restauranteId]
+  const archivo =
+    "comanda_" +
+    destino.replace(
+      /[^a-z0-9_-]/g,
+      "_"
+    ) +
+    ".txt";
+
+  let resultadoBridge;
+
+  try {
+    resultadoBridge =
+      await preparaComandaPrintBridge(
+        db,
+        {
+          restaurante_id:
+            restauranteId,
+          destino:
+            destino,
+          mesa:
+            mesa.numero,
+          lineas:
+            lineas,
+          contenuto:
+            texto
+        }
+      );
+  } catch (errBridge) {
+    console.error(
+      "[PRINT BRIDGE] Errore accodando comanda:",
+      errBridge.message
     );
 
-    if (destino === "bar") {
-      await run(
-        db,
-        "UPDATE pedido_lineas SET cantidad_enviada_bar=cantidad, enviada_bar=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
-        [linea.id, restauranteId]
-      );
-    }
-
-    if (destino === "cocina") {
-      await run(
-        db,
-        "UPDATE pedido_lineas SET cantidad_enviada_cocina=cantidad, enviada_cocina=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
-        [linea.id, restauranteId]
-      );
-    }
+    return {
+      ok: false,
+      status: 500,
+      data: {
+        ok: false,
+        error:
+          "print_bridge_queue_error"
+      }
+    };
   }
 
-  const texto = formatearComanda(destino, mesa.numero, lineas, idioma);
-  const archivo = "comanda_" + destino.replace(/[^a-z0-9_-]/g, "_") + ".txt";
-  guardarPrint(archivo, texto);
+  if (
+    resultadoBridge &&
+    resultadoBridge.gestita &&
+    !resultadoBridge.ok
+  ) {
+    console.log(
+      "[PRINT BRIDGE " +
+      destino.toUpperCase() +
+      "] Comanda non accodata:",
+      resultadoBridge.error
+    );
+
+    return {
+      ok: false,
+      status: 503,
+      data: {
+        ok: false,
+        error:
+          resultadoBridge.error,
+        destino:
+          destino,
+        mesa:
+          mesa.numero
+      }
+    };
+  }
+
+  await marcarLineasComandaEnviadas(
+    db,
+    restauranteId,
+    destino,
+    lineas
+  );
+
+  guardarPrint(
+    archivo,
+    texto
+  );
+
+  const stampa =
+    (
+      resultadoBridge &&
+      resultadoBridge.gestita
+    )
+      ? {
+          modo:
+            "print_bridge",
+          job_id:
+            resultadoBridge
+              .lavoro.id,
+          stato:
+            resultadoBridge
+              .lavoro.estado,
+          creato:
+            resultadoBridge
+              .creato
+        }
+      : {
+          modo:
+            (
+              resultadoBridge &&
+              resultadoBridge.modo
+            ) ||
+            "legacy"
+        };
+
+  if (
+    resultadoBridge &&
+    resultadoBridge.gestita
+  ) {
+    console.log(
+      "[PRINT BRIDGE " +
+      destino.toUpperCase() +
+      "] Job accodato:",
+      resultadoBridge.lavoro.id,
+      resultadoBridge.creato
+        ? "nuovo"
+        : "gia_esistente"
+    );
+  }
 
   return {
     ok: true,
     data: {
       ok: true,
-      mensaje: "Comanda " + destino + " generada",
-      archivo: "prints/" + archivo,
-      destino: destino,
-      lineas: lineas.map((l) => ({
-        id: l.id,
-        linea_id: l.id,
-        pedido_id: l.pedido_id,
-        nombre: l.nombre,
-        producto: l.producto,
-        cantidad: l.cantidad,
-        nota: l.nota || "",
-        destino_categoria: l.destino_categoria || ""
-      }))
+      mensaje:
+        "Comanda " +
+        destino +
+        " generada",
+      archivo:
+        "prints/" +
+        archivo,
+      destino:
+        destino,
+      stampa:
+        stampa,
+      lineas:
+        lineas.map(
+          (l) => ({
+            id:
+              l.id,
+            linea_id:
+              l.id,
+            pedido_id:
+              l.pedido_id,
+            nombre:
+              l.nombre,
+            producto:
+              l.producto,
+            cantidad:
+              l.cantidad,
+            nota:
+              l.nota || "",
+            destino_categoria:
+              l.destino_categoria || ""
+          })
+        )
     }
   };
 }
 
-async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
-  const restaurante = await get(
-    db,
-    "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
-    [restauranteId]
-  ) || {};
 
-  const idioma = normalizarIdioma(restaurante.idioma);
+async function enviarTodasComandasMesa(
+  db,
+  restauranteId,
+  mesaParam
+) {
+  const restaurante =
+    await get(
+      db,
+      "SELECT idioma FROM restaurantes WHERE id=? LIMIT 1",
+      [restauranteId]
+    ) || {};
 
-  const mesa = await buscarMesa(db, restauranteId, mesaParam);
+  const idioma =
+    normalizarIdioma(
+      restaurante.idioma
+    );
+
+  const mesa =
+    await buscarMesa(
+      db,
+      restauranteId,
+      mesaParam
+    );
 
   if (!mesa) {
     return {
@@ -731,105 +973,120 @@ async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
       status: 404,
       data: {
         ok: false,
-        error: "Mesa no encontrada para este restaurante"
+        error:
+          "Mesa no encontrada para este restaurante"
       }
     };
   }
 
-  const pedido = await buscarPedidoMesa(db, restauranteId, mesa.id);
+  const pedido =
+    await buscarPedidoMesa(
+      db,
+      restauranteId,
+      mesa.id
+    );
 
   if (!pedido) {
     return {
       ok: true,
       data: {
         ok: true,
-        mensaje: "Nada para enviar",
+        mensaje:
+          "Nada para enviar",
         enviados: [],
         lineas: [],
-        debug: "Sin pedido abierto"
+        debug:
+          "Sin pedido abierto"
       }
     };
   }
 
-  const lineas = await all(
-    db,
-    "SELECT " +
-    "pl.id, " +
-    "pl.id AS linea_id, " +
-    "pl.pedido_id, " +
-    "productos.nombre AS nombre, " +
-    "productos.nombre AS producto, " +
-    "pl.nota, " +
-    "pl.cantidad AS cantidad_total, " +
-    "COALESCE(categorias.destino,'cocina') AS destino_categoria, " +
-    "COALESCE(cel.cantidad_enviada,0) AS cantidad_enviada, " +
-    "pl.cantidad - COALESCE(cel.cantidad_enviada,0) AS cantidad " +
-    "FROM pedido_lineas pl " +
-    "JOIN pedidos pe " +
-    "ON pe.id = pl.pedido_id " +
-    "AND pe.estado != 'cerrado' " +
-    "AND COALESCE(pe.restaurante_id,1)=? " +
-    "JOIN mesas m " +
-    "ON m.id = pe.mesa_id " +
-    "AND COALESCE(m.restaurante_id,1)=? " +
-    "JOIN productos " +
-    "ON productos.id = pl.producto_id " +
-    "AND COALESCE(productos.restaurante_id,1)=? " +
-    "JOIN categorias " +
-    "ON categorias.id = productos.categoria_id " +
-    "AND COALESCE(categorias.restaurante_id,1)=? " +
-    "LEFT JOIN comanda_envios_linea cel " +
-    "ON cel.linea_id = pl.id " +
-    "AND LOWER(cel.destino)=LOWER(COALESCE(categorias.destino,'cocina')) " +
-    "AND COALESCE(cel.restaurante_id,1)=? " +
-    "WHERE pe.id=? " +
-    "AND m.id=? " +
-    "AND COALESCE(pl.restaurante_id,1)=? " +
-    "AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0 " +
-    "ORDER BY COALESCE(categorias.destino,'cocina'), pl.id",
-    [
-      restauranteId,
-      restauranteId,
-      restauranteId,
-      restauranteId,
-      restauranteId,
-      pedido.id,
-      mesa.id,
-      restauranteId
-    ]
-  );
-
-  if (!lineas.length) {
-    const debugLineas = await all(
+  const lineas =
+    await all(
       db,
       "SELECT " +
+      "pl.id, " +
       "pl.id AS linea_id, " +
       "pl.pedido_id, " +
+      "productos.nombre AS nombre, " +
       "productos.nombre AS producto, " +
-      "categorias.nombre AS categoria, " +
-      "categorias.destino AS destino_categoria, " +
-      "pl.cantidad, " +
-      "COALESCE(pl.restaurante_id,1) AS restaurante_id " +
+      "pl.nota, " +
+      "pl.cantidad AS cantidad_total, " +
+      "COALESCE(categorias.destino,'cocina') AS destino_categoria, " +
+      "COALESCE(cel.cantidad_enviada,0) AS cantidad_enviada, " +
+      "pl.cantidad - COALESCE(cel.cantidad_enviada,0) AS cantidad " +
       "FROM pedido_lineas pl " +
-      "JOIN productos ON productos.id = pl.producto_id " +
-      "JOIN categorias ON categorias.id = productos.categoria_id " +
-      "WHERE pl.pedido_id=? " +
-      "ORDER BY pl.id",
-      [pedido.id]
+      "JOIN pedidos pe " +
+      "ON pe.id = pl.pedido_id " +
+      "AND pe.estado != 'cerrado' " +
+      "AND COALESCE(pe.restaurante_id,1)=? " +
+      "JOIN mesas m " +
+      "ON m.id = pe.mesa_id " +
+      "AND COALESCE(m.restaurante_id,1)=? " +
+      "JOIN productos " +
+      "ON productos.id = pl.producto_id " +
+      "AND COALESCE(productos.restaurante_id,1)=? " +
+      "JOIN categorias " +
+      "ON categorias.id = productos.categoria_id " +
+      "AND COALESCE(categorias.restaurante_id,1)=? " +
+      "LEFT JOIN comanda_envios_linea cel " +
+      "ON cel.linea_id = pl.id " +
+      "AND LOWER(cel.destino)=LOWER(COALESCE(categorias.destino,'cocina')) " +
+      "AND COALESCE(cel.restaurante_id,1)=? " +
+      "WHERE pe.id=? " +
+      "AND m.id=? " +
+      "AND COALESCE(pl.restaurante_id,1)=? " +
+      "AND (pl.cantidad - COALESCE(cel.cantidad_enviada,0)) > 0 " +
+      "ORDER BY COALESCE(categorias.destino,'cocina'), pl.id",
+      [
+        restauranteId,
+        restauranteId,
+        restauranteId,
+        restauranteId,
+        restauranteId,
+        pedido.id,
+        mesa.id,
+        restauranteId
+      ]
     );
+
+  if (!lineas.length) {
+    const debugLineas =
+      await all(
+        db,
+        "SELECT " +
+        "pl.id AS linea_id, " +
+        "pl.pedido_id, " +
+        "productos.nombre AS producto, " +
+        "categorias.nombre AS categoria, " +
+        "categorias.destino AS destino_categoria, " +
+        "pl.cantidad, " +
+        "COALESCE(pl.restaurante_id,1) AS restaurante_id " +
+        "FROM pedido_lineas pl " +
+        "JOIN productos ON productos.id = pl.producto_id " +
+        "JOIN categorias ON categorias.id = productos.categoria_id " +
+        "WHERE pl.pedido_id=? " +
+        "ORDER BY pl.id",
+        [pedido.id]
+      );
 
     return {
       ok: true,
       data: {
         ok: true,
-        mensaje: "Nada para enviar",
+        mensaje:
+          "Nada para enviar",
         enviados: [],
         lineas: [],
         debug: {
-          pedido_id: pedido.id,
-          mesa_id: mesa.id,
-          mesa: mesa.numero,
-          lineas_pedido: debugLineas
+          pedido_id:
+            pedido.id,
+          mesa_id:
+            mesa.id,
+          mesa:
+            mesa.numero,
+          lineas_pedido:
+            debugLineas
         }
       }
     };
@@ -837,64 +1094,228 @@ async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
 
   const grupos = {};
 
-  lineas.forEach((linea) => {
-    const destino = String(linea.destino_categoria || "cocina").trim().toLowerCase() || "cocina";
-    if (!grupos[destino]) grupos[destino] = [];
-    grupos[destino].push(linea);
-  });
+  lineas.forEach(
+    (linea) => {
+      const destino =
+        String(
+          linea.destino_categoria ||
+          "cocina"
+        )
+          .trim()
+          .toLowerCase() ||
+        "cocina";
+
+      if (!grupos[destino]) {
+        grupos[destino] = [];
+      }
+
+      grupos[destino].push(
+        linea
+      );
+    }
+  );
+
+  /*
+   * Prima accodiamo tutti i gruppi Print Bridge.
+   * Solo se tutti i gruppi sono accettati
+   * marchiamo le righe come inviate.
+   */
+  const preparati = [];
+
+  for (
+    const destino of
+    Object.keys(grupos)
+  ) {
+    const grupo =
+      grupos[destino];
+
+    const texto =
+      formatearComanda(
+        destino,
+        mesa.numero,
+        grupo,
+        idioma
+      );
+
+    const archivo =
+      "comanda_" +
+      destino.replace(
+        /[^a-z0-9_-]/g,
+        "_"
+      ) +
+      ".txt";
+
+    let resultadoBridge;
+
+    try {
+      resultadoBridge =
+        await preparaComandaPrintBridge(
+          db,
+          {
+            restaurante_id:
+              restauranteId,
+            destino:
+              destino,
+            mesa:
+              mesa.numero,
+            lineas:
+              grupo,
+            contenuto:
+              texto
+          }
+        );
+    } catch (errBridge) {
+      console.error(
+        "[PRINT BRIDGE] Errore accodando comanda:",
+        errBridge.message
+      );
+
+      return {
+        ok: false,
+        status: 500,
+        data: {
+          ok: false,
+          error:
+            "print_bridge_queue_error",
+          destino:
+            destino
+        }
+      };
+    }
+
+    if (
+      resultadoBridge &&
+      resultadoBridge.gestita &&
+      !resultadoBridge.ok
+    ) {
+      console.log(
+        "[PRINT BRIDGE " +
+        destino.toUpperCase() +
+        "] Comanda non accodata:",
+        resultadoBridge.error
+      );
+
+      return {
+        ok: false,
+        status: 503,
+        data: {
+          ok: false,
+          error:
+            resultadoBridge.error,
+          destino:
+            destino,
+          mesa:
+            mesa.numero
+        }
+      };
+    }
+
+    preparati.push({
+      destino:
+        destino,
+      grupo:
+        grupo,
+      texto:
+        texto,
+      archivo:
+        archivo,
+      resultadoBridge:
+        resultadoBridge
+    });
+  }
 
   const enviados = [];
 
-  for (const destino of Object.keys(grupos)) {
-    const grupo = grupos[destino];
+  for (
+    const preparato of preparati
+  ) {
+    await marcarLineasComandaEnviadas(
+      db,
+      restauranteId,
+      preparato.destino,
+      preparato.grupo
+    );
 
-    for (const linea of grupo) {
-      await run(
-        db,
-        "INSERT OR IGNORE INTO comanda_envios_linea (linea_id, destino, cantidad_enviada, actualizado_en, restaurante_id) VALUES (?, ?, 0, CURRENT_TIMESTAMP, ?)",
-        [linea.id, destino, restauranteId]
+    guardarPrint(
+      preparato.archivo,
+      preparato.texto
+    );
+
+    const risultato =
+      preparato.resultadoBridge;
+
+    const stampa =
+      (
+        risultato &&
+        risultato.gestita
+      )
+        ? {
+            modo:
+              "print_bridge",
+            job_id:
+              risultato
+                .lavoro.id,
+            stato:
+              risultato
+                .lavoro.estado,
+            creato:
+              risultato
+                .creato
+          }
+        : {
+            modo:
+              (
+                risultato &&
+                risultato.modo
+              ) ||
+              "legacy"
+          };
+
+    if (
+      risultato &&
+      risultato.gestita
+    ) {
+      console.log(
+        "[PRINT BRIDGE " +
+        preparato.destino
+          .toUpperCase() +
+        "] Job accodato:",
+        risultato.lavoro.id,
+        risultato.creato
+          ? "nuovo"
+          : "gia_esistente"
       );
-
-      await run(
-        db,
-        "UPDATE comanda_envios_linea SET cantidad_enviada=?, actualizado_en=CURRENT_TIMESTAMP WHERE linea_id=? AND LOWER(destino)=LOWER(?) AND COALESCE(restaurante_id,1)=?",
-        [linea.cantidad_total, linea.id, destino, restauranteId]
-      );
-
-      if (destino === "bar") {
-        await run(
-          db,
-          "UPDATE pedido_lineas SET cantidad_enviada_bar=cantidad, enviada_bar=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
-          [linea.id, restauranteId]
-        );
-      }
-
-      if (destino === "cocina") {
-        await run(
-          db,
-          "UPDATE pedido_lineas SET cantidad_enviada_cocina=cantidad, enviada_cocina=1 WHERE id=? AND COALESCE(restaurante_id,1)=?",
-          [linea.id, restauranteId]
-        );
-      }
     }
 
-    const texto = formatearComanda(destino, mesa.numero, grupo, idioma);
-    const archivo = "comanda_" + destino.replace(/[^a-z0-9_-]/g, "_") + ".txt";
-    guardarPrint(archivo, texto);
-
     enviados.push({
-      destino: destino,
-      archivo: "prints/" + archivo,
-      lineas: grupo.map((l) => ({
-        id: l.id,
-        linea_id: l.id,
-        pedido_id: l.pedido_id,
-        nombre: l.nombre,
-        producto: l.producto,
-        cantidad: l.cantidad,
-        nota: l.nota || "",
-        destino_categoria: l.destino_categoria || ""
-      }))
+      destino:
+        preparato.destino,
+      archivo:
+        "prints/" +
+        preparato.archivo,
+      stampa:
+        stampa,
+      lineas:
+        preparato.grupo.map(
+          (l) => ({
+            id:
+              l.id,
+            linea_id:
+              l.id,
+            pedido_id:
+              l.pedido_id,
+            nombre:
+              l.nombre,
+            producto:
+              l.producto,
+            cantidad:
+              l.cantidad,
+            nota:
+              l.nota || "",
+            destino_categoria:
+              l.destino_categoria || ""
+          })
+        )
     });
   }
 
@@ -902,13 +1323,21 @@ async function enviarTodasComandasMesa(db, restauranteId, mesaParam) {
     ok: true,
     data: {
       ok: true,
-      mensaje: "Comandas generadas",
-      enviados: enviados.map((e) => e.destino),
-      grupos: enviados,
-      lineas: lineas
+      mensaje:
+        "Comandas generadas",
+      enviados:
+        enviados.map(
+          (e) =>
+            e.destino
+        ),
+      grupos:
+        enviados,
+      lineas:
+        lineas
     }
   };
 }
+
 
 async function renderTicketMesa(db, restauranteId, mesaParam) {
   const respuesta = await cargarPedidoRespuesta(db, restauranteId, mesaParam);
