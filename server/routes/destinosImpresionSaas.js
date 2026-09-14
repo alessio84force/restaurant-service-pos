@@ -3,6 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const { restauranteIdFromReq } = require("../utils/restauranteContext");
 const {
+  accodaLavoro
+} = require("../printing/printBridgeQueue");
+const {
   textosDestinosImpresion,
   nombreDestinoVisible
 } = require("../utils/destinosImpresionI18n");
@@ -1412,42 +1415,299 @@ module.exports = function destinosImpresionSaasRoutes(db) {
   });
 
   router.post("/configuracion-impresoras/probar-:destinoId", requiereConfig, async function(req, res) {
-    const restauranteId = restauranteIdFromReq(req);
-    const textos = await textosDestinosRestaurante(
-      db,
-      restauranteId
-    );
-    const destinoId = String(req.params.destinoId || "ticket");
+
+    const restauranteId =
+      restauranteIdFromReq(req);
+
+    const textos =
+      await textosDestinosRestaurante(
+        db,
+        restauranteId
+      );
+
+    const destinoId =
+      String(
+        req.params.destinoId ||
+        "ticket"
+      );
+
     const destinos = [
       {
         id: "ticket",
         nombre: textos.ticketCaja,
         activo: 1
       },
-      ...(await destinosRestaurante(
-        db,
-        restauranteId
-      )).map((destino) => ({
-        ...destino,
-        nombre: nombreDestinoVisible(
-          destino,
-          textos
+      ...(
+        await destinosRestaurante(
+          db,
+          restauranteId
         )
+      ).map((destino) => ({
+        ...destino,
+        nombre:
+          nombreDestinoVisible(
+            destino,
+            textos
+          )
       }))
     ];
-    const destino = destinos.find((d) => String(d.id) === destinoId) || { id: destinoId, nombre: destinoId, activo: 1 };
-    const archivo = nombreArchivoPrueba(destinoId, restauranteId);
-    const carpeta = path.join(process.cwd(), "prints");
 
-    try {
-      fs.mkdirSync(carpeta, { recursive: true });
-      fs.writeFileSync(path.join(carpeta, archivo), pruebaTexto(destino, textos), "utf8");
-    } catch (err) {
-      console.error("[destinosImpresionSaas] Error prueba impresión:", err.message);
-      return res.redirect("/configuracion-impresoras?error=" + encodeURIComponent(textos.noGenerarPrueba));
+    const destino =
+      destinos.find(
+        (d) =>
+          String(d.id) ===
+          destinoId
+      ) || {
+        id: destinoId,
+        nombre: destinoId,
+        activo: 1
+      };
+
+    const config =
+      await asegurarConfig(
+        db,
+        restauranteId
+      );
+
+    const configJson =
+      parseConfigImpresion(
+        config
+      );
+
+    const cfg =
+      configDestino(
+        config,
+        configJson,
+        destino
+      );
+
+    const modo =
+      String(
+        cfg.modo || ""
+      )
+        .trim()
+        .toLowerCase();
+
+    if (modo === "print_bridge") {
+
+      const bridgeId =
+        String(
+          cfg.bridge_id || ""
+        ).trim();
+
+      const printerId =
+        String(
+          cfg.printer_id || ""
+        ).trim();
+
+      if (
+        !bridgeId ||
+        !printerId
+      ) {
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.stampanteBridgeNonValida
+          )
+        );
+      }
+
+      const bridge =
+        await get(
+          db,
+          `
+          SELECT
+            restaurante_id
+          FROM print_bridge_config
+          WHERE restaurante_id=?
+            AND token_hash IS NOT NULL
+            AND TRIM(token_hash)<>''
+          LIMIT 1
+          `,
+          [
+            restauranteId
+          ]
+        );
+
+      const stampante =
+        await get(
+          db,
+          `
+          SELECT
+            bridge_id,
+            printer_id,
+            printer_nome,
+            stato
+          FROM print_bridge_printers
+          WHERE restaurante_id=?
+            AND bridge_id=?
+            AND printer_id=?
+            AND stato='rilevata'
+          LIMIT 1
+          `,
+          [
+            restauranteId,
+            bridgeId,
+            printerId
+          ]
+        );
+
+      if (
+        !bridge ||
+        !stampante
+      ) {
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.stampanteBridgeNonValida
+          )
+        );
+      }
+
+      const idempotencyKey =
+        [
+          "test",
+          restauranteId,
+          slug(destinoId) ||
+            "ticket",
+          Date.now(),
+          require("crypto")
+            .randomBytes(8)
+            .toString("hex")
+        ].join(":");
+
+      try {
+
+        const risultato =
+          await accodaLavoro(
+            db,
+            {
+              restaurante_id:
+                restauranteId,
+
+              idempotency_key:
+                idempotencyKey,
+
+              tipo:
+                "test",
+
+              destino:
+                slug(destinoId) ||
+                "ticket",
+
+              contenuto:
+                pruebaTexto(
+                  destino,
+                  textos
+                ),
+
+              printer_id:
+                stampante.printer_id,
+
+              printer_nombre:
+                stampante.printer_nome,
+
+              bridge_id:
+                stampante.bridge_id
+            }
+          );
+
+        if (
+          !risultato ||
+          !risultato.lavoro
+        ) {
+          throw new Error(
+            "Job Print Bridge non creato"
+          );
+        }
+
+        return res.redirect(
+          "/configuracion-impresoras?ok=" +
+          encodeURIComponent(
+            textos.pruebaGenerada +
+            " · RSP Print Bridge #" +
+            risultato.lavoro.id
+          )
+        );
+
+      } catch (err) {
+
+        console.error(
+          "[destinosImpresionSaas] Error test Print Bridge:",
+          err.message
+        );
+
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.noGenerarPrueba
+          )
+        );
+      }
     }
 
-    res.redirect("/configuracion-impresoras?ok=" + encodeURIComponent(textos.pruebaGenerada + " prints/" + archivo));
+    /*
+     * Modalità legacy:
+     * conserva il vecchio test TXT.
+     */
+
+    const archivo =
+      nombreArchivoPrueba(
+        destinoId,
+        restauranteId
+      );
+
+    const carpeta =
+      path.join(
+        process.cwd(),
+        "prints"
+      );
+
+    try {
+
+      fs.mkdirSync(
+        carpeta,
+        {
+          recursive: true
+        }
+      );
+
+      fs.writeFileSync(
+        path.join(
+          carpeta,
+          archivo
+        ),
+        pruebaTexto(
+          destino,
+          textos
+        ),
+        "utf8"
+      );
+
+    } catch (err) {
+
+      console.error(
+        "[destinosImpresionSaas] Error prueba impresión:",
+        err.message
+      );
+
+      return res.redirect(
+        "/configuracion-impresoras?error=" +
+        encodeURIComponent(
+          textos.noGenerarPrueba
+        )
+      );
+    }
+
+    return res.redirect(
+      "/configuracion-impresoras?ok=" +
+      encodeURIComponent(
+        textos.pruebaGenerada +
+        " prints/" +
+        archivo
+      )
+    );
+
   });
 
   router.get("/configuracion-impresoras/ver-prueba/:destinoId", requiereConfig, async function(req, res) {
