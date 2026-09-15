@@ -14,6 +14,10 @@ const {
   inviaUsbEscposMacOS
 } = require("./usbEscposMac");
 
+const {
+  inviaTcpEscpos
+} = require("./tcpEscpos");
+
 function esegui(comando, args) {
   return new Promise(
     (resolve, reject) => {
@@ -263,6 +267,48 @@ async function stampaTesto(
         risultato.stdout,
       trasporto:
         "usb_escpos"
+    };
+  }
+
+  if (
+    stampante.trasporto ===
+    "tcp_escpos"
+  ) {
+
+    const dati =
+      creaBufferEscPos(
+        contenuto
+      );
+
+    const risultato =
+      await inviaTcpEscpos(
+        stampante,
+        dati,
+        {
+          timeoutMs:
+            timeoutMs
+        }
+      );
+
+    return {
+      ok: true,
+
+      stampante:
+        stampante.nome,
+
+      printer_id:
+        stampante.id,
+
+      job_id:
+        "tcp-" +
+        Date.now(),
+
+      risposta:
+        "bytes=" +
+        risultato.bytes,
+
+      trasporto:
+        "tcp_escpos"
     };
   }
 

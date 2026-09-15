@@ -15,6 +15,15 @@ const {
 } = require("./scopriStampanti");
 
 const {
+  deveSincronizzare,
+  registraTentativo
+} = require("./statoInventario");
+
+const {
+  aggiornaCacheReteEscpos
+} = require("./reteEscpos");
+
+const {
   stampaTesto
 } = require("./stampaLocale");
 
@@ -289,32 +298,103 @@ async function main() {
     "HEARTBEAT: OK"
   );
 
-  try {
-    const stampanti =
-      scopriStampanti();
-
-    const sync =
-      await sincronizzaStampanti(
-        config,
-        stampanti
-      );
-
-    if (rispostaOk(sync)) {
-      console.log(
-        "STAMPANTI SINCRONIZZATE:",
-        sync.json.rilevate
-      );
-    } else {
-      console.log(
-        "STAMPANTI: sync fallita HTTP",
-        sync.status
-      );
-    }
-  } catch (errStampanti) {
-    console.log(
-      "STAMPANTI: sincronizzazione non disponibile:",
-      errStampanti.message
+  const intervalloSyncStampanti =
+    Math.max(
+      10000,
+      Number(
+        process.env
+          .RSP_PRINT_BRIDGE_PRINTER_SYNC_MS
+      ) || 60000
     );
+
+  if (
+    deveSincronizzare(
+      intervalloSyncStampanti
+    )
+  ) {
+
+    try {
+
+      try {
+
+        const rete =
+          await aggiornaCacheReteEscpos();
+
+        console.log(
+          "RETE TCP 9100 RILEVATA:",
+          rete.stampanti.length
+        );
+
+      } catch (errRete) {
+
+        console.log(
+          "RETE TCP 9100: scansione non disponibile:",
+          errRete.message
+        );
+
+      }
+
+      const stampanti =
+        scopriStampanti();
+
+      const sync =
+        await sincronizzaStampanti(
+          config,
+          stampanti
+        );
+
+      if (
+        rispostaOk(sync)
+      ) {
+
+        registraTentativo(
+          true,
+          "rilevate=" +
+            String(
+              sync.json.rilevate != null
+                ? sync.json.rilevate
+                : stampanti.length
+            )
+        );
+
+        console.log(
+          "STAMPANTI SINCRONIZZATE:",
+          sync.json.rilevate
+        );
+
+      } else {
+
+        registraTentativo(
+          false,
+          "HTTP " +
+            sync.status
+        );
+
+        console.log(
+          "STAMPANTI: sync fallita HTTP",
+          sync.status
+        );
+
+      }
+
+    } catch (errStampanti) {
+
+      try {
+
+        registraTentativo(
+          false,
+          errStampanti.message
+        );
+
+      } catch (_) {}
+
+      console.log(
+        "STAMPANTI: sincronizzazione non disponibile:",
+        errStampanti.message
+      );
+
+    }
+
   }
 
   const recuperato =

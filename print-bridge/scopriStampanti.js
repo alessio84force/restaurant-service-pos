@@ -6,6 +6,10 @@ const {
   elencaUsbEscposMacOS
 } = require("./usbEscposMac");
 
+const {
+  leggiCacheReteEscpos
+} = require("./reteEscpos");
+
 function esegui(comando, args) {
   try {
     return execFileSync(
@@ -201,6 +205,81 @@ function stampantiUsbDiretteMacOS() {
     });
 }
 
+function stampantiReteDiretteCache() {
+
+  return leggiCacheReteEscpos()
+    .map((dispositivo) => {
+
+      const host =
+        String(
+          dispositivo.host ||
+          ""
+        ).trim();
+
+      const port =
+        Number(
+          dispositivo.port ||
+          9100
+        );
+
+      if (
+        !host ||
+        !Number.isInteger(port) ||
+        port <= 0 ||
+        port > 65535
+      ) {
+        return null;
+      }
+
+      const uri =
+        "tcp-escpos://" +
+        host +
+        ":" +
+        port;
+
+      return {
+        id:
+          creaIdStabile(
+            "tcp_escpos",
+            uri
+          ),
+
+        nome:
+          dispositivo.nome ||
+          (
+            "Dispositivo POS rete " +
+            host
+          ),
+
+        tipo:
+          "rete",
+
+        connessione:
+          "Rete / TCP 9100 - da verificare",
+
+        uri:
+          uri,
+
+        trasporto:
+          "tcp_escpos",
+
+        host:
+          host,
+
+        port:
+          port,
+
+        marca:
+          dispositivo.marca ||
+          "",
+
+        compatibilita:
+          "da_verificare"
+      };
+    })
+    .filter(Boolean);
+}
+
 function scopriStampanti() {
   const piattaforma =
     os.platform();
@@ -209,6 +288,9 @@ function scopriStampanti() {
     return stampantiMacOS()
       .concat(
         stampantiUsbDiretteMacOS()
+      )
+      .concat(
+        stampantiReteDiretteCache()
       );
   }
 
