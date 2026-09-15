@@ -169,8 +169,20 @@ function stampantiUsbDiretteMacOS() {
           dispositivo.nome,
         tipo: "usb",
         connessione:
-          "USB diretto / ESC-POS",
+          dispositivo.compatibilita ===
+            "verificata"
+            ? "USB diretto / ESC-POS"
+            : "USB diretto / ESC-POS - da verificare",
+
         uri: uri,
+
+        marca:
+          dispositivo.marca || "",
+
+        compatibilita:
+          dispositivo.compatibilita ||
+          "da_verificare",
+
         trasporto:
           "usb_escpos",
         vendor_id:

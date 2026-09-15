@@ -108,7 +108,111 @@ function assicuraHelper() {
   return binario;
 }
 
+function classificaUsbPos(
+  nome,
+  vendorId
+) {
+  const n =
+    String(nome || "")
+      .trim()
+      .toUpperCase();
+
+  const vendor =
+    String(vendorId || "")
+      .trim()
+      .toLowerCase();
+
+  /*
+   * Epson TM:
+   * supporto fisico gia verificato.
+   */
+  if (
+    vendor === "04b8" &&
+    (
+      n.startsWith("TM-") ||
+      n.includes("EPSON")
+    )
+  ) {
+    return {
+      marca: "Epson",
+      compatibilita:
+        "verificata"
+    };
+  }
+
+  /*
+   * Famiglie POS commerciali.
+   *
+   * Le rileviamo automaticamente,
+   * ma restano "da verificare"
+   * finche non facciamo un test
+   * fisico sul modello specifico.
+   */
+  const profili = [
+    {
+      marca: "Bixolon",
+      pattern:
+        /BIXOLON|SRP-/
+    },
+    {
+      marca: "Citizen",
+      pattern:
+        /CITIZEN|CT-S/
+    },
+    {
+      marca: "Custom",
+      pattern:
+        /CUSTOM|K3/
+    },
+    {
+      marca: "Rongta",
+      pattern:
+        /RONGTA|RP58|RP80|RP-/
+    },
+    {
+      marca: "Xprinter",
+      pattern:
+        /XPRINTER|XP-/
+    },
+    {
+      marca: "Sewoo",
+      pattern:
+        /SEWOO|LK-T/
+    },
+    {
+      marca: "SNBC",
+      pattern:
+        /SNBC|BTP-/
+    },
+    {
+      marca: "ESC/POS generica",
+      pattern:
+        /POS-58|POS58|POS-80|POS80|THERMAL RECEIPT|RECEIPT PRINTER/
+    }
+  ];
+
+  for (
+    let i = 0;
+    i < profili.length;
+    i++
+  ) {
+    if (
+      profili[i].pattern.test(n)
+    ) {
+      return {
+        marca:
+          profili[i].marca,
+        compatibilita:
+          "da_verificare"
+      };
+    }
+  }
+
+  return null;
+}
+
 function elencaUsbEscposMacOS() {
+
   if (os.platform() !== "darwin") {
     return [];
   }
@@ -150,33 +254,41 @@ function elencaUsbEscposMacOS() {
     )
     .filter(Boolean)
     .map((riga) => {
+
       const campi =
         riga.split("\t");
 
       if (
         campi.length !== 8 ||
-        campi[0] !== "EPSON_POS"
+        campi[0] !==
+          "USB_BULK_POS"
       ) {
         return null;
       }
 
       const nome =
-        String(campi[1] || "")
-          .trim();
+        String(
+          campi[1] || ""
+        ).trim();
 
       const vendorId =
-        String(campi[2] || "")
+        String(
+          campi[2] || ""
+        )
           .trim()
           .toLowerCase();
 
       const productId =
-        String(campi[3] || "")
+        String(
+          campi[3] || ""
+        )
           .trim()
           .toLowerCase();
 
       const seriale =
-        String(campi[4] || "")
-          .trim();
+        String(
+          campi[4] || ""
+        ).trim();
 
       const interfaccia =
         Number(campi[5]);
@@ -191,22 +303,63 @@ function elencaUsbEscposMacOS() {
         !nome ||
         !vendorId ||
         !productId ||
-        !Number.isInteger(interfaccia) ||
-        !Number.isInteger(pipeOut) ||
+        !Number.isInteger(
+          interfaccia
+        ) ||
+        !Number.isInteger(
+          pipeOut
+        ) ||
         pipeOut <= 0
       ) {
         return null;
       }
 
+      const profilo =
+        classificaUsbPos(
+          nome,
+          vendorId
+        );
+
+      /*
+       * Una periferica USB con BULK OUT
+       * non e' necessariamente una
+       * stampante.
+       *
+       * Se non la riconosciamo come
+       * POS, non la mostriamo.
+       */
+      if (!profilo) {
+        return null;
+      }
+
       return {
         nome: nome,
-        vendor_id: vendorId,
-        product_id: productId,
-        seriale: seriale,
-        interfaccia: interfaccia,
-        pipe_out: pipeOut,
+
+        marca:
+          profilo.marca,
+
+        compatibilita:
+          profilo.compatibilita,
+
+        vendor_id:
+          vendorId,
+
+        product_id:
+          productId,
+
+        seriale:
+          seriale,
+
+        interfaccia:
+          interfaccia,
+
+        pipe_out:
+          pipeOut,
+
         pipe_in:
-          Number.isInteger(pipeIn)
+          Number.isInteger(
+            pipeIn
+          )
             ? pipeIn
             : 0
       };

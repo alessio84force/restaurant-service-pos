@@ -307,13 +307,7 @@ static int elencaStampanti(void) {
             CFSTR("bInterfaceNumber"),
             &interfaceNumber
         );
-
-        if (vendor != 0x04b8) {
-            IOObjectRelease(service);
-            continue;
-        }
-
-        io_registry_entry_t device =
+io_registry_entry_t device =
             IO_OBJECT_NULL;
 
         char nome[256] = "";
@@ -339,27 +333,7 @@ static int elencaStampanti(void) {
                 sizeof(seriale)
             );
         }
-
-        if (
-            nome[0] != '\0' &&
-            strncmp(
-                nome,
-                "TM-",
-                3
-            ) != 0
-        ) {
-            if (
-                device !=
-                IO_OBJECT_NULL
-            ) {
-                IOObjectRelease(device);
-            }
-
-            IOObjectRelease(service);
-            continue;
-        }
-
-        IOUSBInterfaceInterface **usb =
+IOUSBInterfaceInterface **usb =
             NULL;
 
         if (
@@ -421,7 +395,7 @@ static int elencaStampanti(void) {
             pulisciCampo(seriale);
 
             printf(
-                "EPSON_POS\t"
+                "USB_BULK_POS\t"
                 "%s\t"
                 "%04x\t"
                 "%04x\t"
@@ -431,7 +405,7 @@ static int elencaStampanti(void) {
                 "%d\n",
                 nome[0]
                     ? nome
-                    : "EPSON TM",
+                    : "USB POS",
                 vendor,
                 product,
                 seriale,
