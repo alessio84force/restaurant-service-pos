@@ -18,6 +18,10 @@ const {
   inviaTcpEscpos
 } = require("./tcpEscpos");
 
+const {
+  profiloPerStampante
+} = require("./profiliStampanti");
+
 function esegui(comando, args) {
   return new Promise(
     (resolve, reject) => {
@@ -164,40 +168,68 @@ function normalizzaTestoEscPos(
 }
 
 function creaBufferEscPos(
-  testo
+  testo,
+  stampante
 ) {
+
   const contenuto =
     normalizzaTestoEscPos(
       testo
     );
 
-  return Buffer.concat([
+  const profilo =
+    profiloPerStampante(
+      stampante
+    );
+
+  const blocchi = [
     Buffer.from(
       [
         0x1B,
         0x40
       ]
     ),
+
     Buffer.from(
       contenuto,
       "ascii"
     ),
+
     Buffer.from(
       "\n\n\n",
       "ascii"
-    ),
-    /*
-     * Epson ESC/POS:
-     * GS V 1 = taglio parziale
-     */
-    Buffer.from(
-      [
-        0x1D,
-        0x56,
-        0x01
-      ]
     )
-  ]);
+  ];
+
+  /*
+   * Taglio automatico soltanto
+   * per profili verificati.
+   *
+   * Epson TM:
+   * GS V 1 = taglio parziale.
+   */
+  if (
+    profilo.capacita.taglio ===
+      true &&
+    profilo.capacita
+      .taglio_comando ===
+      "gs_v_1_partial"
+  ) {
+
+    blocchi.push(
+      Buffer.from(
+        [
+          0x1D,
+          0x56,
+          0x01
+        ]
+      )
+    );
+  }
+
+  return Buffer.concat(
+    blocchi
+  );
 }
 
 async function stampaTesto(
@@ -242,7 +274,8 @@ async function stampaTesto(
   ) {
     const dati =
       creaBufferEscPos(
-        contenuto
+        contenuto,
+        stampante
       );
 
     const risultato =
@@ -277,7 +310,8 @@ async function stampaTesto(
 
     const dati =
       creaBufferEscPos(
-        contenuto
+        contenuto,
+        stampante
       );
 
     const risultato =
@@ -442,6 +476,8 @@ function stampaTest(idONome) {
 }
 
 module.exports = {
+
+  creaBufferEscPos,
   trovaStampante,
   stampaTesto,
   stampaTest

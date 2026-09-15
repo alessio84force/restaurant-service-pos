@@ -10,6 +10,10 @@ const {
   leggiCacheReteEscpos
 } = require("./reteEscpos");
 
+const {
+  applicaProfiloStampante
+} = require("./profiliStampanti");
+
 function esegui(comando, args) {
   try {
     return execFileSync(
@@ -291,6 +295,9 @@ function scopriStampanti() {
       )
       .concat(
         stampantiReteDiretteCache()
+      )
+      .map(
+        applicaProfiloStampante
       );
   }
 
