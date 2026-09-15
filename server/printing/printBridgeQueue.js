@@ -129,11 +129,17 @@ async function accodaLavoro(db, dati) {
 }
 
 async function reclamaProssimoLavoro(
+
   db,
+
   ristoranteId,
+
   bridgeId,
+
   leaseSecondi
+
 ) {
+
   const restauranteId =
     Number(ristoranteId);
 
@@ -168,141 +174,116 @@ async function reclamaProssimoLavoro(
       durata * 1000
     ).toISOString();
 
-  await run(
-    db,
-    "BEGIN IMMEDIATE"
-  );
+  /*
+   * Prima leggiamo il candidato.
+   * Poi l'UPDATE sotto agisce come
+   * compare-and-set atomico.
+   *
+   * Se un altro Bridge lo reclama
+   * prima di noi, changes sarà 0.
+   */
 
-  try {
-    const lavoro =
-      await get(
-        db,
-        `
-        SELECT *
-        FROM print_bridge_jobs
-        WHERE restaurante_id=?
-          AND (
-            (
-              estado='pendiente'
-              AND (
-                bridge_id IS NULL
-                OR bridge_id=''
-                OR bridge_id=?
-              )
-            )
-            OR (
-              estado='reclamado'
-              AND bridge_id=?
-              AND lease_hasta IS NOT NULL
-              AND lease_hasta < ?
-            )
-          )
-        ORDER BY id
-        LIMIT 1
-        `,
-        [
-          restauranteId,
-          bridge,
-          bridge,
-          adesso
-        ]
-      );
-
-    if (!lavoro) {
-      await run(
-        db,
-        "COMMIT"
-      );
-
-      return null;
-    }
-
-    const aggiornato =
-      await run(
-        db,
-        `
-        UPDATE print_bridge_jobs
-        SET
-          estado='reclamado',
-          bridge_id=?,
-          reclamado_en=?,
-          lease_hasta=?,
-          intentos=intentos+1,
-          error_mensaje=NULL,
-          error_en=NULL
-        WHERE id=?
-          AND restaurante_id=?
-          AND (
-            (
-              estado='pendiente'
-              AND (
-                bridge_id IS NULL
-                OR bridge_id=''
-                OR bridge_id=?
-              )
-            )
-            OR (
-              estado='reclamado'
-              AND bridge_id=?
-              AND lease_hasta IS NOT NULL
-              AND lease_hasta < ?
-            )
-          )
-        `,
-        [
-          bridge,
-          adesso,
-          leaseHasta,
-          lavoro.id,
-          restauranteId,
-          bridge,
-          bridge,
-          adesso
-        ]
-      );
-
-    if (
-      aggiornato.changes !== 1
-    ) {
-      await run(
-        db,
-        "ROLLBACK"
-      );
-
-      return null;
-    }
-
-    const reclamato =
-      await get(
-        db,
-        `
-        SELECT *
-        FROM print_bridge_jobs
-        WHERE id=?
-          AND restaurante_id=?
-        `,
-        [
-          lavoro.id,
-          restauranteId
-        ]
-      );
-
-    await run(
+  const lavoro =
+    await get(
       db,
-      "COMMIT"
+      `
+      SELECT *
+      FROM print_bridge_jobs
+      WHERE restaurante_id=?
+        AND (
+          (
+            estado='pendiente'
+            AND (
+              bridge_id IS NULL
+              OR bridge_id=''
+              OR bridge_id=?
+            )
+          )
+          OR (
+            estado='reclamado'
+            AND bridge_id=?
+            AND lease_hasta IS NOT NULL
+            AND lease_hasta < ?
+          )
+        )
+      ORDER BY id
+      LIMIT 1
+      `,
+      [
+        restauranteId,
+        bridge,
+        bridge,
+        adesso
+      ]
     );
 
-    return reclamato;
-  } catch (err) {
-    try {
-      await run(
-        db,
-        "ROLLBACK"
-      );
-    } catch (_) {}
-
-    throw err;
+  if (!lavoro) {
+    return null;
   }
+
+  const aggiornato =
+    await run(
+      db,
+      `
+      UPDATE print_bridge_jobs
+      SET
+        estado='reclamado',
+        bridge_id=?,
+        reclamado_en=?,
+        lease_hasta=?,
+        intentos=intentos+1,
+        error_mensaje=NULL,
+        error_en=NULL
+      WHERE id=?
+        AND restaurante_id=?
+        AND (
+          (
+            estado='pendiente'
+            AND (
+              bridge_id IS NULL
+              OR bridge_id=''
+              OR bridge_id=?
+            )
+          )
+          OR (
+            estado='reclamado'
+            AND bridge_id=?
+            AND lease_hasta IS NOT NULL
+            AND lease_hasta < ?
+          )
+        )
+      `,
+      [
+        bridge,
+        adesso,
+        leaseHasta,
+        lavoro.id,
+        restauranteId,
+        bridge,
+        bridge,
+        adesso
+      ]
+    );
+
+  if (
+    aggiornato.changes !== 1
+  ) {
+    return null;
+  }
+
+  return get(
+    db,
+    `
+    SELECT *
+    FROM print_bridge_jobs
+    WHERE id=?
+      AND restaurante_id=?
+    `,
+    [
+      lavoro.id,
+      restauranteId
+    ]
+  );
 }
 
 async function segnaImpreso(

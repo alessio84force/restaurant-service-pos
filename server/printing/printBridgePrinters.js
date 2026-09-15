@@ -118,11 +118,17 @@ function normalizzaStampanti(stampanti) {
 }
 
 async function sincronizzaStampanti(
+
   db,
+
   restauranteId,
+
   bridgeId,
+
   stampanti
+
 ) {
+
   const ristorante =
     Number(restauranteId);
 
@@ -152,93 +158,85 @@ async function sincronizzaStampanti(
   const adesso =
     new Date().toISOString();
 
+  /*
+   * Niente BEGIN/COMMIT sulla connessione
+   * SQLite condivisa dal server.
+   *
+   * Due Print Bridge possono sincronizzarsi
+   * contemporaneamente senza aprire
+   * transazioni annidate.
+   */
+
   await run(
     db,
-    "BEGIN IMMEDIATE"
+    `
+    UPDATE print_bridge_printers
+    SET
+      stato='non_rilevata',
+      ultimo_contacto=?
+    WHERE restaurante_id=?
+      AND bridge_id=?
+    `,
+    [
+      adesso,
+      ristorante,
+      bridge
+    ]
   );
 
-  try {
+  for (
+    let i = 0;
+    i < elenco.length;
+    i++
+  ) {
+    const p =
+      elenco[i];
+
     await run(
       db,
       `
-      UPDATE print_bridge_printers
-      SET
-        stato='non_rilevata',
-        ultimo_contacto=?
-      WHERE restaurante_id=?
-        AND bridge_id=?
+      INSERT OR REPLACE INTO print_bridge_printers
+      (
+        restaurante_id,
+        bridge_id,
+        printer_id,
+        printer_nome,
+        tipo,
+        connessione,
+        uri,
+        stato,
+        ultimo_contacto
+      )
+      VALUES (
+        ?, ?, ?, ?, ?, ?, ?,
+        'rilevata', ?
+      )
       `,
       [
-        adesso,
         ristorante,
-        bridge
+        bridge,
+        p.id,
+        p.nome,
+        p.tipo || null,
+        p.connessione || null,
+        p.uri || null,
+        adesso
       ]
     );
-
-    for (
-      let i = 0;
-      i < elenco.length;
-      i++
-    ) {
-      const p =
-        elenco[i];
-
-      await run(
-        db,
-        `
-        INSERT OR REPLACE INTO print_bridge_printers
-        (
-          restaurante_id,
-          bridge_id,
-          printer_id,
-          printer_nome,
-          tipo,
-          connessione,
-          uri,
-          stato,
-          ultimo_contacto
-        )
-        VALUES (
-          ?, ?, ?, ?, ?, ?, ?,
-          'rilevata', ?
-        )
-        `,
-        [
-          ristorante,
-          bridge,
-          p.id,
-          p.nome,
-          p.tipo || null,
-          p.connessione || null,
-          p.uri || null,
-          adesso
-        ]
-      );
-    }
-
-    await run(
-      db,
-      "COMMIT"
-    );
-  } catch (err) {
-    try {
-      await run(
-        db,
-        "ROLLBACK"
-      );
-    } catch (_) {}
-
-    throw err;
   }
 
   return {
     ok: true,
+
     restaurante_id:
       ristorante,
+
     bridge_id:
       bridge,
+
     rilevate:
       elenco.length,
+
     ultimo_contacto:
       adesso
   };

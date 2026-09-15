@@ -1,10 +1,17 @@
 const express = require("express");
 
 const {
+  creaTokenBridge,
   autenticaTokenBridge,
   registraContattoBridge
 } = require(
   "../printing/printBridgeAuth"
+);
+
+const {
+  consumaCodicePairingBridge
+} = require(
+  "../printing/printBridgePairing"
 );
 
 const {
@@ -22,9 +29,11 @@ const {
 );
 
 function tokenBearer(req) {
-  const header = String(
-    req.headers.authorization || ""
-  ).trim();
+  const header =
+    String(
+      req.headers.authorization ||
+      ""
+    ).trim();
 
   const match =
     header.match(
@@ -32,13 +41,17 @@ function tokenBearer(req) {
     );
 
   return match
-    ? String(match[1]).trim()
+    ? String(
+        match[1]
+      ).trim()
     : "";
 }
 
 function bridgeIdFromReq(req) {
   return String(
-    req.headers["x-rsp-bridge-id"] ||
+    req.headers[
+      "x-rsp-bridge-id"
+    ] ||
     ""
   ).trim();
 }
@@ -54,6 +67,147 @@ function printBridgeApiRoutes(db) {
     })
   );
 
+  /*
+   * PAIRING PUBBLICO
+   *
+   * Non richiede token perché serve
+   * proprio a generare la prima
+   * credenziale del Bridge.
+   *
+   * Richiede però un codice temporaneo,
+   * monouso e legato al ristorante.
+   */
+  router.post(
+    "/api/print-bridge/pair",
+    async (req, res) => {
+      try {
+        const codice =
+          String(
+            (
+              req.body &&
+              req.body.codice
+            ) ||
+            ""
+          ).trim();
+
+        const bridgeId =
+          String(
+            (
+              req.body &&
+              req.body.bridge_id
+            ) ||
+            ""
+          ).trim();
+
+        const bridgeNome =
+          String(
+            (
+              req.body &&
+              req.body.bridge_nome
+            ) ||
+            ""
+          )
+            .trim()
+            .slice(
+              0,
+              200
+            );
+
+        const bridgeVersion =
+          String(
+            (
+              req.body &&
+              req.body.bridge_version
+            ) ||
+            ""
+          )
+            .trim()
+            .slice(
+              0,
+              50
+            );
+
+        if (
+          !codice ||
+          !bridgeId ||
+          bridgeId.length > 120
+        ) {
+          return res
+            .status(400)
+            .json({
+              ok: false,
+              error:
+                "pairing_dati_non_validi"
+            });
+        }
+
+        const pairing =
+          await consumaCodicePairingBridge(
+            db,
+            codice
+          );
+
+        if (!pairing) {
+          return res
+            .status(401)
+            .json({
+              ok: false,
+              error:
+                "pairing_codice_non_valido_o_scaduto"
+            });
+        }
+
+        const credenziali =
+          await creaTokenBridge(
+            db,
+            pairing.restaurante_id,
+            bridgeNome,
+            bridgeId
+          );
+
+        console.log(
+          "[PRINT BRIDGE PAIRING]",
+          "ristorante",
+          pairing.restaurante_id,
+          "bridge",
+          bridgeId
+        );
+
+        return res.json({
+          ok: true,
+
+          restaurante_id:
+            pairing.restaurante_id,
+
+          token:
+            credenziali.token,
+
+          bridge_id:
+            bridgeId,
+
+          bridge_nome:
+            bridgeNome,
+
+          bridge_version:
+            bridgeVersion
+        });
+      } catch (err) {
+        console.error(
+          "[PRINT BRIDGE PAIRING]",
+          err.message
+        );
+
+        return res
+          .status(500)
+          .json({
+            ok: false,
+            error:
+              "pairing_errore_server"
+          });
+      }
+    }
+  );
+
   async function richiedeToken(
     req,
     res,
@@ -67,11 +221,13 @@ function printBridgeApiRoutes(db) {
         );
 
       if (!auth) {
-        return res.status(401).json({
-          ok: false,
-          error:
-            "print_bridge_non_autorizzato"
-        });
+        return res
+          .status(401)
+          .json({
+            ok: false,
+            error:
+              "print_bridge_non_autorizzato"
+          });
       }
 
       req.printBridgeAuth =
@@ -84,10 +240,13 @@ function printBridgeApiRoutes(db) {
         err.message
       );
 
-      res.status(500).json({
-        ok: false,
-        error: "errore_autenticazione"
-      });
+      res
+        .status(500)
+        .json({
+          ok: false,
+          error:
+            "errore_autenticazione"
+        });
     }
   }
 
@@ -100,17 +259,58 @@ function printBridgeApiRoutes(db) {
       bridgeIdFromReq(req);
 
     if (!bridgeId) {
-      return res.status(400).json({
-        ok: false,
-        error: "bridge_id_obbligatorio"
-      });
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          error:
+            "bridge_id_obbligatorio"
+        });
     }
 
-    if (bridgeId.length > 120) {
-      return res.status(400).json({
-        ok: false,
-        error: "bridge_id_non_valido"
-      });
+    if (
+      bridgeId.length > 120
+    ) {
+      return res
+        .status(400)
+        .json({
+          ok: false,
+          error:
+            "bridge_id_non_valido"
+        });
+    }
+
+    const autorizzato =
+      String(
+        (
+          req.printBridgeAuth &&
+          req.printBridgeAuth
+            .bridge_id_autorizzato
+        ) ||
+        ""
+      ).trim();
+
+    /*
+     * Compatibilità con Bridge creati
+     * prima del pairing:
+     *
+     * se bridge_id_autorizzato è vuoto,
+     * il vecchio token continua a funzionare.
+     *
+     * I nuovi pairing invece vengono legati
+     * al bridge_id preciso.
+     */
+    if (
+      autorizzato &&
+      autorizzato !== bridgeId
+    ) {
+      return res
+        .status(403)
+        .json({
+          ok: false,
+          error:
+            "bridge_id_non_autorizzato"
+        });
     }
 
     req.printBridgeId =
@@ -125,6 +325,7 @@ function printBridgeApiRoutes(db) {
     (req, res) => {
       res.json({
         ok: true,
+
         restaurante_id:
           req.printBridgeAuth
             .restaurante_id
@@ -141,15 +342,19 @@ function printBridgeApiRoutes(db) {
         const risultato =
           await registraContattoBridge(
             db,
+
             req.printBridgeAuth
               .restaurante_id,
+
             {
               bridge_nome:
                 req.body &&
                 req.body.bridge_nome,
+
               bridge_version:
                 req.body &&
                 req.body.bridge_version,
+
               ultimo_error:
                 req.body &&
                 req.body.ultimo_error
@@ -158,6 +363,7 @@ function printBridgeApiRoutes(db) {
 
         res.json({
           ok: true,
+
           ultimo_contacto:
             risultato
               .ultimo_contacto
@@ -168,10 +374,13 @@ function printBridgeApiRoutes(db) {
           err.message
         );
 
-        res.status(500).json({
-          ok: false,
-          error: "errore_heartbeat"
-        });
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error:
+              "errore_heartbeat"
+          });
       }
     }
   );
@@ -185,17 +394,22 @@ function printBridgeApiRoutes(db) {
         const risultato =
           await sincronizzaStampanti(
             db,
+
             req.printBridgeAuth
               .restaurante_id,
+
             req.printBridgeId,
+
             req.body &&
             req.body.stampanti
           );
 
         res.json({
           ok: true,
+
           rilevate:
             risultato.rilevate,
+
           ultimo_contacto:
             risultato
               .ultimo_contacto
@@ -206,11 +420,13 @@ function printBridgeApiRoutes(db) {
           err.message
         );
 
-        res.status(400).json({
-          ok: false,
-          error:
-            "errore_sync_stampanti"
-        });
+        res
+          .status(400)
+          .json({
+            ok: false,
+            error:
+              "errore_sync_stampanti"
+          });
       }
     }
   );
@@ -224,15 +440,19 @@ function printBridgeApiRoutes(db) {
         const lavoro =
           await reclamaProssimoLavoro(
             db,
+
             req.printBridgeAuth
               .restaurante_id,
+
             req.printBridgeId,
+
             60
           );
 
         res.json({
           ok: true,
-          lavoro: lavoro || null
+          lavoro:
+            lavoro || null
         });
       } catch (err) {
         console.error(
@@ -240,10 +460,13 @@ function printBridgeApiRoutes(db) {
           err.message
         );
 
-        res.status(500).json({
-          ok: false,
-          error: "errore_claim"
-        });
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error:
+              "errore_claim"
+          });
       }
     }
   );
@@ -257,23 +480,31 @@ function printBridgeApiRoutes(db) {
         const ok =
           await segnaImpreso(
             db,
+
             req.printBridgeAuth
               .restaurante_id,
-            Number(req.params.id),
+
+            Number(
+              req.params.id
+            ),
+
             req.printBridgeId
           );
 
         if (!ok) {
-          return res.status(409).json({
-            ok: false,
-            error:
-              "lavoro_non_confermabile"
-          });
+          return res
+            .status(409)
+            .json({
+              ok: false,
+              error:
+                "lavoro_non_confermabile"
+            });
         }
 
         res.json({
           ok: true,
-          estado: "impreso"
+          estado:
+            "impreso"
         });
       } catch (err) {
         console.error(
@@ -281,10 +512,13 @@ function printBridgeApiRoutes(db) {
           err.message
         );
 
-        res.status(500).json({
-          ok: false,
-          error: "errore_ack"
-        });
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error:
+              "errore_ack"
+          });
       }
     }
   );
@@ -297,32 +531,46 @@ function printBridgeApiRoutes(db) {
       try {
         const messaggio =
           String(
-            (req.body &&
-             req.body.error) ||
+            (
+              req.body &&
+              req.body.error
+            ) ||
             "Errore stampa"
-          ).slice(0, 1000);
+          ).slice(
+            0,
+            1000
+          );
 
         const ok =
           await segnaErrore(
             db,
+
             req.printBridgeAuth
               .restaurante_id,
-            Number(req.params.id),
+
+            Number(
+              req.params.id
+            ),
+
             req.printBridgeId,
+
             messaggio
           );
 
         if (!ok) {
-          return res.status(409).json({
-            ok: false,
-            error:
-              "lavoro_non_aggiornabile"
-          });
+          return res
+            .status(409)
+            .json({
+              ok: false,
+              error:
+                "lavoro_non_aggiornabile"
+            });
         }
 
         res.json({
           ok: true,
-          estado: "error"
+          estado:
+            "error"
         });
       } catch (err) {
         console.error(
@@ -330,11 +578,13 @@ function printBridgeApiRoutes(db) {
           err.message
         );
 
-        res.status(500).json({
-          ok: false,
-          error:
-            "errore_registrazione"
-        });
+        res
+          .status(500)
+          .json({
+            ok: false,
+            error:
+              "errore_registrazione"
+          });
       }
     }
   );

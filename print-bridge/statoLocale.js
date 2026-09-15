@@ -10,12 +10,37 @@ function cartellaDefault() {
 }
 
 function percorsoStato() {
-  return (
-    process.env.RSP_PRINT_BRIDGE_STATE ||
-    path.join(
-      cartellaDefault(),
+
+  const esplicito =
+    String(
+      process.env
+        .RSP_PRINT_BRIDGE_STATE ||
+      ""
+    ).trim();
+
+  if (esplicito) {
+    return esplicito;
+  }
+
+  const configPersonalizzata =
+    String(
+      process.env
+        .RSP_PRINT_BRIDGE_CONFIG ||
+      ""
+    ).trim();
+
+  if (configPersonalizzata) {
+    return path.join(
+      path.dirname(
+        configPersonalizzata
+      ),
       "stato.json"
-    )
+    );
+  }
+
+  return path.join(
+    cartellaDefault(),
+    "stato.json"
   );
 }
 

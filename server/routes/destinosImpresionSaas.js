@@ -1,3 +1,7 @@
+const {
+  creaCodicePairingBridge
+} = require("../printing/printBridgePairing");
+
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
@@ -476,6 +480,80 @@ function renderDestinos(destinos, query, textos) {
 </html>`;
 }
 
+function testiPairingBridge(langValor) {
+  const lang =
+    String(langValor || "es")
+      .toLowerCase();
+
+  const testi = {
+    es: {
+      boton: "Conectar Print Bridge",
+      ayuda:
+        "Genera un código temporal para vincular este restaurante con su Print Bridge.",
+      titulo:
+        "Conectar Print Bridge",
+      instruccion:
+        "Introduce este código en RSP Print Bridge. Es de un solo uso.",
+      caduca:
+        "Caduca",
+      copiar:
+        "Copiar código",
+      volver:
+        "Volver al Centro de impresión"
+    },
+    it: {
+      boton: "Collega Print Bridge",
+      ayuda:
+        "Genera un codice temporaneo per collegare questo ristorante al suo Print Bridge.",
+      titulo:
+        "Collega Print Bridge",
+      instruccion:
+        "Inserisci questo codice in RSP Print Bridge. È monouso.",
+      caduca:
+        "Scade",
+      copiar:
+        "Copia codice",
+      volver:
+        "Torna al Centro di stampa"
+    },
+    en: {
+      boton: "Connect Print Bridge",
+      ayuda:
+        "Generate a temporary code to link this restaurant to its Print Bridge.",
+      titulo:
+        "Connect Print Bridge",
+      instruccion:
+        "Enter this code in RSP Print Bridge. It can only be used once.",
+      caduca:
+        "Expires",
+      copiar:
+        "Copy code",
+      volver:
+        "Back to Print Center"
+    },
+    "pt-br": {
+      boton: "Conectar Print Bridge",
+      ayuda:
+        "Gere um código temporário para vincular este restaurante ao Print Bridge.",
+      titulo:
+        "Conectar Print Bridge",
+      instruccion:
+        "Digite este código no RSP Print Bridge. Ele só pode ser usado uma vez.",
+      caduca:
+        "Expira",
+      copiar:
+        "Copiar código",
+      volver:
+        "Voltar ao Centro de impressão"
+    }
+  };
+
+  return (
+    testi[lang] ||
+    testi.es
+  );
+}
+
 function renderImpresoras(
   config,
   destinos,
@@ -665,6 +743,27 @@ function renderImpresoras(
           ${escapar(textos.bridgeNoRegistrado)}
         </div>
       `;
+
+  const pairingTesti =
+    testiPairingBridge(
+      textos.lang
+    );
+
+  const pairingHtml = `
+    <form
+      method="POST"
+      action="/configuracion-impresoras/print-bridge/pairing"
+      style="margin-top:12px;"
+    >
+      <button type="submit">
+        ${escapar(pairingTesti.boton)}
+      </button>
+    </form>
+
+    <p class="help">
+      ${escapar(pairingTesti.ayuda)}
+    </p>
+  `;
 
   const stampantiHtml =
     stampanti.length
@@ -915,7 +1014,7 @@ function renderImpresoras(
 
     <div class="bridge-grid">
       <div>
-        ${bridgeHtml}
+        ${bridgeHtml}${pairingHtml}
       </div>
 
       <div>
@@ -1117,6 +1216,120 @@ module.exports = function destinosImpresionSaasRoutes(db) {
     });
 
     res.json(respuesta);
+  });
+
+  router.post("/configuracion-impresoras/print-bridge/pairing", requiereConfig, async function(req, res) {
+    try {
+      const restauranteId =
+        restauranteIdFromReq(req);
+
+      const textos =
+        await textosDestinosRestaurante(
+          db,
+          restauranteId
+        );
+
+      const t =
+        testiPairingBridge(
+          textos.lang
+        );
+
+      const pairing =
+        await creaCodicePairingBridge(
+          db,
+          restauranteId,
+          10
+        );
+
+      res.send(`<!doctype html>
+<html lang="${escapar(textos.lang || "es")}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>${escapar(t.titulo)}</title>
+  <style>
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      background:#f3f4f6;
+      color:#111827;
+      padding:30px;
+    }
+    .card{
+      max-width:620px;
+      margin:40px auto;
+      background:white;
+      border:1px solid #e5e7eb;
+      border-radius:22px;
+      padding:28px;
+      text-align:center;
+      box-shadow:0 14px 36px rgba(15,23,42,.10);
+    }
+    .code{
+      font-family:monospace;
+      font-size:34px;
+      font-weight:900;
+      letter-spacing:3px;
+      margin:24px 0;
+      padding:18px;
+      background:#f9fafb;
+      border:2px dashed #0f766e;
+      border-radius:16px;
+    }
+    button,a{
+      display:inline-block;
+      border:0;
+      border-radius:12px;
+      padding:11px 16px;
+      background:#0f766e;
+      color:white;
+      font-weight:900;
+      text-decoration:none;
+      cursor:pointer;
+      margin:6px;
+    }
+    .muted{
+      color:#6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>${escapar(t.titulo)}</h1>
+    <p>${escapar(t.instruccion)}</p>
+
+    <div
+      class="code"
+      id="pairing-code"
+    >${escapar(pairing.codice)}</div>
+
+    <p class="muted">
+      ${escapar(t.caduca)}:
+      ${escapar(pairing.scade_en)}
+    </p>
+
+    <button
+      type="button"
+      onclick="navigator.clipboard.writeText(document.getElementById('pairing-code').textContent.trim())"
+    >
+      ${escapar(t.copiar)}
+    </button>
+
+    <a href="/configuracion-impresoras">
+      ${escapar(t.volver)}
+    </a>
+  </div>
+</body>
+</html>`);
+    } catch (err) {
+      console.error(
+        "[PRINT BRIDGE PAIRING UI]",
+        err.message
+      );
+
+      res.status(500).send(
+        "Errore generando codice Print Bridge"
+      );
+    }
   });
 
   router.get("/configuracion-impresoras", requiereConfig, async function(req, res) {
