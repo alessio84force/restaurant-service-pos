@@ -554,6 +554,94 @@ function testiPairingBridge(langValor) {
   );
 }
 
+function compatibilitaStampanteVisibile(
+  stampante,
+  textos
+) {
+  const valore =
+    String(
+      stampante &&
+      stampante.compatibilita ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    valore === "verificata"
+  ) {
+    return textos.compatibilidadVerificada;
+  }
+
+  if (
+    valore === "da_verificare"
+  ) {
+    return textos.compatibilidadPorVerificar;
+  }
+
+  return "-";
+}
+
+
+function capacitaStampanteVisibili(
+  stampante
+) {
+  const raw =
+    String(
+      stampante &&
+      stampante.capacita_json ||
+      ""
+    ).trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  try {
+    const obj =
+      JSON.parse(raw);
+
+    if (
+      !obj ||
+      typeof obj !== "object" ||
+      Array.isArray(obj)
+    ) {
+      return "";
+    }
+
+    return Object.keys(obj)
+      .slice(0, 8)
+      .map((chiave) => {
+        const valore =
+          obj[chiave];
+
+        if (
+          valore == null
+        ) {
+          return "";
+        }
+
+        if (
+          typeof valore === "object"
+        ) {
+          return "";
+        }
+
+        return (
+          String(chiave) +
+          "=" +
+          String(valore)
+        );
+      })
+      .filter(Boolean)
+      .join(" · ");
+
+  } catch (_) {
+    return "";
+  }
+}
+
+
 function renderImpresoras(
   config,
   destinos,
@@ -633,13 +721,33 @@ function renderImpresoras(
         String(cfg.printer_id || "") ===
           String(p.printer_id || "");
 
+      const compatibilita =
+        compatibilitaStampanteVisibile(
+          p,
+          textos
+        );
+
       const label =
         String(p.printer_nome || "") +
+        (
+          p.marca
+            ? " — " +
+              String(p.marca)
+            : ""
+        ) +
         " — " +
         String(
           p.connessione ||
+          p.trasporto ||
           p.tipo ||
           ""
+        ) +
+        (
+          compatibilita &&
+          compatibilita !== "-"
+            ? " — " +
+              compatibilita
+            : ""
         );
 
       html +=
@@ -773,6 +881,17 @@ function renderImpresoras(
               String(p.stato) ===
               "rilevata";
 
+            const compatibilita =
+              compatibilitaStampanteVisibile(
+                p,
+                textos
+              );
+
+            const capacita =
+              capacitaStampanteVisibili(
+                p
+              );
+
             return `
               <div class="device">
                 <div>
@@ -782,6 +901,7 @@ function renderImpresoras(
 
                 <div>
                   <strong>
+                    ${escapar(textos.deteccionImpresora)}:
                     ${escapar(
                       rilevata
                         ? textos.estadoDetectada
@@ -790,9 +910,59 @@ function renderImpresoras(
                   </strong>
 
                   <small>
-                    ${escapar(textos.conexion)}:
-                    ${escapar(p.connessione || p.tipo || "-")}
+                    ${escapar(textos.compatibilidad)}:
+                    ${escapar(compatibilita)}
                   </small>
+
+                  ${p.marca
+                    ? `
+                      <small>
+                        ${escapar(textos.marcaImpresora)}:
+                        ${escapar(p.marca)}
+                      </small>
+                    `
+                    : ""
+                  }
+
+                  <small>
+                    ${escapar(textos.conexion)}:
+                    ${escapar(
+                      p.connessione ||
+                      p.trasporto ||
+                      p.tipo ||
+                      "-"
+                    )}
+                  </small>
+
+                  ${p.profilo
+                    ? `
+                      <small>
+                        ${escapar(textos.perfilImpresora)}:
+                        ${escapar(p.profilo)}
+                      </small>
+                    `
+                    : ""
+                  }
+
+                  ${p.linguaggio
+                    ? `
+                      <small>
+                        ${escapar(textos.lenguajeImpresora)}:
+                        ${escapar(p.linguaggio)}
+                      </small>
+                    `
+                    : ""
+                  }
+
+                  ${capacita
+                    ? `
+                      <small>
+                        ${escapar(textos.capacidadesImpresora)}:
+                        ${escapar(capacita)}
+                      </small>
+                    `
+                    : ""
+                  }
 
                   <small>
                     ${escapar(textos.identificadorBridge)}:
@@ -1384,7 +1554,14 @@ module.exports = function destinosImpresionSaasRoutes(db) {
           connessione,
           uri,
           stato,
-          ultimo_contacto
+          ultimo_contacto,
+          marca,
+          compatibilita,
+          trasporto,
+          profilo,
+          linguaggio,
+          capacita_json,
+          ultimo_rilevato_en
         FROM print_bridge_printers
         WHERE restaurante_id=?
         ORDER BY

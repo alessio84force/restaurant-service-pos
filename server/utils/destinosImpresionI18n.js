@@ -372,7 +372,23 @@ function textosDestinosImpresion(idiomaValor) {
       printBridgeAyuda:
         "Selecciona una impresora detectada por RSP Print Bridge. No es necesario introducir IP ni elegir impresora desde el POS.",
       stampanteBridgeNonValida:
-        "La impresora seleccionada para RSP Print Bridge no está disponible."
+        "La impresora seleccionada para RSP Print Bridge no está disponible.",
+      compatibilidad:
+        "Compatibilidad",
+      compatibilidadVerificada:
+        "Verificada",
+      compatibilidadPorVerificar:
+        "Por verificar",
+      marcaImpresora:
+        "Marca",
+      perfilImpresora:
+        "Perfil",
+      lenguajeImpresora:
+        "Lenguaje",
+      capacidadesImpresora:
+        "Capacidades",
+      deteccionImpresora:
+        "Detección"
     },
 
     it: {
@@ -411,7 +427,23 @@ function textosDestinosImpresion(idiomaValor) {
       printBridgeAyuda:
         "Seleziona una stampante rilevata da RSP Print Bridge. Dal POS non sarà necessario inserire IP o scegliere la stampante.",
       stampanteBridgeNonValida:
-        "La stampante selezionata per RSP Print Bridge non è disponibile."
+        "La stampante selezionata per RSP Print Bridge non è disponibile.",
+      compatibilidad:
+        "Compatibilità",
+      compatibilidadVerificada:
+        "Verificata",
+      compatibilidadPorVerificar:
+        "Da verificare",
+      marcaImpresora:
+        "Marca",
+      perfilImpresora:
+        "Profilo",
+      lenguajeImpresora:
+        "Linguaggio",
+      capacidadesImpresora:
+        "Capacità",
+      deteccionImpresora:
+        "Rilevamento"
     },
 
     en: {
@@ -450,7 +482,23 @@ function textosDestinosImpresion(idiomaValor) {
       printBridgeAyuda:
         "Select a printer detected by RSP Print Bridge. The POS will not need an IP address or manual printer selection.",
       stampanteBridgeNonValida:
-        "The selected RSP Print Bridge printer is not available."
+        "The selected RSP Print Bridge printer is not available.",
+      compatibilidad:
+        "Compatibility",
+      compatibilidadVerificada:
+        "Verified",
+      compatibilidadPorVerificar:
+        "Needs verification",
+      marcaImpresora:
+        "Brand",
+      perfilImpresora:
+        "Profile",
+      lenguajeImpresora:
+        "Language",
+      capacidadesImpresora:
+        "Capabilities",
+      deteccionImpresora:
+        "Detection"
     },
 
     "pt-br": {
@@ -489,7 +537,23 @@ function textosDestinosImpresion(idiomaValor) {
       printBridgeAyuda:
         "Selecione uma impressora detectada pelo RSP Print Bridge. No POS não será necessário informar IP nem escolher a impressora.",
       stampanteBridgeNonValida:
-        "A impressora selecionada para o RSP Print Bridge não está disponível."
+        "A impressora selecionada para o RSP Print Bridge não está disponível.",
+      compatibilidad:
+        "Compatibilidade",
+      compatibilidadVerificada:
+        "Verificada",
+      compatibilidadPorVerificar:
+        "A verificar",
+      marcaImpresora:
+        "Marca",
+      perfilImpresora:
+        "Perfil",
+      lenguajeImpresora:
+        "Linguagem",
+      capacidadesImpresora:
+        "Capacidades",
+      deteccionImpresora:
+        "Detecção"
     }
   };
 
