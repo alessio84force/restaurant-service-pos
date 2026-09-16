@@ -1,5 +1,165 @@
-function prepararPrintBridge(db, callback) {
+function eseguiSqlSequenziale(
+  db,
+  sql,
+  callback
+) {
+
+  let indice = 0;
+
+  function successivo(err) {
+
+    if (err) {
+      if (callback) {
+        callback(err);
+      }
+      return;
+    }
+
+    if (indice >= sql.length) {
+      if (callback) {
+        callback(null);
+      }
+      return;
+    }
+
+    const comando =
+      sql[indice];
+
+    indice += 1;
+
+    db.run(
+      comando,
+      [],
+      function(error) {
+        successivo(
+          error
+        );
+      }
+    );
+  }
+
+  successivo();
+}
+
+
+function assicuraColonneStampanti(
+  db,
+  callback
+) {
+
+  db.all(
+    "PRAGMA table_info(print_bridge_printers)",
+    [],
+    function(err, rows) {
+
+      if (err) {
+        if (callback) {
+          callback(err);
+        }
+        return;
+      }
+
+      const presenti = {};
+
+      (rows || []).forEach(
+        function(riga) {
+
+          presenti[
+            String(
+              riga.name || ""
+            )
+          ] = true;
+
+        }
+      );
+
+      const colonne = [
+        {
+          nome:
+            "marca",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "compatibilita",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "trasporto",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "profilo",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "linguaggio",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "capacita_json",
+          definizione:
+            "TEXT"
+        },
+        {
+          nome:
+            "ultimo_rilevato_en",
+          definizione:
+            "TEXT"
+        }
+      ];
+
+      const mancanti =
+        colonne.filter(
+          function(colonna) {
+            return !presenti[
+              colonna.nome
+            ];
+          }
+        );
+
+      const alter =
+        mancanti.map(
+          function(colonna) {
+
+            return (
+              "ALTER TABLE " +
+              "print_bridge_printers " +
+              "ADD COLUMN " +
+              colonna.nome +
+              " " +
+              colonna.definizione
+            );
+
+          }
+        );
+
+      eseguiSqlSequenziale(
+        db,
+        alter,
+        callback
+      );
+    }
+  );
+}
+
+
+function prepararPrintBridge(
+  db,
+  callback
+) {
+
   const sql = [
+
     `
     CREATE TABLE IF NOT EXISTS print_bridge_config (
       restaurante_id INTEGER PRIMARY KEY,
@@ -11,6 +171,7 @@ function prepararPrintBridge(db, callback) {
       ultimo_error TEXT
     )
     `,
+
     `
     CREATE TABLE IF NOT EXISTS print_bridge_jobs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +194,7 @@ function prepararPrintBridge(db, callback) {
       UNIQUE(restaurante_id, idempotency_key)
     )
     `,
+
     `
     CREATE TABLE IF NOT EXISTS print_bridge_printers (
       restaurante_id INTEGER NOT NULL,
@@ -44,6 +206,15 @@ function prepararPrintBridge(db, callback) {
       uri TEXT,
       stato TEXT NOT NULL DEFAULT 'rilevata',
       ultimo_contacto TEXT NOT NULL,
+
+      marca TEXT,
+      compatibilita TEXT,
+      trasporto TEXT,
+      profilo TEXT,
+      linguaggio TEXT,
+      capacita_json TEXT,
+      ultimo_rilevato_en TEXT,
+
       PRIMARY KEY (
         restaurante_id,
         bridge_id,
@@ -51,41 +222,64 @@ function prepararPrintBridge(db, callback) {
       )
     )
     `,
+
     `
     CREATE INDEX IF NOT EXISTS idx_print_bridge_printers_ristorante
-    ON print_bridge_printers(restaurante_id, stato, printer_nome)
+    ON print_bridge_printers(
+      restaurante_id,
+      stato,
+      printer_nome
+    )
     `,
+
     `
     CREATE INDEX IF NOT EXISTS idx_print_bridge_jobs_estado
-    ON print_bridge_jobs(restaurante_id, estado, id)
+    ON print_bridge_jobs(
+      restaurante_id,
+      estado,
+      id
+    )
     `,
+
     `
     CREATE INDEX IF NOT EXISTS idx_print_bridge_jobs_lease
-    ON print_bridge_jobs(restaurante_id, lease_hasta)
+    ON print_bridge_jobs(
+      restaurante_id,
+      lease_hasta
+    )
     `
   ];
 
-  let indice = 0;
+  eseguiSqlSequenziale(
+    db,
+    sql,
+    function(err) {
 
-  function siguiente(err) {
-    if (err) {
-      if (callback) callback(err);
-      return;
+      if (err) {
+        if (callback) {
+          callback(err);
+        }
+        return;
+      }
+
+      /*
+       * CREATE TABLE IF NOT EXISTS
+       * non modifica una tabella gia'
+       * esistente.
+       *
+       * Per i database installati prima
+       * di questi metadati aggiungiamo
+       * quindi soltanto le colonne
+       * effettivamente mancanti.
+       */
+      assicuraColonneStampanti(
+        db,
+        callback
+      );
     }
-
-    if (indice >= sql.length) {
-      if (callback) callback(null);
-      return;
-    }
-
-    db.run(sql[indice], [], function(error) {
-      indice += 1;
-      siguiente(error);
-    });
-  }
-
-  siguiente();
+  );
 }
+
 
 module.exports = {
   prepararPrintBridge

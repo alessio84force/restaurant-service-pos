@@ -1,43 +1,57 @@
 function run(db, sql, params) {
   return new Promise(
     (resolve, reject) => {
+
       db.run(
         sql,
         params || [],
         function(err) {
+
           if (err) {
             return reject(err);
           }
 
           resolve({
-            id: this.lastID,
-            changes: this.changes
+            id:
+              this.lastID,
+
+            changes:
+              this.changes
           });
         }
       );
+
     }
   );
 }
+
 
 function all(db, sql, params) {
   return new Promise(
     (resolve, reject) => {
+
       db.all(
         sql,
         params || [],
         function(err, rows) {
+
           if (err) {
             return reject(err);
           }
 
-          resolve(rows || []);
+          resolve(
+            rows || []
+          );
         }
       );
+
     }
   );
 }
 
+
 function pulisci(valor, max) {
+
   return String(
     valor == null
       ? ""
@@ -46,18 +60,71 @@ function pulisci(valor, max) {
     .trim()
     .slice(
       0,
-      Number(max || 500)
+      Number(
+        max || 500
+      )
     );
 }
 
-function normalizzaStampanti(stampanti) {
-  if (!Array.isArray(stampanti)) {
+
+function serializzaCapacita(
+  capacita
+) {
+
+  if (
+    !capacita ||
+    typeof capacita !==
+      "object" ||
+    Array.isArray(capacita)
+  ) {
+    return "";
+  }
+
+  try {
+
+    const json =
+      JSON.stringify(
+        capacita
+      );
+
+    /*
+     * Le capacita previste sono
+     * molto piccole.
+     *
+     * Non tronchiamo JSON perché
+     * diventerebbe invalido.
+     */
+    if (
+      json.length > 4000
+    ) {
+      return "";
+    }
+
+    return json;
+
+  } catch (_) {
+
+    return "";
+
+  }
+}
+
+
+function normalizzaStampanti(
+  stampanti
+) {
+
+  if (
+    !Array.isArray(stampanti)
+  ) {
     throw new Error(
       "stampanti deve essere un array"
     );
   }
 
-  if (stampanti.length > 100) {
+  if (
+    stampanti.length > 100
+  ) {
     throw new Error(
       "troppe stampanti"
     );
@@ -68,6 +135,7 @@ function normalizzaStampanti(stampanti) {
 
   stampanti.forEach(
     (stampante) => {
+
       const id =
         pulisci(
           stampante &&
@@ -82,55 +150,100 @@ function normalizzaStampanti(stampanti) {
           240
         );
 
-      if (!id || !nome) {
+      if (
+        !id ||
+        !nome
+      ) {
         return;
       }
 
-      if (viste[id]) {
+      if (
+        viste[id]
+      ) {
         return;
       }
 
       viste[id] = true;
 
       risultato.push({
+
         id,
+
         nome,
+
         tipo:
           pulisci(
             stampante.tipo,
             50
           ),
+
         connessione:
           pulisci(
             stampante.connessione,
-            120
+            160
           ),
+
         uri:
           pulisci(
             stampante.uri,
             1000
+          ),
+
+        marca:
+          pulisci(
+            stampante.marca,
+            120
+          ),
+
+        compatibilita:
+          pulisci(
+            stampante.compatibilita,
+            50
+          ),
+
+        trasporto:
+          pulisci(
+            stampante.trasporto,
+            50
+          ),
+
+        profilo:
+          pulisci(
+            stampante.profilo,
+            120
+          ),
+
+        linguaggio:
+          pulisci(
+            stampante.linguaggio,
+            80
+          ),
+
+        capacita_json:
+          serializzaCapacita(
+            stampante.capacita
           )
+
       });
+
     }
   );
 
   return risultato;
 }
 
+
 async function sincronizzaStampanti(
-
   db,
-
   restauranteId,
-
   bridgeId,
-
   stampanti
-
 ) {
 
   const ristorante =
-    Number(restauranteId);
+    Number(
+      restauranteId
+    );
 
   const bridge =
     pulisci(
@@ -156,17 +269,26 @@ async function sincronizzaStampanti(
     );
 
   const adesso =
-    new Date().toISOString();
+    new Date()
+      .toISOString();
 
   /*
-   * Niente BEGIN/COMMIT sulla connessione
-   * SQLite condivisa dal server.
+   * Una sincronizzazione indica
+   * che il Bridge ha controllato
+   * il proprio inventario.
    *
-   * Due Print Bridge possono sincronizzarsi
-   * contemporaneamente senza aprire
-   * transazioni annidate.
+   * Per le stampanti che non sono
+   * presenti:
+   *
+   * - stato diventa non_rilevata
+   * - ultimo_contacto viene aggiornato
+   *   alla sincronizzazione attuale
+   * - ultimo_rilevato_en NON cambia
+   *
+   * In questo modo sappiamo quando
+   * quella stampante e' stata vista
+   * realmente l'ultima volta.
    */
-
   await run(
     db,
     `
@@ -189,9 +311,16 @@ async function sincronizzaStampanti(
     i < elenco.length;
     i++
   ) {
+
     const p =
       elenco[i];
 
+    /*
+     * INSERT OR REPLACE viene
+     * mantenuto per compatibilita'
+     * con le versioni SQLite usate
+     * dal progetto.
+     */
     await run(
       db,
       `
@@ -205,11 +334,19 @@ async function sincronizzaStampanti(
         connessione,
         uri,
         stato,
-        ultimo_contacto
+        ultimo_contacto,
+        marca,
+        compatibilita,
+        trasporto,
+        profilo,
+        linguaggio,
+        capacita_json,
+        ultimo_rilevato_en
       )
       VALUES (
         ?, ?, ?, ?, ?, ?, ?,
-        'rilevata', ?
+        'rilevata', ?,
+        ?, ?, ?, ?, ?, ?, ?
       )
       `,
       [
@@ -220,13 +357,25 @@ async function sincronizzaStampanti(
         p.tipo || null,
         p.connessione || null,
         p.uri || null,
+
+        adesso,
+
+        p.marca || null,
+        p.compatibilita || null,
+        p.trasporto || null,
+        p.profilo || null,
+        p.linguaggio || null,
+        p.capacita_json || null,
+
         adesso
       ]
     );
+
   }
 
   return {
-    ok: true,
+    ok:
+      true,
 
     restaurante_id:
       ristorante,
@@ -242,10 +391,12 @@ async function sincronizzaStampanti(
   };
 }
 
+
 async function elencoStampanti(
   db,
   restauranteId
 ) {
+
   return all(
     db,
     `
@@ -258,7 +409,14 @@ async function elencoStampanti(
       connessione,
       uri,
       stato,
-      ultimo_contacto
+      ultimo_contacto,
+      marca,
+      compatibilita,
+      trasporto,
+      profilo,
+      linguaggio,
+      capacita_json,
+      ultimo_rilevato_en
     FROM print_bridge_printers
     WHERE restaurante_id=?
     ORDER BY
@@ -271,10 +429,13 @@ async function elencoStampanti(
       printer_id
     `,
     [
-      Number(restauranteId)
+      Number(
+        restauranteId
+      )
     ]
   );
 }
+
 
 module.exports = {
   sincronizzaStampanti,
