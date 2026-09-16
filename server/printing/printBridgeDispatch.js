@@ -4,6 +4,10 @@ const {
   accodaLavoro
 } = require("./printBridgeQueue");
 
+const {
+  valutaStampantePerProduzione
+} = require("./printBridgeCompatibility");
+
 function get(db, sql, params) {
   return new Promise(
     (resolve, reject) => {
@@ -276,7 +280,9 @@ async function preparaStampaPrintBridge(
         bridge_id,
         stato,
         tipo,
-        connessione
+        connessione,
+        trasporto,
+        compatibilita
       FROM print_bridge_printers
       WHERE restaurante_id=?
         AND bridge_id=?
@@ -290,10 +296,13 @@ async function preparaStampaPrintBridge(
       ]
     );
 
+  const valutazioneStampante =
+    valutaStampantePerProduzione(
+      stampante
+    );
+
   if (
-    !stampante ||
-    stampante.stato !==
-      "rilevata"
+    !valutazioneStampante.ok
   ) {
     return {
       gestita: true,
@@ -301,7 +310,10 @@ async function preparaStampaPrintBridge(
       modo:
         "print_bridge",
       error:
-        "print_bridge_stampante_non_disponibile"
+        valutazioneStampante.motivo ===
+          "da_verificare"
+          ? "print_bridge_stampante_da_verificare"
+          : "print_bridge_stampante_non_disponibile"
     };
   }
 
