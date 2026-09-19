@@ -316,15 +316,21 @@ async function sincronizzaStampanti(
       elenco[i];
 
     /*
-     * INSERT OR REPLACE viene
-     * mantenuto per compatibilita'
-     * con le versioni SQLite usate
-     * dal progetto.
+     * Non usiamo INSERT OR REPLACE:
+     * una REPLACE puo' eliminare
+     * colonne future gestite soltanto
+     * dal server.
+     *
+     * INSERT OR IGNORE crea la riga
+     * soltanto quando manca.
+     * L'UPDATE successivo modifica
+     * esclusivamente i dati provenienti
+     * dal Bridge.
      */
     await run(
       db,
       `
-      INSERT OR REPLACE INTO print_bridge_printers
+      INSERT OR IGNORE INTO print_bridge_printers
       (
         restaurante_id,
         bridge_id,
@@ -368,6 +374,51 @@ async function sincronizzaStampanti(
         p.capacita_json || null,
 
         adesso
+      ]
+    );
+
+    await run(
+      db,
+      `
+      UPDATE print_bridge_printers
+      SET
+        printer_nome=?,
+        tipo=?,
+        connessione=?,
+        uri=?,
+        stato='rilevata',
+        ultimo_contacto=?,
+        marca=?,
+        compatibilita=?,
+        trasporto=?,
+        profilo=?,
+        linguaggio=?,
+        capacita_json=?,
+        ultimo_rilevato_en=?
+      WHERE restaurante_id=?
+        AND bridge_id=?
+        AND printer_id=?
+      `,
+      [
+        p.nome,
+        p.tipo || null,
+        p.connessione || null,
+        p.uri || null,
+
+        adesso,
+
+        p.marca || null,
+        p.compatibilita || null,
+        p.trasporto || null,
+        p.profilo || null,
+        p.linguaggio || null,
+        p.capacita_json || null,
+
+        adesso,
+
+        ristorante,
+        bridge,
+        p.id
       ]
     );
 
