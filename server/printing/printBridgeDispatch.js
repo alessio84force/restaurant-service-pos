@@ -282,7 +282,9 @@ async function preparaStampaPrintBridge(
         tipo,
         connessione,
         trasporto,
-        compatibilita
+        compatibilita,
+        compatibilita_confermata,
+        compatibilita_confermata_en
       FROM print_bridge_printers
       WHERE restaurante_id=?
         AND bridge_id=?

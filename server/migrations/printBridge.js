@@ -115,6 +115,18 @@ function assicuraColonneStampanti(
             "ultimo_rilevato_en",
           definizione:
             "TEXT"
+        },
+        {
+          nome:
+            "compatibilita_confermata",
+          definizione:
+            "INTEGER NOT NULL DEFAULT 0"
+        },
+        {
+          nome:
+            "compatibilita_confermata_en",
+          definizione:
+            "TEXT"
         }
       ];
 
@@ -214,6 +226,9 @@ function prepararPrintBridge(
       linguaggio TEXT,
       capacita_json TEXT,
       ultimo_rilevato_en TEXT,
+
+      compatibilita_confermata INTEGER NOT NULL DEFAULT 0,
+      compatibilita_confermata_en TEXT,
 
       PRIMARY KEY (
         restaurante_id,

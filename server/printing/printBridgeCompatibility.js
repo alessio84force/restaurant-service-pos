@@ -23,13 +23,19 @@ function valutaStampantePerProduzione(stampante) {
   const compatibilita =
     normalizza(p.compatibilita);
 
+  const confermataManualmente =
+    Number(
+      p.compatibilita_confermata || 0
+    ) === 1;
+
   const escposDiretto =
     trasporto === "usb_escpos" ||
     trasporto === "tcp_escpos";
 
   if (
     escposDiretto &&
-    compatibilita !== "verificata"
+    compatibilita !== "verificata" &&
+    !confermataManualmente
   ) {
     return {
       ok: false,
