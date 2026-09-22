@@ -379,6 +379,18 @@ function textosDestinosImpresion(idiomaValor) {
         "Verificada",
       compatibilidadPorVerificar:
         "Por verificar",
+      compatibilidadVerificadaManual:
+        "Verificada manualmente",
+      confirmarCompatibilidad:
+        "Confirmar compatibilidad",
+      confirmarCompatibilidadAyuda:
+        "Confirma solo si la prueba de impresión salió correctamente en esta impresora.",
+      compatibilidadConfirmadaEn:
+        "Confirmada",
+      compatibilidadConfirmadaOk:
+        "Compatibilidad de la impresora confirmada.",
+      compatibilidadConfirmacionNoValida:
+        "No se puede confirmar esta impresora. Comprueba que siga detectada y que sea una ESC/POS por verificar.",
       marcaImpresora:
         "Marca",
       perfilImpresora:
@@ -434,6 +446,18 @@ function textosDestinosImpresion(idiomaValor) {
         "Verificata",
       compatibilidadPorVerificar:
         "Da verificare",
+      compatibilidadVerificadaManual:
+        "Verificata manualmente",
+      confirmarCompatibilidad:
+        "Conferma compatibilità",
+      confirmarCompatibilidadAyuda:
+        "Conferma solo se la stampa di prova è uscita correttamente da questa stampante.",
+      compatibilidadConfirmadaEn:
+        "Confermata",
+      compatibilidadConfirmadaOk:
+        "Compatibilità della stampante confermata.",
+      compatibilidadConfirmacionNoValida:
+        "Non è possibile confermare questa stampante. Verifica che sia ancora rilevata e che sia una ESC/POS da verificare.",
       marcaImpresora:
         "Marca",
       perfilImpresora:
@@ -489,6 +513,18 @@ function textosDestinosImpresion(idiomaValor) {
         "Verified",
       compatibilidadPorVerificar:
         "Needs verification",
+      compatibilidadVerificadaManual:
+        "Manually verified",
+      confirmarCompatibilidad:
+        "Confirm compatibility",
+      confirmarCompatibilidadAyuda:
+        "Confirm only if the test print came out correctly on this printer.",
+      compatibilidadConfirmadaEn:
+        "Confirmed",
+      compatibilidadConfirmadaOk:
+        "Printer compatibility confirmed.",
+      compatibilidadConfirmacionNoValida:
+        "This printer cannot be confirmed. Check that it is still detected and is an ESC/POS printer that needs verification.",
       marcaImpresora:
         "Brand",
       perfilImpresora:
@@ -544,6 +580,18 @@ function textosDestinosImpresion(idiomaValor) {
         "Verificada",
       compatibilidadPorVerificar:
         "A verificar",
+      compatibilidadVerificadaManual:
+        "Verificada manualmente",
+      confirmarCompatibilidad:
+        "Confirmar compatibilidade",
+      confirmarCompatibilidadAyuda:
+        "Confirme somente se a impressão de teste saiu corretamente nesta impressora.",
+      compatibilidadConfirmadaEn:
+        "Confirmada",
+      compatibilidadConfirmadaOk:
+        "Compatibilidade da impressora confirmada.",
+      compatibilidadConfirmacionNoValida:
+        "Não é possível confirmar esta impressora. Verifique se ela continua detectada e se é uma ESC/POS que precisa de verificação.",
       marcaImpresora:
         "Marca",
       perfilImpresora:

@@ -573,6 +573,20 @@ function compatibilitaStampanteVisibile(
     return textos.compatibilidadVerificada;
   }
 
+  const confermataManualmente =
+    Number(
+      stampante &&
+      stampante.compatibilita_confermata ||
+      0
+    ) === 1;
+
+  if (
+    valore === "da_verificare" &&
+    confermataManualmente
+  ) {
+    return textos.compatibilidadVerificadaManual;
+  }
+
   if (
     valore === "da_verificare"
   ) {
@@ -892,6 +906,89 @@ function renderImpresoras(
                 p
               );
 
+            const compatibilitaRaw =
+              String(
+                p.compatibilita || ""
+              )
+                .trim()
+                .toLowerCase();
+
+            const trasporto =
+              String(
+                p.trasporto || ""
+              )
+                .trim()
+                .toLowerCase();
+
+            const confermataManualmente =
+              Number(
+                p.compatibilita_confermata || 0
+              ) === 1;
+
+            const escposDiretta =
+              trasporto === "usb_escpos" ||
+              trasporto === "tcp_escpos";
+
+            const puoConfermare =
+              rilevata &&
+              escposDiretta &&
+              compatibilitaRaw ===
+                "da_verificare" &&
+              !confermataManualmente;
+
+            const confermaManualeHtml =
+              puoConfermare
+                ? `
+                  <div style="margin-top:10px;">
+                    <p class="help">
+                      ${escapar(
+                        textos.confirmarCompatibilidadAyuda
+                      )}
+                    </p>
+
+                    <form
+                      method="POST"
+                      action="/configuracion-impresoras/print-bridge/confirmar-compatibilidad"
+                    >
+                      <input
+                        type="hidden"
+                        name="bridge_id"
+                        value="${escapar(p.bridge_id)}"
+                      >
+
+                      <input
+                        type="hidden"
+                        name="printer_id"
+                        value="${escapar(p.printer_id)}"
+                      >
+
+                      <button type="submit">
+                        ${escapar(
+                          textos.confirmarCompatibilidad
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                `
+                : "";
+
+            const confermaDataHtml =
+              confermataManualmente &&
+              compatibilitaRaw ===
+                "da_verificare"
+                ? `
+                  <small>
+                    ${escapar(
+                      textos.compatibilidadConfirmadaEn
+                    )}:
+                    ${escapar(
+                      p.compatibilita_confermata_en ||
+                      "-"
+                    )}
+                  </small>
+                `
+                : "";
+
             return `
               <div class="device">
                 <div>
@@ -968,6 +1065,9 @@ function renderImpresoras(
                     ${escapar(textos.identificadorBridge)}:
                     ${escapar(p.bridge_id)}
                   </small>
+
+                  ${confermaDataHtml}
+                  ${confermaManualeHtml}
                 </div>
               </div>
             `;
@@ -1561,7 +1661,9 @@ module.exports = function destinosImpresionSaasRoutes(db) {
           profilo,
           linguaggio,
           capacita_json,
-          ultimo_rilevato_en
+          ultimo_rilevato_en,
+          compatibilita_confermata,
+          compatibilita_confermata_en
         FROM print_bridge_printers
         WHERE restaurante_id=?
         ORDER BY
@@ -1803,6 +1905,113 @@ module.exports = function destinosImpresionSaasRoutes(db) {
       )
     );
   });
+
+  router.post(
+    "/configuracion-impresoras/print-bridge/confirmar-compatibilidad",
+    requiereConfig,
+    async function(req, res) {
+
+      const restauranteId =
+        restauranteIdFromReq(req);
+
+      const textos =
+        await textosDestinosRestaurante(
+          db,
+          restauranteId
+        );
+
+      const bridgeId =
+        String(
+          req.body &&
+          req.body.bridge_id ||
+          ""
+        )
+          .trim()
+          .slice(0, 160);
+
+      const printerId =
+        String(
+          req.body &&
+          req.body.printer_id ||
+          ""
+        )
+          .trim()
+          .slice(0, 160);
+
+      if (
+        !bridgeId ||
+        !printerId
+      ) {
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.compatibilidadConfirmacionNoValida
+          )
+        );
+      }
+
+      const risultato =
+        await run(
+          db,
+          `
+            UPDATE print_bridge_printers
+            SET
+              compatibilita_confermata=1,
+              compatibilita_confermata_en=?
+            WHERE restaurante_id=?
+              AND bridge_id=?
+              AND printer_id=?
+              AND stato='rilevata'
+              AND LOWER(
+                TRIM(
+                  COALESCE(
+                    compatibilita,
+                    ''
+                  )
+                )
+              )='da_verificare'
+              AND LOWER(
+                TRIM(
+                  COALESCE(
+                    trasporto,
+                    ''
+                  )
+                )
+              ) IN (
+                'usb_escpos',
+                'tcp_escpos'
+              )
+          `,
+          [
+            new Date().toISOString(),
+            restauranteId,
+            bridgeId,
+            printerId
+          ]
+        );
+
+      if (
+        !risultato.ok ||
+        Number(
+          risultato.changes || 0
+        ) !== 1
+      ) {
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.compatibilidadConfirmacionNoValida
+          )
+        );
+      }
+
+      return res.redirect(
+        "/configuracion-impresoras?ok=" +
+        encodeURIComponent(
+          textos.compatibilidadConfirmadaOk
+        )
+      );
+    }
+  );
 
   router.post("/configuracion-impresoras/probar-:destinoId", requiereConfig, async function(req, res) {
 
