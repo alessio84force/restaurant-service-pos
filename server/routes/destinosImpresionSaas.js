@@ -720,6 +720,43 @@ function renderImpresoras(
       escapar(textos.sinAsignar) +
       '</option>';
 
+    const assegnataNonRilevata =
+      stampanti.find((p) =>
+        String(p.stato || "") !==
+          "rilevata" &&
+        String(cfg.bridge_id || "") ===
+          String(p.bridge_id || "") &&
+        String(cfg.printer_id || "") ===
+          String(p.printer_id || "")
+      );
+
+    if (assegnataNonRilevata) {
+      const valueOffline =
+        JSON.stringify({
+          bridge_id:
+            assegnataNonRilevata.bridge_id,
+          printer_id:
+            assegnataNonRilevata.printer_id
+        });
+
+      const labelOffline =
+        String(
+          assegnataNonRilevata.printer_nome ||
+          ""
+        ) +
+        " — " +
+        String(
+          textos.estadoNoDetectada
+        );
+
+      html +=
+        '<option value="' +
+        escapar(valueOffline) +
+        '" selected>' +
+        escapar(labelOffline) +
+        "</option>";
+    }
+
     rilevate.forEach((p) => {
       const value =
         JSON.stringify({
@@ -1734,7 +1771,6 @@ module.exports = function destinosImpresionSaasRoutes(db) {
           stato
         FROM print_bridge_printers
         WHERE restaurante_id=?
-          AND stato='rilevata'
         `,
         [restauranteId]
       );
@@ -1748,6 +1784,9 @@ module.exports = function destinosImpresionSaasRoutes(db) {
         String(p.printer_id)
       ] = p;
     });
+
+    const configAttuale =
+      parseConfigImpresion(config);
 
     const configJson = {};
 
@@ -1801,7 +1840,41 @@ module.exports = function destinosImpresionSaasRoutes(db) {
           const stampante =
             mappaStampanti[chiave];
 
-          if (stampante) {
+          const guardatoAttuale =
+            configAttuale[d.id] || {};
+
+          const stessaAssegnazione =
+            String(
+              guardatoAttuale.bridge_id ||
+              ""
+            ) ===
+              String(
+                scelta.bridge_id ||
+                ""
+              ) &&
+            String(
+              guardatoAttuale.printer_id ||
+              ""
+            ) ===
+              String(
+                scelta.printer_id ||
+                ""
+              );
+
+          const stampanteAccettata =
+            stampante &&
+            (
+              String(
+                stampante.stato || ""
+              ) === "rilevata" ||
+              (
+                modoDestino ===
+                  "print_bridge" &&
+                stessaAssegnazione
+              )
+            );
+
+          if (stampanteAccettata) {
             item.bridge_id =
               stampante.bridge_id;
 
