@@ -656,6 +656,41 @@ function capacitaStampanteVisibili(
 }
 
 
+function stampanteBridgeDiretta(p) {
+  const trasporto = String(
+    (p && p.trasporto) || ""
+  ).trim().toLowerCase();
+
+  const uri = String(
+    (p && p.uri) || ""
+  ).trim().toLowerCase();
+
+  const profilo = String(
+    (p && p.profilo) || ""
+  ).trim().toLowerCase();
+
+  const linguaggio = String(
+    (p && p.linguaggio) || ""
+  ).trim().toLowerCase();
+
+  if (
+    profilo === "system_driver" ||
+    linguaggio === "driver_sistema"
+  ) {
+    return false;
+  }
+
+  const usb = uri.startsWith("usb-escpos://");
+  const tcp = uri.startsWith("tcp-escpos://");
+
+  if (trasporto === "usb_escpos") return usb;
+  if (trasporto === "tcp_escpos") return tcp;
+
+  if (trasporto) return false;
+
+  return usb || tcp;
+}
+
 function renderImpresoras(
   config,
   destinos,
@@ -686,7 +721,8 @@ function renderImpresoras(
     stampanti.filter(
       (p) =>
         String(p.stato) ===
-        "rilevata"
+          "rilevata" &&
+        stampanteBridgeDiretta(p)
     );
 
   const destinosImpresion = [
@@ -722,6 +758,7 @@ function renderImpresoras(
 
     const assegnataNonRilevata =
       stampanti.find((p) =>
+        stampanteBridgeDiretta(p) &&
         String(p.stato || "") !==
           "rilevata" &&
         String(cfg.bridge_id || "") ===
@@ -1768,7 +1805,11 @@ module.exports = function destinosImpresionSaasRoutes(db) {
           bridge_id,
           printer_id,
           printer_nome,
-          stato
+          stato,
+          uri,
+          trasporto,
+          profilo,
+          linguaggio
         FROM print_bridge_printers
         WHERE restaurante_id=?
         `,
@@ -1863,6 +1904,7 @@ module.exports = function destinosImpresionSaasRoutes(db) {
 
           const stampanteAccettata =
             stampante &&
+            stampanteBridgeDiretta(stampante) &&
             (
               String(
                 stampante.stato || ""
