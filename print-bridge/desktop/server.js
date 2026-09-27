@@ -10,6 +10,11 @@ const {
 } = require("../desktopPairing");
 
 const { leggiStato } = require("./stato");
+const {
+  leggiLingua,
+  salvaLingua,
+  linguaValida
+} = require("./preferenze");
 
 const pagina = path.join(__dirname, "index.html");
 
@@ -27,6 +32,11 @@ function avviaDesktop(opzioni = {}) {
     typeof opzioni.configFile === "string"
       ? opzioni.configFile
       : configDesktopDefault;
+
+  const preferenzeFile = path.join(
+    path.dirname(configFile),
+    "preferenze.json"
+  );
 
   const collega =
     typeof opzioni.collega === "function"
@@ -221,6 +231,101 @@ function avviaDesktop(opzioni = {}) {
       return;
     }
 
+    if (
+      req.method === "POST" &&
+      req.url === "/api/preferenze"
+    ) {
+      if (req.headers.origin !== origine) {
+        rispondiJson(res, headers, 403, {
+          ok: false,
+          error: "Richiesta non autorizzata."
+        });
+        return;
+      }
+
+      const tipo = String(
+        req.headers["content-type"] || ""
+      );
+
+      if (
+        !/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(tipo)
+      ) {
+        rispondiJson(res, headers, 415, {
+          ok: false,
+          error: "Formato non valido."
+        });
+        return;
+      }
+
+      let contenuto = "";
+      let troppoGrande = false;
+
+      req.setEncoding("utf8");
+
+      req.on("data", pezzo => {
+        if (troppoGrande) return;
+
+        contenuto += pezzo;
+
+        if (Buffer.byteLength(contenuto, "utf8") > 128) {
+          troppoGrande = true;
+          contenuto = "";
+        }
+      });
+
+      req.on("end", () => {
+        if (troppoGrande) {
+          rispondiJson(res, headers, 413, {
+            ok: false,
+            error: "Richiesta troppo grande."
+          });
+          return;
+        }
+
+        let dati;
+
+        try {
+          dati = JSON.parse(contenuto);
+        } catch (_) {
+          dati = null;
+        }
+
+        if (
+          !dati ||
+          typeof dati !== "object" ||
+          Array.isArray(dati) ||
+          Object.keys(dati).length !== 1 ||
+          !linguaValida(dati.lingua)
+        ) {
+          rispondiJson(res, headers, 400, {
+            ok: false,
+            error: "Lingua non valida."
+          });
+          return;
+        }
+
+        try {
+          const risultato = salvaLingua(
+            preferenzeFile,
+            dati.lingua
+          );
+
+          rispondiJson(res, headers, 200, {
+            ok: true,
+            lingua: risultato.lingua
+          });
+
+        } catch (_) {
+          rispondiJson(res, headers, 500, {
+            ok: false,
+            error: "Impossibile salvare la preferenza."
+          });
+        }
+      });
+
+      return;
+    }
+
     if (req.method !== "GET") {
       res.writeHead(405, headers);
       res.end();
@@ -268,6 +373,13 @@ function avviaDesktop(opzioni = {}) {
           res.end(contenuto);
         }
       );
+      return;
+    }
+
+    if (req.url === "/api/preferenze") {
+      rispondiJson(res, headers, 200, {
+        lingua: leggiLingua(preferenzeFile)
+      });
       return;
     }
 
