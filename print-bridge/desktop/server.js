@@ -5,8 +5,11 @@ const fs = require("fs");
 const path = require("path");
 
 const {
-  collegaRistorante
+  collegaRistorante,
+  configDesktopDefault
 } = require("../desktopPairing");
+
+const { leggiStato } = require("./stato");
 
 const pagina = path.join(__dirname, "index.html");
 
@@ -20,10 +23,17 @@ function rispondiJson(res, headers, stato, dati) {
 }
 
 function avviaDesktop(opzioni = {}) {
+  const configFile =
+    typeof opzioni.configFile === "string"
+      ? opzioni.configFile
+      : configDesktopDefault;
+
   const collega =
     typeof opzioni.collega === "function"
       ? opzioni.collega
-      : collegaRistorante;
+      : codice => collegaRistorante(codice, {
+          configFile
+        });
 
   let collegamentoInCorso = false;
 
@@ -257,6 +267,16 @@ function avviaDesktop(opzioni = {}) {
 
           res.end(contenuto);
         }
+      );
+      return;
+    }
+
+    if (req.url === "/api/stato") {
+      rispondiJson(
+        res,
+        headers,
+        200,
+        leggiStato(configFile)
       );
       return;
     }
