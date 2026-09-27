@@ -357,12 +357,21 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error("");
-  console.error(
-    "ERRORE:",
-    err.message
-  );
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("");
+    console.error(
+      "ERRORE:",
+      err.message
+    );
 
-  process.exitCode = 1;
-});
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  richiestaPairing,
+  configEsistente,
+  bridgeIdDefault,
+  salvaConfig
+};
