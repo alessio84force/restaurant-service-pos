@@ -8,7 +8,7 @@ const SERVER =
 
 const CONFIG = path.join(
   os.homedir(),
-  ".rsp-print-bridge",
+  ".rsp-print-bridge-desktop",
   "config.json"
 );
 
@@ -95,5 +95,6 @@ async function collegaRistorante(codice, opzioni = {}) {
 
 module.exports = {
   collegaRistorante,
-  normalizzaCodice
+  normalizzaCodice,
+  configDesktopDefault: CONFIG
 };
