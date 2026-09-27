@@ -243,6 +243,29 @@ button:enabled:hover {
   color:#991b1b;
 }
 
+.language-row {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.language-row label {
+  margin:0;
+  color:#fff;
+  font-size:12px;
+}
+
+.language-row select {
+  padding:8px 12px;
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  background:#fff;
+  color:#111827;
+  font-weight:bold;
+}
+
 @media(max-width:570px) {
   main { margin:15px auto; }
   .hero { display:block; padding:22px; }
@@ -256,48 +279,57 @@ button:enabled:hover {
 </head>
 <body>
 <main>
+  <div class="language-row">
+    <label for="language" data-i18n="language">Lingua</label>
+    <select id="language" aria-label="Language">
+      <option value="es">ES</option>
+      <option value="it">IT</option>
+      <option value="en">EN</option>
+      <option value="pt-BR">PT-BR</option>
+    </select>
+  </div>
+
   <header class="hero">
     <div class="hero-content">
       <div class="eyebrow">RESTAURANT SERVICE POS</div>
       <h1>Print Bridge</h1>
-      <p>Collega il tuo computer al ristorante e gestisci le stampanti del servizio.</p>
+      <p data-i18n="subtitle">Collega il tuo computer al ristorante e gestisci le stampanti del servizio.</p>
     </div>
     <div class="hero-status">
-      <span>STATO COLLEGAMENTO</span>
+      <span data-i18n="connectionStatus">STATO COLLEGAMENTO</span>
       <strong id="collegamento-stato">Non collegato</strong>
     </div>
   </header>
 
   <div class="stats">
     <div class="stat">
-      <span>RISTORANTE</span>
+      <span data-i18n="restaurant">RISTORANTE</span>
       <strong id="ristorante-stato">Non collegato</strong>
     </div>
     <div class="stat">
-      <span>STAMPANTI</span>
-      <strong>In attesa</strong>
+      <span data-i18n="printers">STAMPANTI</span>
+      <strong data-i18n="waiting">In attesa</strong>
     </div>
     <div class="stat">
-      <span>SERVIZIO</span>
-      <strong>Non avviato</strong>
+      <span data-i18n="service">SERVIZIO</span>
+      <strong data-i18n="stopped">Non avviato</strong>
     </div>
   </div>
 
   <section class="card">
     <div class="section-top">
-      <h2>Collega il ristorante</h2>
-      <span class="badge">01 · Collegamento</span>
+      <h2 data-i18n="connectTitle">Collega il ristorante</h2>
+      <span class="badge" data-i18n="connectionStep">01 · Collegamento</span>
     </div>
     <p>
-      Apri il Centro de impresión sul sito Restaurant Service POS,
-      genera un codice e inseriscilo qui.
+      <span data-i18n="instructions">Apri il Centro de impresión sul sito Restaurant Service POS, genera un codice e inseriscilo qui.</span>
     </p>
 
-    <label for="code">CODICE DI COLLEGAMENTO</label>
+    <label for="code" data-i18n="codeLabel">CODICE DI COLLEGAMENTO</label>
     <input id="code" type="text" placeholder="ABCDE-FGHIJ"
       maxlength="11" autocomplete="off" spellcheck="false" disabled>
 
-    <button id="collega-btn" type="button" disabled>Collega ristorante</button>
+    <button id="collega-btn" type="button" data-i18n="connectButton" disabled>Collega ristorante</button>
 
     <div class="notice" id="collegamento-messaggio" role="status" aria-live="polite">
       Inserisci il codice generato nel Centro de impresión.
@@ -306,6 +338,7 @@ button:enabled:hover {
 
   <footer>Restaurant Service POS · Print Bridge Desktop V2.15.0</footer>
 </main>
+<script src="/i18n.js" defer></script>
 <script src="/app.js" defer></script>
 </body>
 </html>
