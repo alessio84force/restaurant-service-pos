@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Restaurant Service Print Bridge</title>
+<style>
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  min-height:100vh;
+  font-family:Arial,Helvetica,sans-serif;
+  color:#111827;
+  background:
+    radial-gradient(circle at 12% 8%,rgba(245,158,11,.22),transparent 30%),
+    radial-gradient(circle at 84% 18%,rgba(20,184,166,.18),transparent 26%),
+    linear-gradient(135deg,#0f172a 0%,#111827 38%,#f8fafc 38%,#f3f4f6 100%);
+}
+
+main {
+  width:calc(100% - 36px);
+  max-width:740px;
+  margin:28px auto;
+}
+
+.hero {
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  min-height:172px;
+  padding:26px;
+  border-radius:30px;
+  color:white;
+  background:
+    linear-gradient(135deg,rgba(17,24,39,.96),rgba(67,56,202,.55)),
+    radial-gradient(circle at 90% 20%,rgba(245,158,11,.55),transparent 32%);
+  box-shadow:0 24px 70px rgba(15,23,42,.25);
+}
+
+.hero:after {
+  content:"";
+  position:absolute;
+  right:-65px;
+  top:-90px;
+  width:240px;
+  height:240px;
+  border-radius:50%;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.16);
+  pointer-events:none;
+}
+
+.hero-content,.hero-status {
+  position:relative;
+  z-index:1;
+}
+
+.eyebrow {
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1.4px;
+  color:#fef3c7;
+}
+
+h1 {
+  margin:11px 0 8px;
+  font-size:31px;
+  line-height:1.08;
+}
+
+.hero p {
+  max-width:380px;
+  margin:0;
+  font-size:14px;
+  line-height:1.5;
+  color:#e5e7eb;
+}
+
+.hero-status {
+  min-width:155px;
+  padding:16px;
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.11);
+}
+
+.hero-status span {
+  display:block;
+  color:#e5e7eb;
+  font-size:11px;
+  font-weight:bold;
+  letter-spacing:1px;
+}
+
+.hero-status strong {
+  display:block;
+  margin-top:7px;
+  font-size:18px;
+}
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:15px 0;
+}
+
+.stat {
+  padding:16px;
+  min-height:85px;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:20px;
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+}
+
+.stat span {
+  display:block;
+  color:#6b7280;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+
+.stat strong {
+  display:block;
+  margin-top:8px;
+  font-size:15px;
+}
+
+.card {
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:22px;
+  padding:25px;
+  box-shadow:0 12px 28px rgba(15,23,42,.08);
+}
+
+.section-top {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.section-top h2 {
+  margin:0;
+  font-size:21px;
+}
+
+.badge {
+  display:inline-block;
+  padding:8px 11px;
+  border-radius:999px;
+  background:#fef3c7;
+  color:#92400e;
+  font-size:11px;
+  font-weight:bold;
+}
+
+.card p {
+  color:#64748b;
+  font-size:14px;
+  line-height:1.6;
+}
+
+label {
+  display:block;
+  margin:22px 0 9px;
+  font-size:12px;
+  font-weight:900;
+}
+
+input {
+  display:block;
+  width:100%;
+  padding:15px;
+  border:1px solid #cbd5e1;
+  border-radius:12px;
+  background:#f8fafc;
+  font-size:19px;
+  text-align:center;
+  letter-spacing:3px;
+}
+
+button {
+  display:block;
+  width:100%;
+  margin-top:13px;
+  padding:15px;
+  border:0;
+  border-radius:12px;
+  color:#78350f;
+  background:linear-gradient(135deg,#f59e0b,#fef3c7);
+  font-size:15px;
+  font-weight:900;
+  opacity:.65;
+  cursor:not-allowed;
+}
+
+.notice {
+  margin-top:16px;
+  padding:12px;
+  border-radius:12px;
+  background:#f8fafc;
+  color:#64748b;
+  font-size:12px;
+  line-height:1.5;
+}
+
+footer {
+  margin:19px 0 25px;
+  text-align:center;
+  font-size:11px;
+  color:#94a3b8;
+}
+
+@media(max-width:570px) {
+  main { margin:15px auto; }
+  .hero { display:block; padding:22px; }
+  h1 { font-size:27px; }
+  .hero-status { margin-top:20px; }
+  .stats { grid-template-columns:1fr; }
+  .stat { min-height:0; }
+  .card { padding:20px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="hero-content">
+      <div class="eyebrow">RESTAURANT SERVICE POS</div>
+      <h1>Print Bridge</h1>
+      <p>Collega il tuo computer al ristorante e gestisci le stampanti del servizio.</p>
+    </div>
+    <div class="hero-status">
+      <span>STATO COLLEGAMENTO</span>
+      <strong>Non collegato</strong>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <span>RISTORANTE</span>
+      <strong>Non collegato</strong>
+    </div>
+    <div class="stat">
+      <span>STAMPANTI</span>
+      <strong>In attesa</strong>
+    </div>
+    <div class="stat">
+      <span>SERVIZIO</span>
+      <strong>Non avviato</strong>
+    </div>
+  </div>
+
+  <section class="card">
+    <div class="section-top">
+      <h2>Collega il ristorante</h2>
+      <span class="badge">01 · Collegamento</span>
+    </div>
+    <p>
+      Apri il Centro de impresión sul sito Restaurant Service POS,
+      genera un codice e inseriscilo qui.
+    </p>
+
+    <label for="code">CODICE DI COLLEGAMENTO</label>
+    <input id="code" type="text" placeholder="ABCDE-FGHIJ"
+      maxlength="11" autocomplete="off" spellcheck="false" disabled>
+
+    <button type="button" disabled>Collega ristorante</button>
+
+    <div class="notice">
+      Anteprima grafica offline. Il collegamento e la stampa non sono ancora attivi.
+    </div>
+  </section>
+
+  <footer>Restaurant Service POS · Print Bridge Desktop V2.15.0</footer>
+</main>
+</body>
+</html>
