@@ -24,6 +24,9 @@ const traduzioni = {
     expiredCode: "Código no válido o caducado. Genera uno nuevo en la web.",
     connectionFailed: "No se ha podido conectar. Comprueba la conexión y vuelve a intentarlo.",
     invalidResponse: "Respuesta de conexión no válida.",
+    configured: "Configurado",
+    existingConnection: "Perfil guardado en este ordenador. La conexión con el servidor todavía no se ha verificado. La impresión no está iniciada.",
+    statusUnavailable: "No se puede comprobar el estado guardado. Recarga la ventana.",
     restaurantNumber: "Restaurante #"
   },
 
@@ -50,6 +53,9 @@ const traduzioni = {
     expiredCode: "Codice non valido o scaduto. Generane uno nuovo sul sito.",
     connectionFailed: "Collegamento non riuscito. Verifica la connessione e riprova.",
     invalidResponse: "Risposta del collegamento non valida.",
+    configured: "Configurato",
+    existingConnection: "Profilo salvato su questo computer. Il collegamento al server non è ancora stato verificato. La stampa non è avviata.",
+    statusUnavailable: "Impossibile controllare lo stato salvato. Ricarica la finestra.",
     restaurantNumber: "Ristorante #"
   },
 
@@ -76,6 +82,9 @@ const traduzioni = {
     expiredCode: "Invalid or expired code. Generate a new one on the website.",
     connectionFailed: "Connection failed. Check your connection and try again.",
     invalidResponse: "Invalid connection response.",
+    configured: "Configured",
+    existingConnection: "Profile saved on this computer. The server connection has not yet been verified. Printing is not running.",
+    statusUnavailable: "Unable to check the saved status. Reload the window.",
     restaurantNumber: "Restaurant #"
   },
 
@@ -102,6 +111,9 @@ const traduzioni = {
     expiredCode: "Código inválido ou expirado. Gere um novo no site.",
     connectionFailed: "Falha na conexão. Verifique sua conexão e tente novamente.",
     invalidResponse: "Resposta de conexão inválida.",
+    configured: "Configurado",
+    existingConnection: "Perfil salvo neste computador. A conexão com o servidor ainda não foi verificada. A impressão não está em execução.",
+    statusUnavailable: "Não foi possível verificar o status salvo. Recarregue a janela.",
     restaurantNumber: "Restaurante #"
   }
 };

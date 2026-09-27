@@ -19,6 +19,8 @@
   let lingua = i18n.linguaSupportata(navigator.language);
   let occupato = false;
   let collegato = false;
+  let configuratoDaDisco = false;
+  let inizializzazione = true;
   let ristoranteId = null;
   let messaggioChiave = "enterCode";
 
@@ -45,7 +47,9 @@
     });
 
     stato.textContent = traduci(
-      collegato ? "connected" : "disconnected"
+      collegato
+        ? (configuratoDaDisco ? "configured" : "connected")
+        : "disconnected"
     );
 
     ristorante.textContent = collegato
@@ -78,7 +82,7 @@
 
   function aggiornaPulsante() {
     pulsante.disabled =
-      occupato || collegato || !codiceValido();
+      occupato || collegato || inizializzazione || !codiceValido();
   }
 
   function mostraMessaggio(chiave, tipo) {
@@ -87,7 +91,7 @@
     aggiornaTesti();
   }
 
-  input.disabled = false;
+  input.disabled = true;
 
   input.addEventListener("input", () => {
     input.value = input.value
@@ -99,7 +103,12 @@
   });
 
   async function collega() {
-    if (occupato || collegato || !codiceValido()) return;
+    if (
+      occupato ||
+      collegato ||
+      inizializzazione ||
+      !codiceValido()
+    ) return;
 
     occupato = true;
     pulsante.disabled = true;
@@ -141,6 +150,7 @@
       }
 
       collegato = true;
+      configuratoDaDisco = false;
       ristoranteId = dati.restaurante_id;
 
       mostraMessaggio("success", "success");
@@ -174,6 +184,54 @@
     }
   });
 
+  async function caricaStato() {
+    try {
+      const risposta = await fetch("/api/stato", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (!risposta.ok) {
+        throw new Error("Stato non disponibile");
+      }
+
+      const dati = await risposta.json();
+
+      if (dati.configurato === true) {
+        if (
+          !Number.isSafeInteger(dati.restaurante_id) ||
+          dati.restaurante_id <= 0
+        ) {
+          throw new Error("Stato non valido");
+        }
+
+        collegato = true;
+        configuratoDaDisco = true;
+        ristoranteId = dati.restaurante_id;
+        messaggioChiave = "existingConnection";
+        messaggio.dataset.state = "pending";
+
+      } else if (
+        dati.configurato !== false ||
+        dati.restaurante_id !== null
+      ) {
+        throw new Error("Stato non valido");
+      }
+
+      inizializzazione = false;
+
+    } catch (_) {
+      mostraMessaggio("statusUnavailable", "error");
+
+    } finally {
+      input.disabled = collegato || inizializzazione;
+      aggiornaPulsante();
+      aggiornaTesti();
+    }
+  }
+
   aggiornaPulsante();
   aggiornaTesti();
+  caricaStato();
 })();
