@@ -219,6 +219,30 @@ footer {
   color:#94a3b8;
 }
 
+button:enabled {
+  opacity:1;
+  cursor:pointer;
+}
+
+button:enabled:hover {
+  filter:brightness(1.04);
+}
+
+.notice[data-state="pending"] {
+  background:#fef3c7;
+  color:#92400e;
+}
+
+.notice[data-state="success"] {
+  background:#dcfce7;
+  color:#166534;
+}
+
+.notice[data-state="error"] {
+  background:#fee2e2;
+  color:#991b1b;
+}
+
 @media(max-width:570px) {
   main { margin:15px auto; }
   .hero { display:block; padding:22px; }
@@ -240,14 +264,14 @@ footer {
     </div>
     <div class="hero-status">
       <span>STATO COLLEGAMENTO</span>
-      <strong>Non collegato</strong>
+      <strong id="collegamento-stato">Non collegato</strong>
     </div>
   </header>
 
   <div class="stats">
     <div class="stat">
       <span>RISTORANTE</span>
-      <strong>Non collegato</strong>
+      <strong id="ristorante-stato">Non collegato</strong>
     </div>
     <div class="stat">
       <span>STAMPANTI</span>
@@ -273,14 +297,15 @@ footer {
     <input id="code" type="text" placeholder="ABCDE-FGHIJ"
       maxlength="11" autocomplete="off" spellcheck="false" disabled>
 
-    <button type="button" disabled>Collega ristorante</button>
+    <button id="collega-btn" type="button" disabled>Collega ristorante</button>
 
-    <div class="notice">
-      Anteprima grafica offline. Il collegamento e la stampa non sono ancora attivi.
+    <div class="notice" id="collegamento-messaggio" role="status" aria-live="polite">
+      Inserisci il codice generato nel Centro de impresión.
     </div>
   </section>
 
   <footer>Restaurant Service POS · Print Bridge Desktop V2.15.0</footer>
 </main>
+<script src="/app.js" defer></script>
 </body>
 </html>

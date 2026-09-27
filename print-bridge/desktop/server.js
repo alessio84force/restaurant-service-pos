@@ -217,6 +217,28 @@ function avviaDesktop(opzioni = {}) {
       return;
     }
 
+    if (req.url === "/app.js") {
+      fs.readFile(
+        path.join(__dirname, "app.js"),
+        (err, contenuto) => {
+          if (err) {
+            res.writeHead(500, headers);
+            res.end();
+            return;
+          }
+
+          res.writeHead(200, {
+            ...headers,
+            "Content-Type":
+              "application/javascript; charset=utf-8"
+          });
+
+          res.end(contenuto);
+        }
+      );
+      return;
+    }
+
     if (req.url === "/health") {
       rispondiJson(res, headers, 200, {
         ok: true,
