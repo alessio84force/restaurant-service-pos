@@ -59,16 +59,64 @@
     messaggio.textContent = traduci(messaggioChiave);
   }
 
-  selettore.addEventListener("change", () => {
-    if (!i18n.traduzioni[selettore.value]) return;
+  // Attendiamo il recupero della preferenza salvata.
+  selettore.disabled = true;
 
-    lingua = selettore.value;
+  selettore.addEventListener("change", async () => {
+    const scelta = selettore.value;
+
+    if (!Object.prototype.hasOwnProperty.call(
+      i18n.traduzioni, scelta
+    )) {
+      aggiornaTesti();
+      return;
+    }
+
+    const precedente = lingua;
+    selettore.disabled = true;
 
     try {
-      localStorage.setItem(chiaveLingua, lingua);
-    } catch (_) {}
+      const risposta = await fetch("/api/preferenze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "same-origin",
+        cache: "no-store",
+        body: JSON.stringify({ lingua: scelta })
+      });
 
-    aggiornaTesti();
+      if (!risposta.ok) {
+        throw new Error("Salvataggio non riuscito");
+      }
+
+      const dati = await risposta.json();
+
+      if (
+        !dati ||
+        dati.ok !== true ||
+        dati.lingua !== scelta ||
+        Object.keys(dati).sort().join("|") !== "lingua|ok"
+      ) {
+        throw new Error("Risposta non valida");
+      }
+
+      lingua = scelta;
+
+      try {
+        localStorage.setItem(chiaveLingua, lingua);
+      } catch (_) {}
+
+      aggiornaTesti();
+
+    } catch (_) {
+      lingua = precedente;
+      aggiornaTesti();
+      window.alert(traduci("preferenceSaveFailed"));
+
+    } finally {
+      selettore.disabled = false;
+    }
   });
 
   function codiceValido() {
@@ -231,7 +279,59 @@
     }
   }
 
+  async function caricaLinguaSalvata() {
+    try {
+      const risposta = await fetch("/api/preferenze", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (!risposta.ok) {
+        throw new Error("Preferenze non disponibili");
+      }
+
+      const dati = await risposta.json();
+
+      if (
+        !dati ||
+        typeof dati !== "object" ||
+        Array.isArray(dati) ||
+        Object.keys(dati).length !== 1 ||
+        !Object.prototype.hasOwnProperty.call(dati, "lingua")
+      ) {
+        throw new Error("Preferenze non valide");
+      }
+
+      if (dati.lingua !== null) {
+        if (
+          !Object.prototype.hasOwnProperty.call(
+            i18n.traduzioni,
+            dati.lingua
+          )
+        ) {
+          throw new Error("Lingua non supportata");
+        }
+
+        lingua = dati.lingua;
+
+        try {
+          localStorage.setItem(chiaveLingua, lingua);
+        } catch (_) {}
+      }
+
+    } catch (_) {
+      // Manteniamo la lingua attualmente disponibile.
+      console.warn("Preferenza linguistica non disponibile.");
+
+    } finally {
+      selettore.disabled = false;
+      aggiornaTesti();
+    }
+  }
+
   aggiornaPulsante();
   aggiornaTesti();
   caricaStato();
+  caricaLinguaSalvata();
 })();

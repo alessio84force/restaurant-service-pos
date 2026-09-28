@@ -27,6 +27,7 @@ const traduzioni = {
     configured: "Configurado",
     existingConnection: "Perfil guardado en este ordenador. La conexión con el servidor todavía no se ha verificado. La impresión no está iniciada.",
     statusUnavailable: "No se puede comprobar el estado guardado. Recarga la ventana.",
+    preferenceSaveFailed: "No se ha podido guardar el idioma. Inténtalo de nuevo.",
     restaurantNumber: "Restaurante #"
   },
 
@@ -56,6 +57,7 @@ const traduzioni = {
     configured: "Configurato",
     existingConnection: "Profilo salvato su questo computer. Il collegamento al server non è ancora stato verificato. La stampa non è avviata.",
     statusUnavailable: "Impossibile controllare lo stato salvato. Ricarica la finestra.",
+    preferenceSaveFailed: "Impossibile salvare la lingua. Riprova.",
     restaurantNumber: "Ristorante #"
   },
 
@@ -85,6 +87,7 @@ const traduzioni = {
     configured: "Configured",
     existingConnection: "Profile saved on this computer. The server connection has not yet been verified. Printing is not running.",
     statusUnavailable: "Unable to check the saved status. Reload the window.",
+    preferenceSaveFailed: "Unable to save the language. Please try again.",
     restaurantNumber: "Restaurant #"
   },
 
@@ -114,6 +117,7 @@ const traduzioni = {
     configured: "Configurado",
     existingConnection: "Perfil salvo neste computador. A conexão com o servidor ainda não foi verificada. A impressão não está em execução.",
     statusUnavailable: "Não foi possível verificar o status salvo. Recarregue a janela.",
+    preferenceSaveFailed: "Não foi possível salvar o idioma. Tente novamente.",
     restaurantNumber: "Restaurante #"
   }
 };
