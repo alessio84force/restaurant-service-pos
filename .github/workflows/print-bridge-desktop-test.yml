@@ -1,6 +1,11 @@
 name: Print Bridge Desktop - test installers
 
 on:
+  push:
+    branches:
+      - v2.15.0-print-bridge-desktop
+    paths:
+      - '.github/workflows/print-bridge-desktop-test.yml'
   workflow_dispatch:
 
 permissions:
