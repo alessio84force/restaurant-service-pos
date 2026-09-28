@@ -56,7 +56,7 @@ jobs:
 
           const result = preparaBuild();
 
-          if (result.files !== 11) {
+          if (result.files !== 23) {
             throw new Error("Unexpected package contents");
           }
 
