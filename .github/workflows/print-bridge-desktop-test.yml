@@ -1,0 +1,83 @@
+name: Print Bridge Desktop - test installers
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/v2.15.0-print-bridge-desktop'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: mac
+            artifact: print-bridge-macos-test
+          - os: windows-2022
+            platform: win
+            artifact: print-bridge-windows-test
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prepare isolated Desktop package
+        id: prepare
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("fs");
+          const { preparaBuild } =
+            require("./print-bridge/desktop/preparaBuild");
+
+          const result = preparaBuild();
+
+          if (result.files !== 11) {
+            throw new Error("Unexpected package contents");
+          }
+
+          fs.appendFileSync(
+            process.env.GITHUB_OUTPUT,
+            "directory=" + result.directory + "\n"
+          );
+
+          console.log("ISOLATED_PACKAGE_OK");
+          NODE
+
+      - name: Install isolated build dependencies
+        working-directory: ${{ steps.prepare.outputs.directory }}
+        shell: bash
+        run: npm install --no-audit --no-fund
+
+      - name: Build test installer without publishing
+        working-directory: ${{ steps.prepare.outputs.directory }}
+        shell: bash
+        run: >
+          npx --no-install electron-builder
+          --config electron-builder.json
+          --${{ matrix.platform }}
+          --publish never
+
+      - name: Store private test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ steps.prepare.outputs.directory }}/dist-test/
+          retention-days: 7
+          if-no-files-found: error
