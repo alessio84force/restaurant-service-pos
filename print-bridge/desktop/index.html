@@ -312,7 +312,7 @@ button:enabled:hover {
     </div>
     <div class="stat">
       <span data-i18n="service">SERVIZIO</span>
-      <strong data-i18n="stopped">Non avviato</strong>
+      <strong id="servizio-stato" data-i18n="stopped">Non avviato</strong>
     </div>
   </div>
 
@@ -334,6 +334,26 @@ button:enabled:hover {
     <div class="notice" id="collegamento-messaggio" role="status" aria-live="polite">
       Inserisci il codice generato nel Centro de impresión.
     </div>
+  </section>
+
+
+  <section class="card" aria-labelledby="servizio-titolo">
+    <div class="section-top">
+      <h2 id="servizio-titolo" data-i18n="serviceTitle">Servizio di stampa</h2>
+      <span class="badge" data-i18n="serviceStep">02 · Servizio</span>
+    </div>
+
+    <p data-i18n="serviceNote">Avvia il servizio solo dopo aver collegato il ristorante.</p>
+
+    <button id="avvia-servizio-btn" type="button"
+      data-i18n="startService" disabled>Avvia servizio</button>
+
+    <button id="arresta-servizio-btn" type="button"
+      data-i18n="stopService" disabled>Arresta servizio</button>
+
+    <div class="notice" id="servizio-messaggio"
+      role="status" aria-live="polite"
+      data-i18n="servicePreview">Comandi in preparazione. La stampa è disattivata.</div>
   </section>
 
   <footer>Restaurant Service POS · Print Bridge Desktop V2.15.0</footer>

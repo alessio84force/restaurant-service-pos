@@ -11,8 +11,22 @@
   const ristorante = document.getElementById("ristorante-stato");
   const selettore = document.getElementById("language");
 
+  const servizioStato =
+    document.getElementById("servizio-stato");
+
+  const avviaServizio =
+    document.getElementById("avvia-servizio-btn");
+
+  const arrestaServizio =
+    document.getElementById("arresta-servizio-btn");
+
+  const servizioMessaggio =
+    document.getElementById("servizio-messaggio");
+
   if (!input || !pulsante || !messaggio ||
-      !stato || !ristorante || !selettore) return;
+      !stato || !ristorante || !selettore ||
+      !servizioStato || !avviaServizio ||
+      !arrestaServizio || !servizioMessaggio) return;
 
   const chiaveLingua = "rsp-print-bridge-desktop-language";
 
@@ -23,6 +37,27 @@
   let inizializzazione = true;
   let ristoranteId = null;
   let messaggioChiave = "enterCode";
+
+  let azioneServizioInCorso = false;
+  let letturaServizioInCorso = false;
+
+  const servizioVuoto = {
+    disponibile: false,
+    attivo: false,
+    in_esecuzione: false,
+    arresto_in_corso: false,
+    errore: false
+  };
+
+  let servizio = { ...servizioVuoto };
+
+  function servizioValido(dati) {
+    return dati &&
+      typeof dati === "object" &&
+      Object.keys(servizioVuoto).every(
+        nome => typeof dati[nome] === "boolean"
+      );
+  }
 
   try {
     const salvata = localStorage.getItem(chiaveLingua);
@@ -57,6 +92,41 @@
       : traduci("disconnected");
 
     messaggio.textContent = traduci(messaggioChiave);
+
+    let chiaveServizio = "stopped";
+
+    if (servizio.errore) {
+      chiaveServizio = "serviceError";
+    } else if (servizio.arresto_in_corso) {
+      chiaveServizio = "stopping";
+    } else if (servizio.attivo) {
+      chiaveServizio = "running";
+    }
+
+    servizioStato.textContent = traduci(chiaveServizio);
+
+    servizioMessaggio.textContent = traduci(
+      !servizio.disponibile
+        ? "servicePreview"
+        : chiaveServizio === "stopped"
+          ? "serviceNote"
+          : chiaveServizio
+    );
+
+    avviaServizio.disabled =
+      !servizio.disponibile ||
+      !collegato ||
+      inizializzazione ||
+      occupato ||
+      azioneServizioInCorso ||
+      servizio.attivo ||
+      servizio.in_esecuzione ||
+      servizio.arresto_in_corso;
+
+    arrestaServizio.disabled =
+      !servizio.disponibile ||
+      azioneServizioInCorso ||
+      !servizio.attivo;
   }
 
   // Attendiamo il recupero della preferenza salvata.
@@ -330,8 +400,114 @@
     }
   }
 
+
+  async function caricaStatoServizio() {
+    if (letturaServizioInCorso || azioneServizioInCorso) {
+      return;
+    }
+
+    letturaServizioInCorso = true;
+
+    try {
+      const risposta = await fetch("/api/servizio", {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store"
+      });
+
+      if (!risposta.ok) {
+        throw new Error("Stato non disponibile");
+      }
+
+      const dati = await risposta.json();
+
+      if (!servizioValido(dati)) {
+        throw new Error("Stato non valido");
+      }
+
+      // Non sovrascrivere una nuova azione con una
+      // risposta GET precedente.
+      if (!azioneServizioInCorso) {
+        servizio = dati;
+      }
+
+    } catch (_) {
+      if (!azioneServizioInCorso) {
+        servizio = { ...servizioVuoto };
+      }
+
+    } finally {
+      letturaServizioInCorso = false;
+      aggiornaTesti();
+    }
+  }
+
+  async function eseguiAzioneServizio(azione) {
+    if (
+      azioneServizioInCorso ||
+      !["avvia", "arresta"].includes(azione)
+    ) {
+      return;
+    }
+
+    const pulsante =
+      azione === "avvia" ? avviaServizio : arrestaServizio;
+
+    if (pulsante.disabled) return;
+
+    azioneServizioInCorso = true;
+    aggiornaTesti();
+
+    try {
+      const risposta = await fetch(
+        "/api/servizio/" + azione,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          cache: "no-store"
+        }
+      );
+
+      const dati = await risposta.json();
+
+      if (
+        !risposta.ok ||
+        dati.ok !== true ||
+        !servizioValido(dati)
+      ) {
+        throw new Error("Operazione non riuscita");
+      }
+
+      servizio = dati;
+
+    } catch (_) {
+      // Se l'esito è incerto, blocchiamo ulteriori
+      // comandi finché lo stato non viene riletto.
+      servizio = {
+        ...servizio,
+        disponibile: false,
+        errore: true
+      };
+
+    } finally {
+      azioneServizioInCorso = false;
+      aggiornaTesti();
+    }
+  }
+
+  avviaServizio.addEventListener("click", () => {
+    eseguiAzioneServizio("avvia");
+  });
+
+  arrestaServizio.addEventListener("click", () => {
+    eseguiAzioneServizio("arresta");
+  });
+
   aggiornaPulsante();
   aggiornaTesti();
   caricaStato();
   caricaLinguaSalvata();
+  caricaStatoServizio();
+
+  setInterval(caricaStatoServizio, 3000);
 })();

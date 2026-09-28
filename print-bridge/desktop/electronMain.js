@@ -5,13 +5,20 @@ function avviaElectron() {
     app,
     BrowserWindow,
     session,
-    dialog
+    dialog,
+    utilityProcess
   } = require("electron");
 
   const { avviaDesktop } = require("./server");
+  const {
+    creaControlloreServizio
+  } = require("./controlloServizio");
 
   let server = null;
   let finestra = null;
+  let controllore = null;
+  let chiusuraInCorso = false;
+  let chiusuraConsentita = false;
 
   if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -25,10 +32,49 @@ function avviaElectron() {
     }
   });
 
-  app.on("before-quit", () => {
-    if (server && server.listening) {
-      server.close();
+  app.on("before-quit", evento => {
+    if (chiusuraConsentita) return;
+
+    evento.preventDefault();
+
+    if (chiusuraInCorso) return;
+    chiusuraInCorso = true;
+
+    try {
+      if (controllore) controllore.arresta();
+    } catch (_) {
+      chiusuraInCorso = false;
+      dialog.showErrorBox(
+        "Restaurant Service Print Bridge",
+        "Impossibile arrestare il servizio."
+      );
+      return;
     }
+
+    Promise.resolve()
+      .then(() =>
+        controllore
+          ? controllore.attendiArresto()
+          : undefined
+      )
+      .then(() => new Promise(resolve => {
+        if (server && server.listening) {
+          server.close(resolve);
+        } else {
+          resolve();
+        }
+      }))
+      .then(() => {
+        chiusuraConsentita = true;
+        app.quit();
+      })
+      .catch(() => {
+        chiusuraInCorso = false;
+        dialog.showErrorBox(
+          "Restaurant Service Print Bridge",
+          "Arresto non completato. Il servizio non è stato interrotto forzatamente."
+        );
+      });
   });
 
   app.on("window-all-closed", () => {
@@ -42,7 +88,12 @@ function avviaElectron() {
       }
     );
 
-    server = avviaDesktop();
+    controllore = creaControlloreServizio({
+      lancia: (workerFile, opzioni) =>
+        utilityProcess.fork(workerFile, [], opzioni)
+    });
+
+    server = avviaDesktop({ controllore });
 
     server.once("error", () => {
       dialog.showErrorBox(

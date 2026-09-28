@@ -47,6 +47,45 @@ function avviaDesktop(opzioni = {}) {
 
   let collegamentoInCorso = false;
 
+  // Nessun controllore significa stampa non disponibile.
+  const controllore = opzioni.controllore || null;
+
+  // La presenza del controllore non abilita la stampa.
+  // Serve un'attivazione esplicita, assente per ora in Electron.
+  const abilitazioneServizio =
+    opzioni.abilitaServizio === true;
+
+  if (
+    controllore !== null &&
+    ["avvia", "arresta", "stato"].some(
+      nome => typeof controllore[nome] !== "function"
+    )
+  ) {
+    throw new Error("Controllore servizio non valido");
+  }
+
+  function statoServizio() {
+    if (!controllore || !abilitazioneServizio) {
+      return {
+        disponibile: false,
+        attivo: false,
+        in_esecuzione: false,
+        arresto_in_corso: false,
+        errore: false
+      };
+    }
+
+    const valore = controllore.stato();
+
+    return {
+      disponibile: true,
+      attivo: Boolean(valore.attivo),
+      in_esecuzione: Boolean(valore.in_esecuzione),
+      arresto_in_corso: Boolean(valore.arresto_in_corso),
+      errore: Boolean(valore.errore)
+    };
+  }
+
   const server = http.createServer((req, res) => {
     const indirizzo =
       "127.0.0.1:" + server.address().port;
@@ -326,6 +365,62 @@ function avviaDesktop(opzioni = {}) {
       return;
     }
 
+    if (
+      req.method === "POST" &&
+      (
+        req.url === "/api/servizio/avvia" ||
+        req.url === "/api/servizio/arresta"
+      )
+    ) {
+      if (req.headers.origin !== origine) {
+        rispondiJson(res, headers, 403, {
+          ok: false,
+          error: "Richiesta non autorizzata."
+        });
+        return;
+      }
+
+      if (
+        req.headers["transfer-encoding"] ||
+        Number(req.headers["content-length"] || 0) !== 0
+      ) {
+        rispondiJson(res, headers, 400, {
+          ok: false,
+          error: "Richiesta non valida."
+        });
+        return;
+      }
+
+      if (!controllore || !abilitazioneServizio) {
+        rispondiJson(res, headers, 503, {
+          ok: false,
+          ...statoServizio()
+        });
+        return;
+      }
+
+      try {
+        const risultato =
+          req.url === "/api/servizio/avvia"
+            ? controllore.avvia()
+            : controllore.arresta();
+
+        const ok = risultato.ok === true;
+
+        rispondiJson(res, headers, ok ? 200 : 409, {
+          ok,
+          ...statoServizio()
+        });
+      } catch (_) {
+        rispondiJson(res, headers, 500, {
+          ok: false,
+          error: "Operazione non riuscita."
+        });
+      }
+
+      return;
+    }
+
     if (req.method !== "GET") {
       res.writeHead(405, headers);
       res.end();
@@ -380,6 +475,11 @@ function avviaDesktop(opzioni = {}) {
       rispondiJson(res, headers, 200, {
         lingua: leggiLingua(preferenzeFile)
       });
+      return;
+    }
+
+    if (req.url === "/api/servizio") {
+      rispondiJson(res, headers, 200, statoServizio());
       return;
     }
 
