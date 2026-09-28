@@ -78,10 +78,10 @@ function preparaHelperMac(directory, modalita) {
 
   // Non accettiamo un binario con una sola architettura.
   execFileSync("/usr/bin/lipo", [
+    binario,
     "-verify_arch",
     "x86_64",
-    "arm64",
-    binario
+    "arm64"
   ], { stdio: "pipe" });
 
   const statBinario = fs.lstatSync(binario);
