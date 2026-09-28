@@ -10,12 +10,24 @@ const files = Object.freeze([
   "print-bridge/pair.js",
   "print-bridge/desktopPairing.js",
   "print-bridge/desktop/electronMain.js",
+  "print-bridge/desktop/controlloServizio.js",
   "print-bridge/desktop/server.js",
   "print-bridge/desktop/app.js",
   "print-bridge/desktop/i18n.js",
   "print-bridge/desktop/index.html",
   "print-bridge/desktop/stato.js",
-  "print-bridge/desktop/preferenze.js"
+  "print-bridge/desktop/preferenze.js",
+  "print-bridge/worker.js",
+  "print-bridge/clientApi.js",
+  "print-bridge/scopriStampanti.js",
+  "print-bridge/statoInventario.js",
+  "print-bridge/reteEscpos.js",
+  "print-bridge/stampaLocale.js",
+  "print-bridge/statoLocale.js",
+  "print-bridge/usbEscposMac.js",
+  "print-bridge/tcpEscpos.js",
+  "print-bridge/profiliStampanti.js",
+  "print-bridge/native/macosUsbEscpos.c"
 ]);
 
 function verificaDistribuzione() {
@@ -66,7 +78,6 @@ function verificaDistribuzione() {
   }
 
   const vietati = [
-    "worker.js",
     "servizio.js",
     "config.json",
     "preferenze.json",

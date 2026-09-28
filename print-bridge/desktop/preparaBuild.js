@@ -10,7 +10,7 @@ const { verificaDistribuzione } = require("./distribuzione");
 function preparaBuild() {
   const pacchetto = preparaPacchetto();
 
-  assert.strictEqual(pacchetto.numeroFile, 10);
+  assert.strictEqual(pacchetto.numeroFile, 22);
 
   const directory = pacchetto.directory;
   const packageFile = path.join(directory, "package.json");
@@ -112,7 +112,7 @@ function preparaBuild() {
 
   assert.deepStrictEqual(presenti.sort(), attesi);
 
-  assert.strictEqual(presenti.length, 11);
+  assert.strictEqual(presenti.length, 23);
 
   return {
     directory,

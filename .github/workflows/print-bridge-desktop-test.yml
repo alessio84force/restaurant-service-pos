@@ -73,6 +73,12 @@ jobs:
         shell: bash
         run: npm install --no-audit --no-fund
 
+      - name: Compile universal macOS USB helper
+        if: matrix.platform == 'mac'
+        shell: bash
+        run: >
+          node print-bridge/desktop/preparaHelperMac.js
+          "${{ steps.prepare.outputs.directory }}" --build
       - name: Build test installer without publishing
         working-directory: ${{ steps.prepare.outputs.directory }}
         shell: bash

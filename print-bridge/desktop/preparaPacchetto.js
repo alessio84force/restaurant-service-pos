@@ -50,7 +50,7 @@ function elencaFile(directory, base = directory) {
 function preparaPacchetto() {
   const verifica = verificaDistribuzione();
 
-  if (!verifica.ok || verifica.files.length !== 9) {
+  if (!verifica.ok || verifica.files.length !== 21) {
     throw new Error("Elenco distribuzione inatteso");
   }
 
@@ -155,7 +155,7 @@ if (require.main === module) {
   console.log("PACCHETTO_TEMPORANEO_CREATO_OK");
   console.log("NUMERO_FILE:", risultato.numeroFile);
   console.log("COPIE_IDENTICHE_VERIFICATE_OK");
-  console.log("NESSUN_WORKER_INCLUSO_OK");
+  console.log("WORKER_INCLUSO_SENZA_AVVIO_OK");
   console.log("CARTELLA_TEMPORANEA:", risultato.directory);
 }
 

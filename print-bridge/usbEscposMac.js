@@ -7,17 +7,39 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const sorgente = path.join(
+const sorgenteArchivio = path.join(
   __dirname,
   "native",
   "macosUsbEscpos.c"
 );
 
-const directoryBin = path.join(
-  os.homedir(),
-  ".rsp-print-bridge",
-  "bin"
+// Il compilatore deve utilizzare il file esterno ad ASAR.
+const partiSorgente = sorgenteArchivio.split(path.sep);
+const indiceAsar = partiSorgente.lastIndexOf("app.asar");
+
+if (indiceAsar !== -1) {
+  partiSorgente[indiceAsar] = "app.asar.unpacked";
+}
+
+const sorgente = partiSorgente.join(path.sep);
+
+// Binario preparato durante la compilazione GitHub.
+const binarioPacchettizzato = path.join(
+  path.dirname(sorgente),
+  "rsp-macos-usb-escpos"
 );
+
+// Manteniamo il percorso storico quando non viene
+// specificata una configurazione personalizzata.
+const configurazionePersonalizzata = String(
+  process.env.RSP_PRINT_BRIDGE_CONFIG || ""
+).trim();
+
+const directoryBase = configurazionePersonalizzata
+  ? path.dirname(path.resolve(configurazionePersonalizzata))
+  : path.join(os.homedir(), ".rsp-print-bridge");
+
+const directoryBin = path.join(directoryBase, "bin");
 
 const binario = path.join(
   directoryBin,
@@ -59,6 +81,30 @@ function assicuraHelper() {
     throw new Error(
       "Sorgente helper USB macOS non trovato"
     );
+  }
+
+  // Nell'app installata non compiliamo codice sul
+  // computer del ristoratore. Il binario deve esistere.
+  if (indiceAsar !== -1) {
+    if (!fs.existsSync(binarioPacchettizzato)) {
+      throw new Error(
+        "Binario USB Desktop non incluso nell'installer"
+      );
+    }
+
+    const stat = fs.lstatSync(binarioPacchettizzato);
+
+    if (
+      !stat.isFile() ||
+      stat.isSymbolicLink() ||
+      (stat.mode & 0o111) === 0
+    ) {
+      throw new Error(
+        "Binario USB Desktop non valido"
+      );
+    }
+
+    return binarioPacchettizzato;
   }
 
   fs.mkdirSync(
