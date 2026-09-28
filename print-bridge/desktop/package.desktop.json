@@ -1,0 +1,9 @@
+{
+  "name": "restaurant-service-print-bridge",
+  "productName": "Restaurant Service Print Bridge",
+  "version": "2.15.0",
+  "description": "Applicazione Desktop per il collegamento del ristorante a Restaurant Service POS.",
+  "private": true,
+  "main": "print-bridge/desktop/electronMain.js",
+  "license": "UNLICENSED"
+}
