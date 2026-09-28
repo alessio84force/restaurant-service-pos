@@ -6,6 +6,9 @@ on:
       - v2.15.0-print-bridge-desktop
     paths:
       - '.github/workflows/print-bridge-desktop-test.yml'
+      - 'print-bridge/desktop/**'
+      - 'print-bridge/desktopPairing.js'
+      - 'print-bridge/pair.js'
   workflow_dispatch:
 
 permissions:

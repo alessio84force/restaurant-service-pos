@@ -54,7 +54,7 @@ function verificaDistribuzione() {
       const destinazione = path.relative(
         root,
         path.resolve(path.dirname(completo), nome)
-      ) + ".js";
+      ).split(path.sep).join("/") + ".js";
 
       if (!autorizzati.has(destinazione)) {
         throw new Error(
