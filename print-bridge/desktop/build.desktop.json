@@ -1,0 +1,42 @@
+{
+  "appId": "com.restaurantservicepos.printbridge",
+  "productName": "Restaurant Service Print Bridge",
+  "asar": true,
+  "directories": {
+    "output": "dist-test"
+  },
+  "files": [
+    "package.json",
+    "print-bridge/pair.js",
+    "print-bridge/desktopPairing.js",
+    "print-bridge/desktop/electronMain.js",
+    "print-bridge/desktop/server.js",
+    "print-bridge/desktop/app.js",
+    "print-bridge/desktop/i18n.js",
+    "print-bridge/desktop/index.html",
+    "print-bridge/desktop/stato.js",
+    "print-bridge/desktop/preferenze.js"
+  ],
+  "mac": {
+    "category": "public.app-category.business",
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["x64", "arm64"]
+      }
+    ],
+    "notarize": false
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  }
+}
