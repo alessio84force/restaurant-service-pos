@@ -232,6 +232,224 @@ function creaBufferEscPos(
   );
 }
 
+
+function inviaWindowsRaw(
+  stampante,
+  dati,
+  opzioni
+) {
+
+  return new Promise(
+    (resolve, reject) => {
+
+      if (
+        os.platform() !== "win32"
+      ) {
+        reject(
+          new Error(
+            "Spooler Windows disponibile solo su win32"
+          )
+        );
+        return;
+      }
+
+      const nome =
+        String(
+          stampante &&
+          stampante.nome ||
+          ""
+        ).trim();
+
+      if (!nome) {
+        reject(
+          new Error(
+            "Nome stampante Windows mancante"
+          )
+        );
+        return;
+      }
+
+      const buffer =
+        Buffer.isBuffer(dati)
+          ? dati
+          : Buffer.from(
+              dati || ""
+            );
+
+      if (!buffer.length) {
+        reject(
+          new Error(
+            "Contenuto RAW Windows vuoto"
+          )
+        );
+        return;
+      }
+
+      const token =
+        Date.now() +
+        "-" +
+        Math.random()
+          .toString(16)
+          .slice(2);
+
+      const fileDati =
+        path.join(
+          os.tmpdir(),
+          "rsp-win-raw-" +
+          token +
+          ".bin"
+        );
+
+      const fileScript =
+        path.join(
+          os.tmpdir(),
+          "rsp-win-raw-" +
+          token +
+          ".ps1"
+        );
+
+      const script = [
+        'param([string]$PrinterName,[string]$FilePath)',
+        '$ErrorActionPreference = "Stop"',
+        '$source = @"',
+        'using System;',
+        'using System.Runtime.InteropServices;',
+        'public class RawPrinter {',
+        '  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]',
+        '  public class DOC_INFO_1 {',
+        '    [MarshalAs(UnmanagedType.LPWStr)] public string pDocName;',
+        '    [MarshalAs(UnmanagedType.LPWStr)] public string pOutputFile;',
+        '    [MarshalAs(UnmanagedType.LPWStr)] public string pDataType;',
+        '  }',
+        '  [DllImport("winspool.drv", EntryPoint="OpenPrinterW", SetLastError=true, CharSet=CharSet.Unicode)]',
+        '  public static extern bool OpenPrinter(string name, out IntPtr handle, IntPtr defaults);',
+        '  [DllImport("winspool.drv", SetLastError=true)]',
+        '  public static extern bool ClosePrinter(IntPtr handle);',
+        '  [DllImport("winspool.drv", EntryPoint="StartDocPrinterW", SetLastError=true, CharSet=CharSet.Unicode)]',
+        '  public static extern int StartDocPrinter(IntPtr handle, int level, [In] DOC_INFO_1 info);',
+        '  [DllImport("winspool.drv", SetLastError=true)]',
+        '  public static extern bool EndDocPrinter(IntPtr handle);',
+        '  [DllImport("winspool.drv", SetLastError=true)]',
+        '  public static extern bool StartPagePrinter(IntPtr handle);',
+        '  [DllImport("winspool.drv", SetLastError=true)]',
+        '  public static extern bool EndPagePrinter(IntPtr handle);',
+        '  [DllImport("winspool.drv", SetLastError=true)]',
+        '  public static extern bool WritePrinter(IntPtr handle, byte[] bytes, int count, out int written);',
+        '}',
+        '"@',
+        'Add-Type -TypeDefinition $source',
+        '$bytes = [IO.File]::ReadAllBytes($FilePath)',
+        '$handle = [IntPtr]::Zero',
+        'if (-not [RawPrinter]::OpenPrinter($PrinterName,[ref]$handle,[IntPtr]::Zero)) { throw "OpenPrinter fallita" }',
+        '$docStarted = $false',
+        '$pageStarted = $false',
+        'try {',
+        '  $doc = New-Object RawPrinter+DOC_INFO_1',
+        '  $doc.pDocName = "Restaurant Service POS"',
+        '  $doc.pOutputFile = $null',
+        '  $doc.pDataType = "RAW"',
+        '  $job = [RawPrinter]::StartDocPrinter($handle,1,$doc)',
+        '  if ($job -le 0) { throw "StartDocPrinter fallita" }',
+        '  $docStarted = $true',
+        '  if (-not [RawPrinter]::StartPagePrinter($handle)) { throw "StartPagePrinter fallita" }',
+        '  $pageStarted = $true',
+        '  $written = 0',
+        '  if (-not [RawPrinter]::WritePrinter($handle,$bytes,$bytes.Length,[ref]$written)) { throw "WritePrinter fallita" }',
+        '  if ($written -ne $bytes.Length) { throw "Scrittura RAW incompleta" }',
+        '  Write-Output ("job=" + $job + " bytes=" + $written)',
+        '} finally {',
+        '  if ($pageStarted) { [RawPrinter]::EndPagePrinter($handle) | Out-Null }',
+        '  if ($docStarted) { [RawPrinter]::EndDocPrinter($handle) | Out-Null }',
+        '  [RawPrinter]::ClosePrinter($handle) | Out-Null',
+        '}'
+      ].join("\r\n");
+
+      fs.writeFileSync(
+        fileDati,
+        buffer
+      );
+
+      fs.writeFileSync(
+        fileScript,
+        script,
+        "utf8"
+      );
+
+      const timeoutMs =
+        Number(
+          opzioni &&
+          opzioni.timeoutMs
+        ) || 15000;
+
+      execFile(
+        "powershell.exe",
+        [
+          "-NoProfile",
+          "-NonInteractive",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          fileScript,
+          "-PrinterName",
+          nome,
+          "-FilePath",
+          fileDati
+        ],
+        {
+          encoding:
+            "utf8",
+          windowsHide:
+            true,
+          timeout:
+            timeoutMs
+        },
+        (err, stdout, stderr) => {
+
+          try {
+            fs.unlinkSync(
+              fileDati
+            );
+          } catch (_) {}
+
+          try {
+            fs.unlinkSync(
+              fileScript
+            );
+          } catch (_) {}
+
+          if (err) {
+            err.stdout =
+              String(
+                stdout || ""
+              );
+
+            err.stderr =
+              String(
+                stderr || ""
+              );
+
+            reject(err);
+            return;
+          }
+
+          resolve({
+            ok:
+              true,
+
+            stdout:
+              String(
+                stdout || ""
+              ).trim(),
+
+            bytes:
+              buffer.length
+          });
+        }
+      );
+    }
+  );
+}
+
 async function stampaTesto(
   idONome,
   testo,
@@ -300,6 +518,49 @@ async function stampaTesto(
         risultato.stdout,
       trasporto:
         "usb_escpos"
+    };
+  }
+
+  if (
+    stampante.trasporto ===
+    "winspool_raw"
+  ) {
+
+    const dati =
+      creaBufferEscPos(
+        contenuto,
+        stampante
+      );
+
+    const risultato =
+      await inviaWindowsRaw(
+        stampante,
+        dati,
+        {
+          timeoutMs:
+            timeoutMs
+        }
+      );
+
+    return {
+      ok:
+        true,
+
+      stampante:
+        stampante.nome,
+
+      printer_id:
+        stampante.id,
+
+      job_id:
+        "win-" +
+        Date.now(),
+
+      risposta:
+        risultato.stdout,
+
+      trasporto:
+        "winspool_raw"
     };
   }
 

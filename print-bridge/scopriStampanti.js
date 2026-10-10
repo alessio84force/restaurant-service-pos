@@ -209,6 +209,140 @@ function stampantiUsbDiretteMacOS() {
     });
 }
 
+
+function stampantiWindows() {
+
+  const comando = [
+    '[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false);',
+    '$OutputEncoding = [Console]::OutputEncoding;',
+    'Get-CimInstance Win32_Printer |',
+    'Select-Object Name,PortName,DriverName,WorkOffline |',
+    'ConvertTo-Json -Compress'
+  ].join(" ");
+
+  const output =
+    esegui(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        comando
+      ]
+    );
+
+  if (!output) {
+    return [];
+  }
+
+  let dati;
+
+  try {
+    dati =
+      JSON.parse(output);
+  } catch (_) {
+    return [];
+  }
+
+  const elenco =
+    Array.isArray(dati)
+      ? dati
+      : [dati];
+
+  return elenco
+    .map((dispositivo) => {
+
+      const nome =
+        String(
+          dispositivo.Name || ""
+        ).trim();
+
+      const porta =
+        String(
+          dispositivo.PortName || ""
+        ).trim();
+
+      if (!nome) {
+        return null;
+      }
+
+      if (
+        /Microsoft Print to PDF/i.test(nome) ||
+        /Microsoft XPS Document Writer/i.test(nome) ||
+        /OneNote/i.test(nome) ||
+        /^Fax$/i.test(nome)
+      ) {
+        return null;
+      }
+
+      let tipo =
+        "sistema";
+
+      if (
+        /^(USB|DOT4)/i.test(porta)
+      ) {
+        tipo =
+          "usb";
+      } else if (
+        /^(IP_|WSD-)/i.test(porta) ||
+        /^\d{1,3}(\.\d{1,3}){3}$/.test(porta)
+      ) {
+        tipo =
+          "rete";
+      }
+
+      const uri =
+        "winspool://" +
+        encodeURIComponent(nome) +
+        "?port=" +
+        encodeURIComponent(porta);
+
+      return {
+        id:
+          creaIdStabile(
+            nome,
+            uri
+          ),
+
+        nome:
+          nome,
+
+        tipo:
+          tipo,
+
+        connessione:
+          tipo === "usb"
+            ? "Windows / USB"
+            : (
+                tipo === "rete"
+                  ? "Windows / rete"
+                  : "Windows / spooler"
+              ),
+
+        uri:
+          uri,
+
+        trasporto:
+          "winspool_raw",
+
+        porta_sistema:
+          porta,
+
+        driver_sistema:
+          String(
+            dispositivo.DriverName || ""
+          ),
+
+        compatibilita:
+          "da_verificare",
+
+        profilo:
+          "generic_escpos"
+      };
+    })
+    .filter(Boolean);
+}
+
 function stampantiReteDiretteCache() {
 
   return leggiCacheReteEscpos()
@@ -302,7 +436,10 @@ function scopriStampanti() {
   }
 
   if (piattaforma === "win32") {
-    return stampantiReteDiretteCache()
+    return stampantiWindows()
+      .concat(
+        stampantiReteDiretteCache()
+      )
       .map(
         applicaProfiloStampante
       );
