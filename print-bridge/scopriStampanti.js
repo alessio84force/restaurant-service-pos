@@ -301,6 +301,13 @@ function scopriStampanti() {
       );
   }
 
+  if (piattaforma === "win32") {
+    return stampantiReteDiretteCache()
+      .map(
+        applicaProfiloStampante
+      );
+  }
+
   throw new Error(
     "Sistema operativo non ancora supportato: " +
     piattaforma
