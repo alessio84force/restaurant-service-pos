@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/print-bridge-desktop-test.yml'
       - 'print-bridge/desktop/**'
+      - 'print-bridge/**'
       - 'print-bridge/desktopPairing.js'
       - 'print-bridge/pair.js'
   workflow_dispatch:
