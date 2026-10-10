@@ -80,6 +80,30 @@ jobs:
         run: >
           node print-bridge/desktop/preparaHelperMac.js
           "${{ steps.prepare.outputs.directory }}" --build
+
+      - name: Verify Windows printer discovery runtime
+        if: matrix.platform == 'win'
+        working-directory: ${{ steps.prepare.outputs.directory }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          Write-Host "WINDOWS_POWERSHELL_OK"
+
+          $printers = Get-CimInstance Win32_Printer |
+            Select-Object Name, PortName, DriverName, WorkOffline
+
+          $printers |
+            ConvertTo-Json -Compress |
+            Write-Host
+
+          node --check print-bridge/scopriStampanti.js
+          node --check print-bridge/stampaLocale.js
+
+          node -e "const d=require('./print-bridge/scopriStampanti'); const p=d.scopriStampanti(); if(!Array.isArray(p)){throw new Error('Discovery result is not an array');} console.log('WINDOWS_DISCOVERY_OK count=' + p.length);"
+
+          node -e "const s=require('./print-bridge/stampaLocale'); if(typeof s.stampaTesto !== 'function'){throw new Error('stampaTesto missing');} console.log('WINDOWS_PRINT_MODULE_OK');"
+
       - name: Build test installer without publishing
         working-directory: ${{ steps.prepare.outputs.directory }}
         shell: bash
