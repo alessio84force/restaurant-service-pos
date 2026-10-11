@@ -273,6 +273,8 @@
 
       mostraMessaggio("success", "success");
 
+      await avviaServizioAutomaticamente();
+
     } catch (err) {
       const chiave = [
         "invalidCode",
@@ -329,6 +331,10 @@
         ristoranteId = dati.restaurante_id;
         messaggioChiave = "existingConnection";
         messaggio.dataset.state = "pending";
+
+        setTimeout(() => {
+          avviaServizioAutomaticamente();
+        }, 300);
 
       } else if (
         dati.configurato !== false ||
@@ -440,6 +446,23 @@
       letturaServizioInCorso = false;
       aggiornaTesti();
     }
+  }
+
+  async function avviaServizioAutomaticamente() {
+
+    await caricaStatoServizio();
+
+    if (
+      !collegato ||
+      !servizio.disponibile ||
+      servizio.attivo ||
+      servizio.in_esecuzione ||
+      servizio.arresto_in_corso
+    ) {
+      return;
+    }
+
+    await eseguiAzioneServizio("avvia");
   }
 
   async function eseguiAzioneServizio(azione) {

@@ -93,7 +93,7 @@ function avviaElectron() {
         utilityProcess.fork(workerFile, [], opzioni)
     });
 
-    server = avviaDesktop({ controllore });
+    server = avviaDesktop({ controllore, abilitaServizio: true });
 
     server.once("error", () => {
       dialog.showErrorBox(
