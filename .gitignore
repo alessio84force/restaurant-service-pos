@@ -45,3 +45,7 @@ database/*.sqlite-*
 !server/routes/backupsSaas.js
 !server/routes/backupsRestaurante.js
 !server/middleware/backupRestauranteLink.js
+
+# Installer Print Bridge Desktop
+# I binari vengono caricati direttamente sul server, non versionati.
+/downloads/

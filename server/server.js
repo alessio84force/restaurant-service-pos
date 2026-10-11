@@ -87,6 +87,22 @@ const app = express();
 app.use(seoLocalesRoutes());
 app.use(marketingPublicoRoutes());
 app.use(marketingMultilinguaRoutes());
+
+/*
+ * V2.15.0 - Download Print Bridge Desktop.
+ * Gli installer non sono versionati in Git.
+ */
+app.use(
+  '/downloads',
+  express.static(
+    path.join(__dirname, '..', 'downloads'),
+    {
+      fallthrough: true,
+      index: false,
+      maxAge: '1h'
+    }
+  )
+);
 /*
  * V2.14.0 - Print Bridge
  * API macchina-macchina autenticata tramite token.
