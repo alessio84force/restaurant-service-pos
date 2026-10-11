@@ -554,6 +554,68 @@ function testiPairingBridge(langValor) {
   );
 }
 
+
+function testiDownloadBridge(langValor) {
+  const lang =
+    String(langValor || "es").toLowerCase();
+
+  const testi = {
+    es: {
+      titulo: "Descarga Print Bridge",
+      introduccion:
+        "Instala Print Bridge en el ordenador conectado a las impresoras.",
+      windows: "Descargar para Windows",
+      macIntel: "Mac Intel",
+      macArm: "Mac Apple Silicon",
+      pasoCodigo:
+        "Después de instalarlo, genera un código de conexión e introdúcelo en la aplicación Print Bridge.",
+      pasoBusqueda:
+        "Una vez conectado, Print Bridge buscará automáticamente las impresoras USB y de red disponibles."
+    },
+
+    it: {
+      titulo: "Scarica Print Bridge",
+      introduccion:
+        "Installa Print Bridge sul computer collegato alle stampanti.",
+      windows: "Scarica per Windows",
+      macIntel: "Mac Intel",
+      macArm: "Mac Apple Silicon",
+      pasoCodigo:
+        "Dopo l'installazione, genera un codice di collegamento e inseriscilo nell'app Print Bridge.",
+      pasoBusqueda:
+        "Dopo il collegamento, Print Bridge cercherà automaticamente le stampanti USB e di rete disponibili."
+    },
+
+    en: {
+      titulo: "Download Print Bridge",
+      introduccion:
+        "Install Print Bridge on the computer connected to the printers.",
+      windows: "Download for Windows",
+      macIntel: "Mac Intel",
+      macArm: "Mac Apple Silicon",
+      pasoCodigo:
+        "After installing it, generate a connection code and enter it in the Print Bridge app.",
+      pasoBusqueda:
+        "Once connected, Print Bridge will automatically search for available USB and network printers."
+    },
+
+    "pt-br": {
+      titulo: "Baixar Print Bridge",
+      introduccion:
+        "Instale o Print Bridge no computador conectado às impressoras.",
+      windows: "Baixar para Windows",
+      macIntel: "Mac Intel",
+      macArm: "Mac Apple Silicon",
+      pasoCodigo:
+        "Depois da instalação, gere um código de conexão e digite-o no aplicativo Print Bridge.",
+      pasoBusqueda:
+        "Depois de conectado, o Print Bridge procurará automaticamente impressoras USB e de rede disponíveis."
+    }
+  };
+
+  return testi[lang] || testi.es;
+}
+
 function compatibilitaStampanteVisibile(
   stampante,
   textos
@@ -944,21 +1006,125 @@ function renderImpresoras(
     testiPairingBridge(
       textos.lang
     );
+  const downloadTesti =
+    testiDownloadBridge(
+      textos.lang
+    );
+
 
   const pairingHtml = `
-    <form
-      method="POST"
-      action="/configuracion-impresoras/print-bridge/pairing"
-      style="margin-top:12px;"
+    <div
+      style="
+        margin-top:14px;
+        padding:18px;
+        border:1px solid #dbe5e7;
+        border-radius:16px;
+        background:#f8fbfb;
+      "
     >
-      <button type="submit">
-        ${escapar(pairingTesti.boton)}
-      </button>
-    </form>
+      <strong
+        style="
+          display:block;
+          margin-bottom:6px;
+          font-size:17px;
+        "
+      >
+        ${escapar(downloadTesti.titulo)}
+      </strong>
 
-    <p class="help">
-      ${escapar(pairingTesti.ayuda)}
-    </p>
+      <p class="help" style="margin-top:0;">
+        ${escapar(downloadTesti.introduccion)}
+      </p>
+
+      <div
+        style="
+          display:flex;
+          gap:8px;
+          flex-wrap:wrap;
+          margin:12px 0 18px;
+        "
+      >
+        <a
+          href="/downloads/print-bridge/windows/Restaurant-Service-Print-Bridge-Setup.exe"
+          style="
+            display:inline-flex;
+            min-height:42px;
+            align-items:center;
+            justify-content:center;
+            padding:0 14px;
+            border-radius:11px;
+            background:#0f766e;
+            color:white;
+            text-decoration:none;
+            font-weight:900;
+          "
+        >
+          ${escapar(downloadTesti.windows)}
+        </a>
+
+        <a
+          href="/downloads/print-bridge/macos/Restaurant-Service-Print-Bridge-Intel.dmg"
+          style="
+            display:inline-flex;
+            min-height:42px;
+            align-items:center;
+            justify-content:center;
+            padding:0 14px;
+            border-radius:11px;
+            background:#ffffff;
+            color:#0f172a;
+            border:1px solid #cbd5e1;
+            text-decoration:none;
+            font-weight:900;
+          "
+        >
+          ${escapar(downloadTesti.macIntel)}
+        </a>
+
+        <a
+          href="/downloads/print-bridge/macos/Restaurant-Service-Print-Bridge-Apple-Silicon.dmg"
+          style="
+            display:inline-flex;
+            min-height:42px;
+            align-items:center;
+            justify-content:center;
+            padding:0 14px;
+            border-radius:11px;
+            background:#ffffff;
+            color:#0f172a;
+            border:1px solid #cbd5e1;
+            text-decoration:none;
+            font-weight:900;
+          "
+        >
+          ${escapar(downloadTesti.macArm)}
+        </a>
+      </div>
+
+      <p class="help">
+        <strong>2.</strong>
+        ${escapar(downloadTesti.pasoCodigo)}
+      </p>
+
+      <form
+        method="POST"
+        action="/configuracion-impresoras/print-bridge/pairing"
+        style="margin-top:10px;"
+      >
+        <button type="submit">
+          ${escapar(pairingTesti.boton)}
+        </button>
+      </form>
+
+      <p class="help">
+        ${escapar(pairingTesti.ayuda)}
+      </p>
+
+      <p class="help">
+        <strong>3.</strong>
+        ${escapar(downloadTesti.pasoBusqueda)}
+      </p>
+    </div>
   `;
 
   const stampantiHtml =
