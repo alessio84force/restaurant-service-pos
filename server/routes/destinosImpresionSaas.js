@@ -744,13 +744,18 @@ function stampanteBridgeDiretta(p) {
 
   const usb = uri.startsWith("usb-escpos://");
   const tcp = uri.startsWith("tcp-escpos://");
+  const winspool =
+    uri.startsWith("winspool://");
 
   if (trasporto === "usb_escpos") return usb;
   if (trasporto === "tcp_escpos") return tcp;
+  if (trasporto === "winspool_raw") {
+    return winspool;
+  }
 
   if (trasporto) return false;
 
-  return usb || tcp;
+  return usb || tcp || winspool;
 }
 
 function renderImpresoras(
@@ -1167,7 +1172,8 @@ function renderImpresoras(
 
             const escposDiretta =
               trasporto === "usb_escpos" ||
-              trasporto === "tcp_escpos";
+              trasporto === "tcp_escpos" ||
+              trasporto === "winspool_raw";
 
             const puoConfermare =
               rilevata &&
