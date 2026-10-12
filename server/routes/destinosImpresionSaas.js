@@ -2363,23 +2363,69 @@ module.exports = function destinosImpresionSaasRoutes(db) {
         destino
       );
 
-    const modo =
+    const rawSceltaForm =
       String(
-        cfg.modo || ""
-      )
-        .trim()
-        .toLowerCase();
+        (req.body || {})[
+          "print_bridge_" + destinoId
+        ] || ""
+      ).trim();
+
+    let sceltaForm = null;
+
+    if (rawSceltaForm) {
+      try {
+        const parsed =
+          JSON.parse(rawSceltaForm);
+
+        if (
+          parsed &&
+          parsed.bridge_id &&
+          parsed.printer_id
+        ) {
+          sceltaForm = {
+            bridge_id:
+              String(parsed.bridge_id),
+            printer_id:
+              String(parsed.printer_id)
+          };
+        }
+      } catch (_) {
+        sceltaForm = null;
+      }
+
+      if (!sceltaForm) {
+        return res.redirect(
+          "/configuracion-impresoras?error=" +
+          encodeURIComponent(
+            textos.stampanteBridgeNonValida
+          )
+        );
+      }
+    }
+
+    const modo =
+      sceltaForm
+        ? "print_bridge"
+        : String(
+            cfg.modo || ""
+          )
+            .trim()
+            .toLowerCase();
 
     if (modo === "print_bridge") {
 
       const bridgeId =
         String(
-          cfg.bridge_id || ""
+          sceltaForm
+            ? sceltaForm.bridge_id
+            : cfg.bridge_id || ""
         ).trim();
 
       const printerId =
         String(
-          cfg.printer_id || ""
+          sceltaForm
+            ? sceltaForm.printer_id
+            : cfg.printer_id || ""
         ).trim();
 
       if (
@@ -2419,7 +2465,11 @@ module.exports = function destinosImpresionSaasRoutes(db) {
             bridge_id,
             printer_id,
             printer_nome,
-            stato
+            stato,
+            uri,
+            trasporto,
+            profilo,
+            linguaggio
           FROM print_bridge_printers
           WHERE restaurante_id=?
             AND bridge_id=?
@@ -2436,7 +2486,8 @@ module.exports = function destinosImpresionSaasRoutes(db) {
 
       if (
         !bridge ||
-        !stampante
+        !stampante ||
+        !stampanteBridgeDiretta(stampante)
       ) {
         return res.redirect(
           "/configuracion-impresoras?error=" +
