@@ -940,15 +940,6 @@ function renderImpresoras(
             <h3>${escapar(d.nombre)}</h3>
             <small>${escapar(d.id)}</small>
 
-            <label>${escapar(textos.modo)}</label>
-            <select name="modo_${escapar(d.id)}">
-              <option value="ventana" ${cfg.modo === "ventana" ? "selected" : ""}>${escapar(textos.modoVentana)}</option>
-              <option value="preview" ${cfg.modo === "preview" ? "selected" : ""}>${escapar(textos.modoPreview)}</option>
-              <option value="archivo_txt" ${cfg.modo === "archivo_txt" ? "selected" : ""}>${escapar(textos.modoArchivoTxt)}</option>
-              <option value="escpos_red" ${cfg.modo === "escpos_red" ? "selected" : ""}>${escapar(textos.modoEscposRed)}</option>
-              <option value="print_bridge" ${cfg.modo === "print_bridge" ? "selected" : ""}>${escapar(textos.modoPrintBridge)}</option>
-            </select>
-
             <label>${escapar(textos.seleccionarImpresora)}</label>
             ${selectBridge(cfg, d.id)}
 
@@ -1542,7 +1533,9 @@ function renderImpresoras(
 
   <form method="POST" action="/configuracion-impresoras">
 
-    <section class="card">
+    <details class="card">
+        <summary>${escapar(textos.configuracionLegacy)}</summary>
+        <div style="margin-top:14px;">
       <h2>${escapar(textos.modoGeneral)}</h2>
 
       <label>
@@ -1570,7 +1563,8 @@ function renderImpresoras(
           ${escapar(textos.modoCentroImpresion)}
         </option>
       </select>
-    </section>
+            </div>
+      </details>
 
     <section class="grid">
       ${cards}
@@ -2006,14 +2000,23 @@ module.exports = function destinosImpresionSaasRoutes(db) {
     let erroreBridge = false;
 
     todos.forEach((d) => {
-      const modoDestino =
+      const raw =
         String(
           body[
-            "modo_" + d.id
-          ] ||
-          body.modo_impresion ||
-          "ventana"
+            "print_bridge_" + d.id
+          ] || ""
         );
+
+      const modoDestino =
+        raw
+          ? "print_bridge"
+          : String(
+              body[
+                "modo_" + d.id
+              ] ||
+              body.modo_impresion ||
+              "ventana"
+            );
 
       const legacyNome =
         String(
@@ -2028,13 +2031,6 @@ module.exports = function destinosImpresionSaasRoutes(db) {
         modo:
           modoDestino
       };
-
-      const raw =
-        String(
-          body[
-            "print_bridge_" + d.id
-          ] || ""
-        );
 
       if (raw) {
         try {
